@@ -9,7 +9,8 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Pinned: TeX Live 2023 and poppler match tests/fixtures/templates/results.json.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -41,6 +42,30 @@ jobs:
 
       - name: Test
         run: pytest -q
+
+  corpus:
+    # Public template corpus: every template x every parser must match docs/parser-table.md.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install TeX, poppler and the corpus fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base texlive-latex-extra texlive-fonts-recommended lmodern \
+            latexmk poppler-utils
+          bash tests/fixtures/templates/provision.sh
+
+      - name: Install package
+        run: pip install -e ".[dev,check]"
+
+      - name: Corpus
+        run: pytest -q -m corpus -rs
 
   example-cv:
     # The reusable CV workflow, run on the fictional example profile with this checkout.

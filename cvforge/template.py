@@ -503,34 +503,28 @@ def personal_fact_warnings(fixed: list[tuple[int, str]], file: str) -> list[Issu
 # ---------------------------------------------------------------- lint
 
 
-_LINT_RULES: list[tuple[re.Pattern[str], str, str]] = [
-    (
-        re.compile(
-            r"\\usepackage(\[[^\]]*\])?\{[^}]*\b(multicol|paracol)\b|\\begin\{(multicols|paracol)\}|\\twocolumn\b"
-        ),
-        "two-column layout: parsers often read across columns and interleave lines.",
-        "use a single column in reading order; keep dates on the line they belong to.",
-    ),
-    (
-        re.compile(
-            r"\\usepackage(\[[^\]]*\])?\{[^}]*\b(fontawesome5?|fontawesome|academicons|marvosym|simpleicons)\b"
-        ),
-        "icon font: icons extract as junk characters or vanish, taking adjacent text with them.",
-        "write the words (Email, GitHub) instead of icons.",
-    ),
-    (
-        re.compile(r"\\includegraphics"),
-        "\\includegraphics (photo or logo): invisible to parsers and a bias risk in screening.",
-        "remove the image; keep information as text.",
-    ),
-    (
-        re.compile(r"\\(fancyhead|fancyfoot|lhead|chead|rhead|lfoot|cfoot|rfoot)\b"),
-        "text in headers/footers: many parsers drop it or repeat it on every page.",
-        "move contact details into the body.",
-    ),
-]
-
-
+_TWO_COLUMN = re.compile(
+    r"\\usepackage(\[[^\]]*\])?\{[^}]*\b(multicol|paracol)\b|\\begin\{(multicols|paracol)\}"
+    r"|\\twocolumn\b"
+)
+# Side-by-side minipages narrower than the page (Deedy Resume in the corpus).
+_NARROW_MINIPAGE = re.compile(r"\\begin\{minipage\}(\[[^\]]*\])?\{0?\.[0-7]\d*\\(text|line)width\}")
+_ICON_PACKAGE = re.compile(
+    r"\\usepackage(\[[^\]]*\])?\{[^}]*\b(fontawesome[5-7]?|academicons|marvosym|simpleicons)\b"
+)
+# Icon commands actually used: Font Awesome (\faX, \faIcon) and common marvosym symbols.
+_ICON_USE = re.compile(
+    r"\\fa[A-Z]\w*|\\faIcon\b|\\(Letter|Email|EmailCT|Mobilefone|Telefon|Mundus|Pointinghand|"
+    r"Clocklogo|Industry|Faxmachine|Lightning|Mobilefone|Writinghand|Gentsroom)\b|\\ai[A-Z]\w*"
+)
+# Header or footer commands with something visible in their argument (Jake's empty
+# \fancyfoot{} is harmless and no longer warns).
+_HEADER_TEXT = re.compile(
+    r"\\(fancyhead|fancyfoot|lhead|chead|rhead|lfoot|cfoot|rfoot)(\[[^\]]*\])?\{\s*[^}\s]"
+)
+_STANDARD_CLASS = re.compile(
+    r"\\documentclass(\[[^\]]*\])?\{(article|extarticle|report|extreport|scrartcl|memoir|letter)\}"
+)
 _RIGHT_ALIGN = re.compile(
     r"\\hfill\b|\\extracolsep\{\\fill\}|\\hspace\*\{\\fill\}|\\raggedleft\b|"
     r"\\begin\{flushright\}|\\rightline\b|\\hfil\b"
@@ -543,43 +537,80 @@ def _code(line: str) -> str:
     return re.split(r"(?<!\\)%", line, maxsplit=1)[0]
 
 
-def lint(text: str, file: str) -> list[Issue]:
+def _first_line(lines: list[str], pattern: re.Pattern[str]) -> int | None:
+    return next((i + 1 for i, row in enumerate(lines) if pattern.search(_code(row))), None)
+
+
+def lint(text: str, file: str, engine: str | None = None) -> list[Issue]:
+    """Parser-safety warnings. Each rule is backed by a corpus template that shows the damage
+    (docs/parser-table.md) or by a known extraction failure (docs/research.md)."""
     found: list[Issue] = []
     lines = text.splitlines()
-    if _DATE_PLACEHOLDER.search(text):
+    code = "\n".join(_code(row) for row in lines)
+
+    def warn(line: int | None, message: str, fix: str) -> None:
+        found.append(Issue(file=file, line=line, severity="warning", message=message, fix=fix))
+
+    if engine is None:
+        header, _ = parse_header(text, file)
+        engine = header.engine if header else "pdflatex"
+
+    if _DATE_PLACEHOLDER.search(code):
         for idx, line in enumerate(lines):
-            if _RIGHT_ALIGN.search(_code(line)):
-                found.append(
-                    Issue(
-                        file=file,
-                        line=idx + 1,
-                        severity="warning",
-                        message="right-aligned dates may separate from titles in some parsers "
-                        "(\\hfill, \\extracolsep{\\fill} or similar).",
-                        fix="usually harmless, because check tests each field on its own; put "
-                        "dates inline if a parser you rely on reorders them.",
-                    )
+            row = _code(line).strip()
+            if row == "\\hfill":  # a gap between side-by-side boxes, not aligned dates
+                continue
+            if _RIGHT_ALIGN.search(row):
+                warn(
+                    idx + 1,
+                    "right-aligned dates may separate from titles in some parsers "
+                    "(\\hfill, \\extracolsep{\\fill} or similar).",
+                    "usually harmless, because check tests each field on its own; put dates "
+                    "inline if a parser you rely on reorders them.",
                 )
                 break
-    for pattern, message, fix in _LINT_RULES:
-        for idx, line in enumerate(lines):
-            code = line.split("%", 1)[0] if not line.lstrip().startswith("%") else ""
-            if pattern.search(code):
-                found.append(
-                    Issue(file=file, line=idx + 1, severity="warning", message=message, fix=fix)
-                )
-                break
-    if "fontspec" in text and "Ligatures=NoCommon" not in text:
-        fs_line = next((i + 1 for i, row in enumerate(lines) if "fontspec" in row), None)
-        found.append(
-            Issue(
-                file=file,
-                line=fs_line,
-                severity="warning",
-                message="fontspec without Ligatures=NoCommon: ligatures like 'fi' can extract "
-                "as one unknown glyph.",
-                fix="add \\defaultfontfeatures{Ligatures=NoCommon} after \\usepackage{fontspec}.",
-            )
+    two_col = _first_line(lines, _TWO_COLUMN)
+    if two_col is None and len(_NARROW_MINIPAGE.findall(code)) >= 2:
+        two_col = _first_line(lines, _NARROW_MINIPAGE)
+    if two_col is not None:
+        warn(
+            two_col,
+            "two-column layout: parsers often read across columns and interleave lines.",
+            "use a single column in reading order; keep dates on the line they belong to.",
+        )
+    if _ICON_PACKAGE.search(code) and _ICON_USE.search(code.split("\\begin{document}")[-1]):
+        warn(
+            _first_line(lines, _ICON_PACKAGE),
+            "icon font: icons extract as junk characters or vanish, taking adjacent text with "
+            "them.",
+            "write the words (Email, GitHub) instead of icons.",
+        )
+    if "\\includegraphics" in code:
+        warn(
+            _first_line(lines, re.compile(r"\\includegraphics")),
+            "\\includegraphics (photo or logo): invisible to parsers and a bias risk in screening.",
+            "remove the image; keep information as text.",
+        )
+    if _HEADER_TEXT.search(code):
+        warn(
+            _first_line(lines, _HEADER_TEXT),
+            "text in headers/footers: many parsers drop it or repeat it on every page.",
+            "move contact details into the body.",
+        )
+    if engine == "pdflatex" and _STANDARD_CLASS.search(code) and "fontenc" not in code:
+        warn(
+            _first_line(lines, _STANDARD_CLASS),
+            "pdfLaTeX with the default OT1 font encoding: underscores are drawn as rules and "
+            "accents as separate marks, so 'my_project' extracts as 'my project'.",
+            "add \\usepackage[T1]{fontenc} (with \\usepackage{lmodern} or another Type 1 font).",
+        )
+    if "fontspec" in code and not re.search(r"Ligatures\s*=\s*\{?\s*(NoCommon|CommonOff)", code):
+        warn(
+            _first_line(lines, re.compile("fontspec")),
+            "fontspec without Ligatures=NoCommon: ligatures like 'fi' can extract as one "
+            "unknown glyph.",
+            "add Ligatures=NoCommon to the font options, or \\defaultfontfeatures{Ligatures="
+            "NoCommon} before the first \\setmainfont.",
         )
     return found
 

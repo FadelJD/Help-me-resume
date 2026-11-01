@@ -1,0 +1,189 @@
+%% cvforge-template v1
+%% sections: education, experience, projects, skills
+%% supports: person.phone, person.links, experience.location, projects.url, skills.groups
+%% max-bullets-per-role: 6
+%
+% Jake's Resume (MIT, Jake Gutierrez), converted to the cvforge contract. The preamble is the
+% original, unchanged; only the sample content in the body became placeholders.
+%-------------------------
+% Resume in Latex
+% Author : Jake Gutierrez
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\input{glyphtounicode}
+
+
+%----------FONT OPTIONS----------
+% sans-serif
+% \usepackage[sfdefault]{FiraSans}
+% \usepackage[sfdefault]{roboto}
+% \usepackage[sfdefault]{noto-sans}
+% \usepackage[default]{sourcesanspro}
+
+% serif
+% \usepackage{CormorantGaramond}
+% \usepackage{charter}
+
+
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.0in}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+% Ensure that generate pdf is machine readable/ATS parsable
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubSubheading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+%----------HEADING----------
+\begin{center}
+    \textbf{\Huge \scshape \VAR{person.name}} \\ \vspace{1pt}
+    \small \BLOCK{if person.phone}\VAR{person.phone} $|$ \BLOCK{endif}\href{mailto:\VAR{person.email}}{\underline{\VAR{person.email}}}\BLOCK{for link in person.links} $|$
+    \href{\VAR{link.href}}{\underline{\VAR{link.text}}}\BLOCK{endfor}
+
+\end{center}
+
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+\BLOCK{for ed in education}
+    \resumeSubheading
+      {\VAR{ed.org}}{}
+      {\VAR{ed.degree}}{\BLOCK{if ed.start}\VAR{ed.start} -- \BLOCK{endif}\VAR{ed.end}}
+\BLOCK{endfor}
+  \resumeSubHeadingListEnd
+
+
+%-----------EXPERIENCE-----------
+\section{Experience}
+  \resumeSubHeadingListStart
+\BLOCK{for job in experience}
+
+    \resumeSubheading
+      {\VAR{job.title}}{\VAR{job.start} -- \VAR{job.end}}
+      {\VAR{job.org}}{\VAR{job.location}}
+\BLOCK{if job.bullets}
+      \resumeItemListStart
+\BLOCK{for b in job.bullets}
+        \resumeItem{\VAR{b.text}} % id:\VAR{b.id}
+\BLOCK{endfor}
+      \resumeItemListEnd
+\BLOCK{endif}
+\BLOCK{endfor}
+
+  \resumeSubHeadingListEnd
+
+
+%-----------PROJECTS-----------
+\section{Projects}
+    \resumeSubHeadingListStart
+\BLOCK{for p in projects}
+      \resumeProjectHeading
+          {\textbf{\VAR{p.name}}\BLOCK{if p.url} $|$ \emph{\VAR{p.url}}\BLOCK{endif}}{\BLOCK{if p.start}\VAR{p.start} -- \VAR{p.end}\BLOCK{endif}}
+\BLOCK{if p.bullets}
+          \resumeItemListStart
+\BLOCK{for b in p.bullets}
+            \resumeItem{\VAR{b.text}} % id:\VAR{b.id}
+\BLOCK{endfor}
+          \resumeItemListEnd
+\BLOCK{endif}
+\BLOCK{endfor}
+    \resumeSubHeadingListEnd
+
+
+%-----------PROGRAMMING SKILLS-----------
+\section{Technical Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+\BLOCK{if skill_groups}
+\BLOCK{for g in skill_groups}
+     \textbf{\VAR{g.name}}{: \VAR{g.skills|join(', ')}}\BLOCK{if not loop.last} \\\BLOCK{endif}
+
+\BLOCK{endfor}
+\BLOCK{else}
+     \textbf{Skills}{: \VAR{skills|join(', ')}}
+\BLOCK{endif}
+    }}
+ \end{itemize}
+
+
+%-------------------------------------------
+\end{document}

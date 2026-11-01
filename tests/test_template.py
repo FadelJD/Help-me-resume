@@ -228,3 +228,38 @@ def test_visible_text() -> None:
     assert visible_text("\\section*{Work \\& Projects}") == "Work & Projects"
     assert visible_text("\\textcolor{gray}{Skills} \\hspace{1em}") == "Skills"
     assert visible_text("\\begin{tabular*}{\\textwidth}{l@{\\extracolsep{\\fill}}r}") == ""
+
+
+CORPUS_T = TEMPLATES.parent / "tests" / "fixtures" / "templates"
+
+
+def _lint_messages(name: str) -> str:
+    return " ".join(i.message for i in lint((CORPUS_T / name / "template.tex").read_text(), name))
+
+
+def test_lint_ot1_encoding_from_jakes_resume() -> None:
+    assert "OT1" in _lint_messages("jakes-resume")
+    assert "OT1" not in " ".join(
+        i.message for i in lint((TEMPLATES / "minimal.tex").read_text(), "m")
+    )
+
+
+def test_lint_side_by_side_minipages_from_deedy() -> None:
+    messages = _lint_messages("deedy-resume")
+    assert "two-column" in messages
+    assert "right-aligned" not in messages  # the \hfill between the boxes is not a date
+
+
+def test_lint_ignores_empty_footer_and_unused_icon_package() -> None:
+    messages = _lint_messages("jakes-resume")  # \fancyfoot{} and an unused marvosym
+    assert "headers/footers" not in messages and "icon font" not in messages
+
+
+def test_lint_icon_package_used() -> None:
+    src = "\\usepackage{fontawesome5}\n\\begin{document}\n\\faGithub\\ x\n"
+    assert any("icon font" in i.message for i in lint(src, "x"))
+
+
+def test_lint_fontspec_accepts_commonoff() -> None:
+    src = "\\usepackage{fontspec}\n\\setmainfont{Lato}[Ligatures=CommonOff]\n"
+    assert not any("fontspec" in i.message for i in lint(src, "x"))

@@ -49,4 +49,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["tex: needs latexmk and pdftotext on PATH"]
+markers = [
+    "tex: needs latexmk and pdftotext on PATH",
+    "corpus: builds the public template corpus (see tests/fixtures/templates/provision.sh)",
+]

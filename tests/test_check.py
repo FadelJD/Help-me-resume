@@ -300,3 +300,55 @@ def test_right_aligned_dates_pass_every_gating_parser(workdir: Path) -> None:
     tex = _build(TEMPLATES / "minimal-right-dates.tex", workdir / "out" / "right.tex")
     result = check(tex, None, Thresholds(), semantic=False)
     assert result.roundtrip_ok, [(p.name, p.misses) for p in result.gating]
+
+
+# Tolerance rules derived from the template corpus (docs/parser-table.md, DECISIONS.md).
+
+
+def test_rule_case_is_styling_not_loss() -> None:
+    from cvforge.check import judge
+
+    # AltaCV and Deedy upper-case names and employers in every parser.
+    assert judge(["JANE DOE | ACME SOFTWARE"], "Jane Doe") == "intact"
+    assert judge(["JANE DOE | ACME SOFTWARE"], "Acme Software") == "intact"
+
+
+def test_rule_soft_hyphen_is_a_hyphen() -> None:
+    from cvforge.check import judge
+
+    # LuaLaTeX output (Awesome-CV) maps the visible hyphen to U+00AD.
+    assert judge(extracted_variants("Owned end­to­end docs"), "end-to-end") == "intact"
+
+
+def test_rule_glued_words_are_a_warning_not_a_loss() -> None:
+    from cvforge.check import contains_glued, judge
+
+    # pdfplumber and pypdf drop inter-word spaces on tight fonts (AltaCV, Awesome-CV, Deedy).
+    assert judge(["AcmeSoftware | Bangkok"], "Acme Software") == "glued"
+    assert judge(
+        ["• BuiltaPythonpipelinemigrating400articlesto"], "Built a Python", prefix=True
+    ) == ("glued")
+    # ...but icon junk glued on, a neighbouring word, or spaces inside words still fail.
+    assert not contains_glued("Bjane@example.com", "jane example")
+    assert not contains_glued("2025Jun2025-Present", "Jun 2025")
+    assert not contains_glued("T echnical W riter", "Technical Writer")
+    assert judge(["�+66800000000"], "+66 80 000 0000") == "missing"
+
+
+def test_rule_interleaved_columns_are_named() -> None:
+    from cvforge.check import judge
+
+    # Two-column templates (AltaCV, Deedy) split a phrase around the other column's text.
+    text = "B.Eng. Computer Innovation Jun 2025 - Present Engineering KMITL"
+    assert judge([text], "B.Eng. Computer Innovation Engineering") == "interleaved"
+
+
+def test_dates_separated_counts_roles() -> None:
+    from cvforge.check import dates_separated
+
+    items = [
+        {"section": "experience", "title": "Writer", "start": "Jun 2025"},
+        {"section": "experience", "title": "Developer", "start": "Jan 2024"},
+    ]
+    raw = "Jun 2025 - Present\nJan 2024\nx\ny\nWriter\nDeveloper Jan 2024"
+    assert dates_separated(raw, items) == (1, 2)

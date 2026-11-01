@@ -1,0 +1,44 @@
+# Template corpus: public CV templates converted to the cvforge contract with their fonts,
+# packages and layout unchanged. `requires` entries: cmd:<program>, sty:<file found by
+# kpsewhich>, font:<family known to fontconfig>. Missing requirements skip that template.
+# Install everything with tests/fixtures/templates/provision.sh.
+
+[[template]]
+name = "jakes-resume"
+title = "Jake's Resume"
+licence = "MIT"
+source = "https://github.com/jakegut/resume"
+requires = ["cmd:pdflatex", "sty:fullpage.sty", "sty:titlesec.sty", "sty:marvosym.sty"]
+layout = "one column; dates right-aligned with tabular*; OT1 font encoding (no fontenc)"
+
+[[template]]
+name = "altacv"
+title = "AltaCV"
+licence = "LPPL 1.3 or later (class header; the work order listed MIT)"
+source = "https://github.com/liantze/AltaCV"
+requires = ["cmd:pdflatex", "sty:paracol.sty", "sty:fontawesome5.sty", "sty:roboto.sty", "sty:lato.sty", "sty:pdfx.sty"]
+layout = "two columns (paracol); Font Awesome icons in contact line and event headers"
+
+[[template]]
+name = "moderncv"
+title = "moderncv (contemporary)"
+licence = "LPPL 1.3c"
+source = "https://github.com/moderncv/moderncv"
+requires = ["cmd:lualatex", "sty:fontawesome7.sty"]
+layout = "dates in a left margin column; icons in contact block; compiled with LuaLaTeX"
+
+[[template]]
+name = "awesome-cv"
+title = "Awesome-CV"
+licence = "LPPL 1.3c"
+source = "https://github.com/posquit0/Awesome-CV"
+requires = ["cmd:lualatex", "sty:fontawesome6.sty", "font:Source Sans 3", "font:Roboto"]
+layout = "one column, tabular* rows with right-aligned dates; Font Awesome 6; LuaLaTeX"
+
+[[template]]
+name = "deedy-resume"
+title = "Deedy Resume (OpenFonts)"
+licence = "Apache-2.0"
+source = "https://github.com/deedydas/Deedy-Resume"
+requires = ["cmd:xelatex", "sty:textpos.sty", "sty:isodate.sty"]
+layout = "two columns (side-by-side minipages); upper-cased headings; Lato and Raleway"

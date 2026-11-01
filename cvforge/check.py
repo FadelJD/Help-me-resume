@@ -2,8 +2,14 @@
 
 The round-trip needs no model: for each parser it asserts that the name, contact details, every
 title, org and date, the first eight words of every bullet, and every skill name survive
-extraction as whole words. A fact glued to junk (an icon glyph, a neighbouring word) counts as
-lost, because a parser reading that text gets the wrong value.
+extraction as whole words. Each fact is judged in three steps (rules derived from the template
+corpus; see docs/parser-table.md and DECISIONS.md):
+
+1. intact: found as whole words, ignoring case (templates restyle case; letters survive);
+2. glued: found only with some inter-word spaces missing, still aligned to word boundaries.
+   A warning, not a failure: the characters and their order are intact;
+3. otherwise lost. A fact touching junk (an icon glyph, a neighbouring word) or with spaces
+   inserted inside words counts as lost, because a parser reading it gets the wrong value.
 """
 
 from __future__ import annotations
@@ -32,6 +38,7 @@ _CHARMAP = str.maketrans(
         **dict.fromkeys([0x201C, 0x201D], '"'),  # curly double quotes
         0x02DC: "~",  # small tilde
         0x00A0: " ",  # no-break space
+        0x00AD: "-",  # soft hyphen: LuaLaTeX maps the visible hyphen to it (Awesome-CV)
     }
 )
 _CID = re.compile(r"\(cid:\d+\)")
@@ -78,6 +85,87 @@ def contains_word(haystack: str, needle: str) -> bool:
     return False
 
 
+def contains_glued(haystack: str, needle: str, open_end: bool = False) -> bool:
+    """The needle with some of its spaces missing in the haystack, aligned to word boundaries.
+
+    The haystack may drop spaces the needle has ("AcmeSoftware") but may not add spaces inside
+    the needle's words ("T echnical"), and the match may not touch junk or another word.
+    With `open_end` (the needle is the start of a longer text, like a bullet's first eight
+    words) the match may run straight into the next glued word.
+    """
+    want = needle.replace(" ", "")
+    if not want or want == needle:
+        return False
+    needle_spaces: set[int] = set()
+    k = 0
+    for ch in needle:
+        if ch == " ":
+            needle_spaces.add(k)
+        else:
+            k += 1
+    chars: list[str] = []
+    space_before: list[bool] = []
+    pending = True
+    for ch in haystack:
+        if ch == " ":
+            pending = True
+            continue
+        chars.append(ch)
+        space_before.append(pending)
+        pending = False
+    flat = "".join(chars)
+    start = 0
+    while (i := flat.find(want, start)) != -1:
+        j = i + len(want)
+        ok_start = i == 0 or space_before[i] or not _glued(flat[i - 1], want[0])
+        ok_end = open_end or j == len(flat) or space_before[j] or not _glued(flat[j], want[-1])
+        inner = {m - i for m in range(i + 1, j) if space_before[m]}
+        if ok_start and ok_end and inner <= needle_spaces:
+            return True
+        start = i + 1
+    return False
+
+
+def interleaved(haystack: str, needle: str) -> bool:
+    """The needle's words appear in order but with other text between them (merged columns)."""
+    words = needle.split()
+    tokens = haystack.split()
+    if len(words) < 2:
+        return False
+    window = 3 * len(words) + 4
+    for i, tok in enumerate(tokens):
+        if tok != words[0]:
+            continue
+        pos, k = i + 1, 1
+        while k < len(words) and pos < min(len(tokens), i + window):
+            if tokens[pos] == words[k]:
+                k += 1
+            pos += 1
+        if k == len(words):
+            return True
+    return False
+
+
+def dates_separated(raw: str, items: list[dict[str, Any]]) -> tuple[int, int]:
+    """How many experience titles are more than one line away from their start date."""
+    lines = [squash(normalize(line)).casefold() for line in raw.splitlines()]
+    lines = [line for line in lines if line]
+    checked = separated = 0
+    for item in items:
+        if item.get("section") != "experience" or not item.get("start"):
+            continue
+        title = squash(normalize(item["title"])).casefold()
+        date = squash(normalize(item["start"])).casefold()
+        t_idx = [i for i, line in enumerate(lines) if title in line]
+        d_idx = [i for i, line in enumerate(lines) if date in line]
+        if not t_idx or not d_idx:
+            continue
+        checked += 1
+        if min(abs(t - d) for t in t_idx for d in d_idx) > 1:
+            separated += 1
+    return separated, checked
+
+
 def garbled_count(raw: str) -> int:
     text = _CID.sub(JUNK, raw)
     return sum(1 for ch in text if _is_junk(ch) and ch not in "\n\r\t\f")
@@ -94,6 +182,7 @@ class Fact:
 class Miss:
     fact: Fact
     found: str | None  # the closest span the parser returned instead, if any
+    kind: str = "lost"  # lost | garbled | interleaved | glued (glued is a warning)
 
 
 @dataclass
@@ -102,8 +191,11 @@ class ParserResult:
     gate: bool = True
     skipped: str | None = None
     misses: list[Miss] = field(default_factory=list)
+    glued: list[Miss] = field(default_factory=list)  # warnings: spaces missing, text intact
     garbled: int = 0
     checked: int = 0
+    dates_separated: int = 0
+    dates_checked: int = 0
 
     @property
     def ok(self) -> bool:
@@ -169,15 +261,10 @@ class CheckReport:
                     "skipped": p.skipped,
                     "checked": p.checked,
                     "garbled_glyphs": p.garbled,
-                    "misses": [
-                        {
-                            "item": m.fact.item,
-                            "field": m.fact.field,
-                            "expected": m.fact.expected,
-                            "found": m.found,
-                        }
-                        for m in p.misses
-                    ],
+                    "dates_separated": p.dates_separated,
+                    "dates_checked": p.dates_checked,
+                    "misses": [_miss_dict(m) for m in p.misses],
+                    "glued": [_miss_dict(m) for m in p.glued],
                 }
                 for p in self.parsers
             ],
@@ -187,6 +274,16 @@ class CheckReport:
             "warnings": [w.to_dict() for w in self.warnings],
             "lint": [i.to_dict() for i in self.lint],
         }
+
+
+def _miss_dict(m: Miss) -> dict[str, Any]:
+    return {
+        "item": m.fact.item,
+        "field": m.fact.field,
+        "expected": m.fact.expected,
+        "found": m.found,
+        "kind": m.kind,
+    }
 
 
 def load_report(tex: Path) -> tuple[Path, dict[str, Any]]:
@@ -259,7 +356,29 @@ def found_instead(text: str, expected: str) -> str | None:
     return best if best_ratio >= 0.6 else None
 
 
-def roundtrip(parser: Parser, pdf: Path, facts: list[Fact], gate: bool) -> tuple[ParserResult, str]:
+def judge(variants: list[str], expected: str, prefix: bool = False) -> str:
+    """intact | glued | interleaved | missing, comparing case-insensitively.
+
+    `prefix` marks a fact that is the start of a longer text (a bullet's first eight words).
+    """
+    want = squash(normalize(expected)).casefold()
+    folded = [v.casefold() for v in variants]
+    if any(contains_word(v, want) for v in folded):
+        return "intact"
+    if any(contains_glued(v, want, open_end=prefix) for v in folded):
+        return "glued"
+    if any(interleaved(v, want) for v in folded):
+        return "interleaved"
+    return "missing"
+
+
+def roundtrip(
+    parser: Parser,
+    pdf: Path,
+    facts: list[Fact],
+    gate: bool,
+    items: list[dict[str, Any]] | None = None,
+) -> tuple[ParserResult, str]:
     reason = parser.unavailable()
     if reason:
         return ParserResult(parser.name, gate=gate, skipped=reason), ""
@@ -267,9 +386,17 @@ def roundtrip(parser: Parser, pdf: Path, facts: list[Fact], gate: bool) -> tuple
     variants = extracted_variants(raw)
     result = ParserResult(parser.name, gate=gate, garbled=garbled_count(raw), checked=len(facts))
     for fact in facts:
-        want = squash(normalize(fact.expected))
-        if not any(contains_word(v, want) for v in variants):
-            result.misses.append(Miss(fact, found_instead(variants[1], fact.expected)))
+        verdict = judge(variants, fact.expected, prefix=fact.field == "bullet")
+        if verdict == "intact":
+            continue
+        found = found_instead(variants[1], fact.expected)
+        if verdict == "glued":
+            result.glued.append(Miss(fact, found, "glued"))
+        elif verdict == "interleaved":
+            result.misses.append(Miss(fact, found, "interleaved"))
+        else:
+            result.misses.append(Miss(fact, found, "garbled" if found else "lost"))
+    result.dates_separated, result.dates_checked = dates_separated(raw, items or [])
     return result, raw
 
 
@@ -364,12 +491,34 @@ def check(
     results: list[ParserResult] = []
     primary_text = ""
     for parser, gate in chosen:
-        parsed, raw = roundtrip(parser, pdf, facts, gate)
+        parsed, raw = roundtrip(parser, pdf, facts, gate, report["emitted"]["items"])
         results.append(parsed)
         if raw and gate and not primary_text:
             primary_text = raw
     warnings: list[Issue] = []
     for r in results:
+        if r.glued:
+            warnings.append(
+                Issue(
+                    file=str(pdf),
+                    severity="warning",
+                    message=f"{r.name} glued {len(r.glued)} fact(s) to neighbouring words "
+                    f"(e.g. {r.glued[0].found!r}); the characters are intact.",
+                    fix="usually tight word spacing or LuaLaTeX output; screening software "
+                    "using this reader may miss those phrases.",
+                )
+            )
+        if r.dates_separated:
+            warnings.append(
+                Issue(
+                    file=str(pdf),
+                    severity="warning",
+                    message=f"{r.name} put {r.dates_separated} of {r.dates_checked} role dates "
+                    "more than a line away from their title.",
+                    fix="dates still came back; put them on the title line if you rely on "
+                    "this reader linking dates to roles.",
+                )
+            )
         if r.skipped:
             warnings.append(
                 Issue(
@@ -435,7 +584,7 @@ def miss_issues(result: CheckReport) -> list[Issue]:
                     item=m.fact.item,
                     severity="error" if p.gate else "warning",
                     message=f"{p.name}{'' if p.gate else ' (advisory)'} did not return the "
-                    f"{m.fact.field} {m.fact.expected!r} as whole words{got}.",
+                    f"{m.fact.field} {m.fact.expected!r} as whole words ({m.kind}){got}.",
                     fix="look for icons, columns or symbols next to it in the template; "
                     "`cvforge template validate` lists parser-unsafe constructs."
                     if p.gate

@@ -1,0 +1,506 @@
+[
+  {
+    "name": "jakes-resume",
+    "roundtrip_ok": false,
+    "lint": [
+      "pdfLaTeX with the default OT1 font encoding",
+      "right-aligned dates may separate from titles in some parsers (\\hfill, \\extracolsep{\\fill} or similar)."
+    ],
+    "parsers": {
+      "pdftotext": {
+        "gate": true,
+        "ok": false,
+        "checked": 41,
+        "garbled_glyphs": 0,
+        "dates_separated": 2,
+        "dates_checked": 2,
+        "misses": [
+          {
+            "item": "prj-02",
+            "field": "name",
+            "kind": "garbled",
+            "expected": "thai_date_utils",
+            "found": "date utils"
+          }
+        ],
+        "glued": 0
+      },
+      "pdftotext-layout": {
+        "gate": false,
+        "ok": false,
+        "checked": 41,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [
+          {
+            "item": "prj-02",
+            "field": "name",
+            "kind": "garbled",
+            "expected": "thai_date_utils",
+            "found": "date utils"
+          }
+        ],
+        "glued": 0
+      },
+      "pdfplumber": {
+        "gate": true,
+        "ok": false,
+        "checked": 41,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [
+          {
+            "item": "prj-02",
+            "field": "name",
+            "kind": "garbled",
+            "expected": "thai_date_utils",
+            "found": "date utils"
+          }
+        ],
+        "glued": 0
+      },
+      "pypdf-layout": {
+        "gate": true,
+        "ok": false,
+        "checked": 41,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [
+          {
+            "item": "prj-02",
+            "field": "name",
+            "kind": "garbled",
+            "expected": "thai_date_utils",
+            "found": "date utils"
+          }
+        ],
+        "glued": 0
+      },
+      "pypdf": {
+        "gate": false,
+        "ok": false,
+        "checked": 41,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 0,
+        "misses": [
+          {
+            "item": "exp-01",
+            "field": "title",
+            "kind": "garbled",
+            "expected": "Technical Writer",
+            "found": "T echnical W riter"
+          },
+          {
+            "item": "exp-02",
+            "field": "title",
+            "kind": "garbled",
+            "expected": "Junior Full-Stack Developer",
+            "found": "Junior F ull-Stack Developer"
+          },
+          {
+            "item": "prj-02",
+            "field": "name",
+            "kind": "garbled",
+            "expected": "thai_date_utils",
+            "found": "date utils"
+          }
+        ],
+        "glued": 0
+      }
+    }
+  },
+  {
+    "name": "altacv",
+    "roundtrip_ok": false,
+    "lint": [
+      "two-column layout"
+    ],
+    "parsers": {
+      "pdftotext": {
+        "gate": true,
+        "ok": true,
+        "checked": 40,
+        "garbled_glyphs": 0,
+        "dates_separated": 2,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
+      },
+      "pdftotext-layout": {
+        "gate": false,
+        "ok": false,
+        "checked": 40,
+        "garbled_glyphs": 0,
+        "dates_separated": 2,
+        "dates_checked": 2,
+        "misses": [
+          {
+            "item": "edu-01",
+            "field": "degree",
+            "kind": "interleaved",
+            "expected": "B.Eng. Computer Innovation Engineering",
+            "found": "B.Eng. Computer Innovation •"
+          }
+        ],
+        "glued": 0
+      },
+      "pdfplumber": {
+        "gate": true,
+        "ok": false,
+        "checked": 40,
+        "garbled_glyphs": 3,
+        "dates_separated": 0,
+        "dates_checked": 0,
+        "misses": [
+          {
+            "item": "person",
+            "field": "phone",
+            "kind": "garbled",
+            "expected": "+66 80 000 0000",
+            "found": "�+66800000000"
+          },
+          {
+            "item": "edu-01",
+            "field": "degree",
+            "kind": "interleaved",
+            "expected": "B.Eng. Computer Innovation Engineering",
+            "found": "B.Eng. Computer Innovation •"
+          }
+        ],
+        "glued": 24
+      },
+      "pypdf-layout": {
+        "gate": true,
+        "ok": false,
+        "checked": 40,
+        "garbled_glyphs": 0,
+        "dates_separated": 2,
+        "dates_checked": 2,
+        "misses": [
+          {
+            "item": "edu-01",
+            "field": "degree",
+            "kind": "interleaved",
+            "expected": "B.Eng. Computer Innovation Engineering",
+            "found": "B.Eng. Computer Innovation •"
+          },
+          {
+            "item": "skills",
+            "field": "skill",
+            "kind": "garbled",
+            "expected": "REST APIs",
+            "found": "ActionsPostgreSQLTypeScriptREST APIs.NET"
+          },
+          {
+            "item": "skills",
+            "field": "skill",
+            "kind": "garbled",
+            "expected": "Technical documentation",
+            "found": "Technical documentationGitHub"
+          }
+        ],
+        "glued": 0
+      },
+      "pypdf": {
+        "gate": false,
+        "ok": false,
+        "checked": 40,
+        "garbled_glyphs": 0,
+        "dates_separated": 1,
+        "dates_checked": 1,
+        "misses": [
+          {
+            "item": "exp-01",
+            "field": "title",
+            "kind": "garbled",
+            "expected": "Technical Writer",
+            "found": "T echnical Writer"
+          },
+          {
+            "item": "exp-01.b6",
+            "field": "bullet",
+            "kind": "garbled",
+            "expected": "Typeset the printed API reference in LaTeX from",
+            "found": "Typeset the printed API reference in La T eX from"
+          },
+          {
+            "item": "skills",
+            "field": "skill",
+            "kind": "garbled",
+            "expected": "Technical documentation",
+            "found": "T echnical documentation"
+          },
+          {
+            "item": "skills",
+            "field": "skill",
+            "kind": "garbled",
+            "expected": "LaTeX",
+            "found": "La T eX"
+          }
+        ],
+        "glued": 0
+      }
+    }
+  },
+  {
+    "name": "moderncv",
+    "roundtrip_ok": false,
+    "lint": [
+      "fontspec without Ligatures=NoCommon"
+    ],
+    "parsers": {
+      "pdftotext": {
+        "gate": true,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 2,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
+      },
+      "pdftotext-layout": {
+        "gate": false,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
+      },
+      "pdfplumber": {
+        "gate": true,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
+      },
+      "pypdf-layout": {
+        "gate": true,
+        "ok": false,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 2,
+        "dates_checked": 2,
+        "misses": [
+          {
+            "item": "person",
+            "field": "phone",
+            "kind": "garbled",
+            "expected": "+66 80 000 0000",
+            "found": "MOBILE-ANDROID-ALT+66 80 000 0000Chiang"
+          },
+          {
+            "item": "exp-01",
+            "field": "start",
+            "kind": "garbled",
+            "expected": "Jun 2025",
+            "found": "2025Jun 2025-Present"
+          },
+          {
+            "item": "exp-02",
+            "field": "start",
+            "kind": "garbled",
+            "expected": "Jan 2024",
+            "found": "2024Jan 2024-May"
+          },
+          {
+            "item": "exp-02",
+            "field": "end",
+            "kind": "garbled",
+            "expected": "May 2025",
+            "found": "2024-May 2025Jun"
+          },
+          {
+            "item": "edu-01",
+            "field": "end",
+            "kind": "garbled",
+            "expected": "May 2024",
+            "found": "2020-May 2024Jan"
+          }
+        ],
+        "glued": 0
+      },
+      "pypdf": {
+        "gate": false,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
+      }
+    }
+  },
+  {
+    "name": "awesome-cv",
+    "roundtrip_ok": true,
+    "lint": [],
+    "parsers": {
+      "pdftotext": {
+        "gate": true,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
+      },
+      "pdftotext-layout": {
+        "gate": false,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
+      },
+      "pdfplumber": {
+        "gate": true,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 0,
+        "misses": [],
+        "glued": 26
+      },
+      "pypdf-layout": {
+        "gate": true,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 0,
+        "misses": [],
+        "glued": 22
+      },
+      "pypdf": {
+        "gate": false,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 0,
+        "misses": [],
+        "glued": 22
+      }
+    }
+  },
+  {
+    "name": "deedy-resume",
+    "roundtrip_ok": false,
+    "lint": [
+      "two-column layout"
+    ],
+    "parsers": {
+      "pdftotext": {
+        "gate": true,
+        "ok": true,
+        "checked": 40,
+        "garbled_glyphs": 0,
+        "dates_separated": 1,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
+      },
+      "pdftotext-layout": {
+        "gate": false,
+        "ok": false,
+        "checked": 40,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [
+          {
+            "item": "edu-01",
+            "field": "degree",
+            "kind": "interleaved",
+            "expected": "B.Eng. Computer Innovation Engineering",
+            "found": "B.Eng. Computer Innovation Jun"
+          }
+        ],
+        "glued": 0
+      },
+      "pdfplumber": {
+        "gate": true,
+        "ok": false,
+        "checked": 40,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 0,
+        "misses": [
+          {
+            "item": "edu-01",
+            "field": "degree",
+            "kind": "garbled",
+            "expected": "B.Eng. Computer Innovation Engineering",
+            "found": "B.Eng. ComputerInnovation Jun2025-Present|Bangkok,TH Engineering"
+          }
+        ],
+        "glued": 28
+      },
+      "pypdf-layout": {
+        "gate": true,
+        "ok": false,
+        "checked": 40,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [
+          {
+            "item": "edu-01",
+            "field": "degree",
+            "kind": "interleaved",
+            "expected": "B.Eng. Computer Innovation Engineering",
+            "found": "B.Eng. Computer Innovation Jun"
+          }
+        ],
+        "glued": 12
+      },
+      "pypdf": {
+        "gate": false,
+        "ok": false,
+        "checked": 40,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [
+          {
+            "item": "exp-01.b6",
+            "field": "bullet",
+            "kind": "garbled",
+            "expected": "Typeset the printed API reference in LaTeX from",
+            "found": "Typeset the printed API reference in LaT eXfrom"
+          },
+          {
+            "item": "skills",
+            "field": "skill",
+            "kind": "garbled",
+            "expected": "Technical documentation",
+            "found": "T echnicaldocumentation"
+          },
+          {
+            "item": "skills",
+            "field": "skill",
+            "kind": "garbled",
+            "expected": "LaTeX",
+            "found": "LaT eX"
+          }
+        ],
+        "glued": 1
+      }
+    }
+  }
+]

@@ -33,7 +33,7 @@ Choices the spec leaves open. One line each, newest last.
 - Optional header key `%% max-pages: N` feeds the density check.
 - Context: `skills` is always a flat list of names; `skill_groups` is a separate list of {name, skills}. Links and project URLs come as {text, href}.
 - Dates render as `Jun 2025` / `Present` in every locale; locales differ in paper size and CV/Résumé wording. Raw `YYYY-MM` is available as `start_raw`/`end_raw`.
-- `templates/minimal.tex` puts dates inline, not right-aligned with `\hfill`: pdftotext split right-aligned dates away from their title in testing.
+- `templates/minimal.tex` puts dates inline. Revised in review: this was chosen from raw pdftotext output before `check` existed, not from a check failure. `templates/minimal-right-dates.tex` restores right-aligned dates and passes every gating parser.
 - Traceability is enforced twice: statically (bullet text and `% id:` on the same template line) and after render (each output line holding bullet text carries the matching id).
 - Selection result types live in `schema.py` as dataclasses, so `template.py` depends only on `schema`.
 - `build_date` honours `SOURCE_DATE_EPOCH` for reproducible output.
@@ -61,14 +61,14 @@ Choices the spec leaves open. One line each, newest last.
 
 ## Step 6: compile, parsers, check
 
-- Third parser is `pypdf`, not a resume-specific parser. Resume Matcher now converts PDFs with markitdown (pdfminer underneath, the same engine as pdfplumber), so it would not add an independent reading. The adapter interface keeps a resume parser one file away.
-- `pypdf` runs in layout mode. Its default mode puts a space inside most kerning pairs in TeX output ("T echnical W riter") in every font tested, so a failure there says nothing about the template. Pipelines built on pypdf's default mode (e.g. LangChain's PyPDFLoader) will see those spaces; that is a known limit, not something a template can fix.
+- Third parser is `pypdf`, not a resume-specific parser (accepted in review). Revised by research (docs/research.md): Resume Matcher calls `pdfminer.high_level.extract_text`, whose output differs from pdfplumber's `extract_text()` (pdfplumber glues words on some fonts), so a pdfminer high-level adapter would add a distinct reading. Recommended, not built (work order 2 item 7 says no code).
+- Revised in review: two pypdf adapters. `pypdf-layout` gates; `pypdf` default mode (LangChain's PyPDFLoader) is advisory and its misses are warnings that show what it read ("T echnical W riter"), because it splits kerning pairs in every font and template tested.
 - Round-trip matching is whole-word: a fact glued to an icon glyph or a neighbouring word counts as lost, because a parser reading that text gets the wrong value. `(cid:N)` and private-use glyphs count as junk.
 - Extracted text is normalized before matching (NFKC, dashes, curly quotes, line-end hyphens read both ways).
 - The round-trip also checks the name, email and phone when the template shows them. Which fields the template shows is recorded in report.json at build time.
 - `check` requires the report.json that `build` writes beside the .tex; it holds the emitted text (including approved rewrites) and evidence.
 - The icon fixture uses Marvosym, which ships with texlive-fonts-recommended. Font Awesome needs the 1.7 GB texlive-fonts-extra and garbles the same way.
-- `semantic` score moved to its own `cvforge[semantic]` extra because sentence-transformers pulls PyTorch. When absent, check says so and continues. It is untested in this container: the network policy blocks huggingface.co and download.pytorch.org.
+- `semantic` score moved to its own `cvforge[semantic]` extra because sentence-transformers pulls PyTorch. The scoring path is covered by a fake-encoder test; `check` loads the model with `local_files_only` (never downloads) and prints why the score is unavailable and the one-line download command. **Open:** the real model has not run in this container (huggingface.co and download.pytorch.org are blocked); to be verified on the user's machine.
 - Density flags: bullets per role or pages above the template's declared limits, and more than 750 words per page.
 
 ## Step 7: rewrite
@@ -88,7 +88,34 @@ Choices the spec leaves open. One line each, newest last.
 - `check --json` output drives the job summary and the `badge` output.
 - Python 3.11 was verified locally alongside 3.13.
 
+
+## Review of work order 1 (accepted fixes)
+
+- Parser gating: each adapter has a default `gate`; `[parsers.<name>] gate/enabled` in cvforge.toml overrides it. Defaults: pdftotext, pdfplumber, pypdf-layout gate; pdftotext-layout and pypdf advise.
+- `pdftotext -layout` is a separate adapter, advisory. Corpus result: it never separated dates from titles in any template (dates stay on the title's line), but it merges columns in both two-column templates (AltaCV, Deedy), so it stays advisory.
+- Fixed text: anything outside `\VAR{}`, `\BLOCK{}` and `\#{}` is fixed by definition; `template validate` lists the visible fixed text of the body separately from filled fields and warns when fixed text looks like a personal fact (email, URL, phone, year).
+- Templates may declare `%% engine: pdflatex|xelatex|lualatex`; compile and check use it. Needed by the corpus (Awesome-CV requires LuaLaTeX; Deedy uses fontspec).
+- Compile adds the template's folder (recursively) to TEXINPUTS and the font paths, so a template can ship its own .cls, .sty and fonts.
+- latexmk output is decoded with `errors="replace"`: TeX splits multi-byte UTF-8 at line wraps (found by the escaper fuzz).
+
+## Work order 2 item 1: corpus and the check rules derived from it
+
+- Corpus: Jake's Resume (MIT), AltaCV (LPPL 1.3+, not MIT as listed: the class header says LPPL), moderncv (LPPL 1.3c), Awesome-CV (LPPL 1.3c) and Deedy Resume (Apache-2.0) as the two-column template. Each built with the sample profile and the full-stack-engineer hat; results in docs/parser-table.md, snapshot in tests/fixtures/templates/results.json.
+- Fonts and packages stay as shipped. What TeX Live 2023 lacks (fontawesome6, fontawesome7, Source Sans 3) is installed by `tests/fixtures/templates/provision.sh` from the authors' repositories; moderncv's current class files are bundled in its fixture because TeX Live's copy predates the sample.
+- moderncv compiles with LuaLaTeX through the template's own `\ifxetexorluatex` branch: fontawesome7 under pdfLaTeX needs Type 1 maps that cannot be listed without the GitHub API here.
+- Rule: matching ignores case. Evidence: AltaCV ("JANE DOE") and Deedy ("ACME SOFTWARE") restyle case in every parser while every letter survives.
+- Rule: U+00AD counts as a hyphen. Evidence: Awesome-CV (LuaLaTeX) maps its visible hyphen to U+00AD in every parser, so "end-to-end" failed everywhere while the text was intact.
+- Rule: a fact that comes back with inter-word spaces missing ("AcmeSoftware"), aligned to word boundaries, is a warning ("glued"), not a failure. Evidence: pdfplumber on AltaCV, Awesome-CV and Deedy and pypdf on Awesome-CV and Deedy glue words while pdftotext reads the same PDFs with spaces, so the spacing is in the PDF and the gluing is the reader's heuristic. Junk or another word touching the fact, or spaces inserted inside words, still fail.
+- Rule: for a bullet (checked by its first eight words) the glued match may run into the ninth word. Evidence: every glued bullet in the corpus failed only at that artificial end boundary.
+- Diagnostic (not gating): misses are classed garbled / interleaved / lost; interleaved means the words came back in order with other text between them (merged columns, AltaCV and Deedy). Dates more than a line from their title are counted per parser.
+- Kept strict: Jake's Resume loses the underscores of `thai_date_utils` in every parser (OT1 encoding draws `\_` as a rule); that is real damage, so the template fails and the lint now says why.
+- Lint added, backed by the corpus: pdfLaTeX with a standard class and no `fontenc` (OT1) — Jake's Resume. Two columns via side-by-side minipages narrower than 0.8 of the text width — Deedy.
+- Lint narrowed, backed by the corpus: header/footer warning only when the command has visible content (Jake's empty `\fancyfoot{}` lost nothing); icon-font warning only when icon commands are used in the body (Jake's loads marvosym but uses none and loses nothing); a bare `\hfill` line between boxes is not a right-aligned date (Deedy).
+- Lint fixed per research: the fontspec rule accepts `Ligatures=CommonOff` and its fix text says to set NoCommon before `\setmainfont`.
+- Not added (research only, no corpus template shows it): microtype letterspacing, fake small caps, Type 3 fonts from missing cm-super.
+
 ## Open
 
 - Step 3 (convert the user's own template) waits for the template file.
-- Final name: still `cvforge` / Help-me-resume.
+- Final name: still `cvforge` / Help-me-resume (renaming deferred by the user).
+- Semantic score with the real model: see the semantic line above.

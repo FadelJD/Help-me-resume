@@ -1,0 +1,79 @@
+%% cvforge-template v1
+%% sections: experience, projects, skills, education
+%% supports: person.phone, person.links, experience.location, projects.url
+%% max-bullets-per-role: 5
+%% engine: xelatex
+%
+% Deedy Resume, OpenFonts version (Apache-2.0, Debarghya Das), converted to the cvforge contract.
+% The class, its fonts (Lato, Raleway, loaded from fonts/ by relative Path) and its two-column
+% minipage layout are the original's. The original sample .tex could not be fetched in this
+% environment (see LICENSE-NOTE.md); this body uses the class's own macros in the published
+% layout: a narrow left column (education, skills) and a wide right column (experience,
+% projects).
+\documentclass[]{deedy-resume-openfont}
+
+\begin{document}
+
+\namesection{\VAR{person.name.split(' ')[0]}}{\VAR{person.name.split(' ')[1:]|join(' ')}}{
+\BLOCK{for link in person.links}\href{\VAR{link.href}}{\VAR{link.text}} | \BLOCK{endfor}\href{mailto:\VAR{person.email}}{\VAR{person.email}}\BLOCK{if person.phone} | \VAR{person.phone}\BLOCK{endif}
+
+}
+
+%----------------------------------------------------------------------------------------
+%	COLUMN ONE
+%----------------------------------------------------------------------------------------
+\begin{minipage}[t]{0.33\textwidth}
+
+\section{Education}
+\BLOCK{for ed in education}
+\subsection{\VAR{ed.org}}
+\descript{\VAR{ed.degree}}
+\location{\BLOCK{if ed.start}\VAR{ed.start} -- \BLOCK{endif}\VAR{ed.end}}
+\sectionsep
+\BLOCK{endfor}
+
+\section{Skills}
+\BLOCK{for s in skills}
+\VAR{s} \\
+\BLOCK{endfor}
+\sectionsep
+
+\end{minipage}
+\hfill
+%----------------------------------------------------------------------------------------
+%	COLUMN TWO
+%----------------------------------------------------------------------------------------
+\begin{minipage}[t]{0.66\textwidth}
+
+\section{Experience}
+\BLOCK{for job in experience}
+\runsubsection{\VAR{job.org}}
+\descript{| \VAR{job.title}}
+\location{\VAR{job.start} -- \VAR{job.end}\BLOCK{if job.location} | \VAR{job.location}\BLOCK{endif}}
+\BLOCK{if job.bullets}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\BLOCK{for b in job.bullets}
+\item \VAR{b.text} % id:\VAR{b.id}
+\BLOCK{endfor}
+\end{tightemize}
+\BLOCK{endif}
+\sectionsep
+\BLOCK{endfor}
+
+\section{Projects}
+\BLOCK{for p in projects}
+\runsubsection{\VAR{p.name}}
+\descript{\BLOCK{if p.url}| \VAR{p.url}\BLOCK{endif}}
+\BLOCK{if p.bullets}
+\begin{tightemize}
+\BLOCK{for b in p.bullets}
+\item \VAR{b.text} % id:\VAR{b.id}
+\BLOCK{endfor}
+\end{tightemize}
+\BLOCK{endif}
+\sectionsep
+\BLOCK{endfor}
+
+\end{minipage}
+\end{document}

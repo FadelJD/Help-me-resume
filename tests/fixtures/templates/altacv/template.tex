@@ -1,0 +1,185 @@
+%% cvforge-template v1
+%% sections: experience, projects, skills, education
+%% supports: person.phone, person.links, experience.location, projects.url
+%% max-bullets-per-role: 5
+%
+% AltaCV (LPPL 1.3 or later, LianTze Lim), converted to the cvforge contract. Class, packages,
+% fonts and two-column layout are the original sample's. Sample-only sections with no profile
+% equivalent (photo, philosophy quote, achievements, languages, referees, wheel chart,
+% publications) are removed; "Strengths" holds the skills as the sample's \cvtag list did.
+%%%%%%%%%%%%%%%%%
+% This is an sample CV template created using altacv.cls
+% (v1.7.4, 30 July 2025) written by LianTze Lim (liantze@gmail.com). Compiles with pdfLaTeX, XeLaTeX and LuaLaTeX.
+%
+%% It may be distributed and/or modified under the
+%% conditions of the LaTeX Project Public License, either version 1.3
+%% of this license or (at your option) any later version.
+%% The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.3 or later is part of all distributions of LaTeX
+%% version 2003/12/01 or later.
+%%%%%%%%%%%%%%%%
+
+%% Use the "normalphoto" option if you want a normal photo instead of cropped to a circle
+% \documentclass[10pt,a4paper,withhyper,normalphoto]{altacv}
+
+\documentclass[10pt,a4paper,withhyper]{altacv}
+%% AltaCV uses the fontawesome5 and simpleicons packages.
+%% See http://texdoc.net/pkg/fontawesome5 and http://texdoc.net/pkg/simpleicons for full list of symbols.
+
+% Change the page layout if you need to
+\geometry{left=1.25cm,right=1.25cm,top=1.5cm,bottom=1.5cm,columnsep=1.2cm}
+
+% The paracol package lets you typeset columns of text in parallel
+\usepackage{paracol}
+
+% Change the font if you want to, depending on whether
+% you're using pdflatex or xelatex/lualatex
+% WHEN COMPILING WITH XELATEX PLEASE USE
+% xelatex -shell-escape -output-driver="xdvipdfmx -z 0" sample.tex
+\iftutex
+  % If using xelatex or lualatex:
+  \setmainfont{Roboto Slab}
+  \setsansfont{Lato}
+  \renewcommand{\familydefault}{\sfdefault}
+\else
+  % If using pdflatex:
+  \usepackage[rm]{roboto}
+  \usepackage[defaultsans]{lato}
+  % \usepackage{sourcesanspro}
+  \renewcommand{\familydefault}{\sfdefault}
+\fi
+
+% Change the colours if you want to
+\definecolor{SlateGrey}{HTML}{2E2E2E}
+\definecolor{LightGrey}{HTML}{666666}
+\definecolor{DarkPastelRed}{HTML}{450808}
+\definecolor{PastelRed}{HTML}{8F0D0D}
+\definecolor{GoldenEarth}{HTML}{E7D192}
+\colorlet{name}{black}
+\colorlet{tagline}{PastelRed}
+\colorlet{heading}{DarkPastelRed}
+\colorlet{headingrule}{GoldenEarth}
+\colorlet{subheading}{PastelRed}
+\colorlet{accent}{PastelRed}
+\colorlet{emphasis}{SlateGrey}
+\colorlet{body}{LightGrey}
+
+% Change some fonts, if necessary
+\renewcommand{\namefont}{\Huge\rmfamily\bfseries}
+\renewcommand{\personalinfofont}{\footnotesize}
+\renewcommand{\cvsectionfont}{\LARGE\rmfamily\bfseries}
+\renewcommand{\cvsubsectionfont}{\large\bfseries}
+
+
+% Change the bullets for itemize and rating marker
+% for \cvskill if you want to
+\renewcommand{\cvItemMarker}{{\small\textbullet}}
+\renewcommand{\cvRatingMarker}{\faCircle}
+% ...and the markers for the date/location for \cvevent
+% \renewcommand{\cvDateMarker}{\faCalendar*[regular]}
+% \renewcommand{\cvLocationMarker}{\faMapMarker*}
+
+
+% If your CV/résumé is in a language other than English,
+% then you probably want to change these so that when you
+% copy-paste from the PDF or run pdftotext, the location
+% and date marker icons for \cvevent will paste as correct
+% translations. For example Spanish:
+% \renewcommand{\locationname}{Ubicación}
+% \renewcommand{\datename}{Fecha}
+
+
+%% Use (and optionally edit if necessary) this .tex if you
+%% want to use an author-year reference style like APA(6)
+%% for your publication list
+% \input{pubs-authoryear.cfg}
+
+%% Use (and optionally edit if necessary) this .tex if you
+%% want an originally numerical reference style like IEEE
+%% for your publication list
+% \input{pubs-num.cfg}  % cvforge: publications are not in the profile
+
+%% sample.bib contains your publications
+% \addbibresource{sample.bib}  % cvforge: publications are not in the profile
+
+\begin{document}
+\name{\VAR{person.name}}
+\tagline{\VAR{person.title_line}}
+%% cvforge: the sample photo (\photoR) is removed; there is no photo in the profile.
+
+\personalinfo{%
+  \email{\VAR{person.email}}
+\BLOCK{if person.phone}
+  \phone{\VAR{person.phone}}
+\BLOCK{endif}
+\BLOCK{if person.location}
+  \location{\VAR{person.location}}
+\BLOCK{endif}
+\BLOCK{for link in person.links}
+  \homepage{\VAR{link.text}}
+\BLOCK{endfor}
+}
+
+\makecvheader
+
+\columnratio{0.6}
+
+\begin{paracol}{2}
+\cvsection{Experience}
+
+\BLOCK{for job in experience}
+\cvevent{\VAR{job.title}}{\VAR{job.org}}{\VAR{job.start} -- \VAR{job.end}}{\VAR{job.location}}
+\BLOCK{if job.bullets}
+\begin{itemize}
+\BLOCK{for b in job.bullets}
+\item \VAR{b.text} % id:\VAR{b.id}
+\BLOCK{endfor}
+\end{itemize}
+\BLOCK{endif}
+\BLOCK{if not loop.last}
+
+\divider
+\BLOCK{endif}
+
+\BLOCK{endfor}
+\cvsection{Projects}
+
+\BLOCK{for p in projects}
+\cvevent{\VAR{p.name}}{\VAR{p.url}}{\BLOCK{if p.start}\VAR{p.start} -- \VAR{p.end}\BLOCK{endif}}{}
+\BLOCK{if p.bullets}
+\begin{itemize}
+\BLOCK{for b in p.bullets}
+\item \VAR{b.text} % id:\VAR{b.id}
+\BLOCK{endfor}
+\end{itemize}
+\BLOCK{endif}
+\BLOCK{if not loop.last}
+
+\divider
+\BLOCK{endif}
+
+\BLOCK{endfor}
+\switchcolumn
+
+\cvsection{Strengths}
+
+\BLOCK{for s in skills}
+\cvtag{\VAR{s}}
+\BLOCK{endfor}
+
+\medskip
+
+\cvsection{Education}
+
+\BLOCK{for ed in education}
+\cvevent{\VAR{ed.degree}}{\VAR{ed.org}}{\BLOCK{if ed.start}\VAR{ed.start} -- \BLOCK{endif}\VAR{ed.end}}{}
+\BLOCK{if not loop.last}
+
+\divider
+\BLOCK{endif}
+\BLOCK{endfor}
+
+\end{paracol}
+
+\end{document}
