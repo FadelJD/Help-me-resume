@@ -381,9 +381,36 @@ _LINT_RULES: list[tuple[re.Pattern[str], str, str]] = [
 ]
 
 
+_RIGHT_ALIGN = re.compile(
+    r"\\hfill\b|\\extracolsep\{\\fill\}|\\hspace\*\{\\fill\}|\\raggedleft\b|"
+    r"\\begin\{flushright\}|\\rightline\b|\\hfil\b"
+)
+_DATE_PLACEHOLDER = re.compile(r"\\VAR\{[^}]*\.(start|end)(_raw)?\b")
+
+
+def _code(line: str) -> str:
+    """The part of a line before an unescaped % comment."""
+    return re.split(r"(?<!\\)%", line, maxsplit=1)[0]
+
+
 def lint(text: str, file: str) -> list[Issue]:
     found: list[Issue] = []
     lines = text.splitlines()
+    if _DATE_PLACEHOLDER.search(text):
+        for idx, line in enumerate(lines):
+            if _RIGHT_ALIGN.search(_code(line)):
+                found.append(
+                    Issue(
+                        file=file,
+                        line=idx + 1,
+                        severity="warning",
+                        message="right-aligned dates may separate from titles in some parsers "
+                        "(\\hfill, \\extracolsep{\\fill} or similar).",
+                        fix="usually harmless, because check tests each field on its own; put "
+                        "dates inline if a parser you rely on reorders them.",
+                    )
+                )
+                break
     for pattern, message, fix in _LINT_RULES:
         for idx, line in enumerate(lines):
             code = line.split("%", 1)[0] if not line.lstrip().startswith("%") else ""

@@ -177,3 +177,17 @@ def test_traceability_catches_missing_id() -> None:
 def test_render_undefined_value_is_reported() -> None:
     with pytest.raises(CVForgeError):
         render("\\VAR{nothing.here}", {}, "t")
+
+
+def test_right_aligned_dates_lint_warning() -> None:
+    right = lint((TEMPLATES / "minimal-right-dates.tex").read_text(), "r")
+    assert any("right-aligned dates" in i.message for i in right)
+    assert all(i.severity == "warning" for i in right)
+    assert not any(
+        "right-aligned" in i.message for i in lint((TEMPLATES / "minimal.tex").read_text(), "m")
+    )
+
+
+def test_right_dates_template_is_valid() -> None:
+    _, report = validate_template(TEMPLATES / "minimal-right-dates.tex", ALL)
+    assert report.ok

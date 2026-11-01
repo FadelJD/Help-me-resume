@@ -1,0 +1,91 @@
+%% cvforge-template v1
+%% sections: experience, projects, skills, education
+%% supports: person.links, person.phone, experience.location, projects.url, skills.groups
+%% max-bullets-per-role: 5
+%% max-pages: 2
+%
+% Second reference template: identical to minimal.tex except that dates are right-aligned with
+% \hfill on the title line, as most real CV templates do. The lint warns about it; check decides.
+% Copy it as a starting point; see docs/SPEC.md "LaTeX template contract" for the tags.
+\documentclass[11pt]{article}
+\usepackage[\VAR{meta.paper},margin=1.8cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\input{glyphtounicode}
+\pdfgentounicode=1
+\setlength{\parindent}{0pt}
+\setlist[itemize]{leftmargin=1.2em, itemsep=1pt, topsep=2pt}
+\pagestyle{empty}
+\newcommand{\cvsection}[1]{\vspace{8pt}{\large\bfseries #1}\par\vspace{2pt}\hrule\vspace{6pt}}
+
+\begin{document}
+
+{\LARGE\bfseries \VAR{person.name}}\par
+\BLOCK{if person.title_line}
+{\large \VAR{person.title_line}}\par
+\BLOCK{endif}
+\vspace{4pt}
+\VAR{person.email}
+\BLOCK{if person.phone} | \VAR{person.phone}\BLOCK{endif}
+\BLOCK{if person.location} | \VAR{person.location}\BLOCK{endif}
+\BLOCK{for link in person.links} | \href{\VAR{link.href}}{\VAR{link.text}}\BLOCK{endfor}
+\par
+
+\BLOCK{for section in meta.sections}
+\BLOCK{if section == 'experience' and experience}
+\cvsection{Experience}
+\BLOCK{for job in experience}
+\textbf{\VAR{job.title}} \hfill \VAR{job.start} -- \VAR{job.end}\par
+\textit{\VAR{job.org}}\BLOCK{if job.location}, \VAR{job.location}\BLOCK{endif}\par
+\BLOCK{if job.bullets}
+\begin{itemize}
+\BLOCK{for b in job.bullets}
+  \item \VAR{b.text} % id:\VAR{b.id}
+\BLOCK{endfor}
+\end{itemize}
+\BLOCK{endif}
+\vspace{4pt}
+\BLOCK{endfor}
+\BLOCK{elif section == 'projects' and projects}
+\cvsection{Projects}
+\BLOCK{for p in projects}
+\textbf{\VAR{p.name}}\BLOCK{if p.url} | \href{\VAR{p.href}}{\VAR{p.url}}\BLOCK{endif}\par
+\BLOCK{if p.bullets}
+\begin{itemize}
+\BLOCK{for b in p.bullets}
+  \item \VAR{b.text} % id:\VAR{b.id}
+\BLOCK{endfor}
+\end{itemize}
+\BLOCK{endif}
+\vspace{4pt}
+\BLOCK{endfor}
+\BLOCK{elif section == 'skills' and skills}
+\cvsection{Skills}
+\BLOCK{if skill_groups}
+\BLOCK{for g in skill_groups}
+\textbf{\VAR{g.name}:} \VAR{g.skills|join(', ')}\par
+\BLOCK{endfor}
+\BLOCK{else}
+\VAR{skills|join(', ')}\par
+\BLOCK{endif}
+\BLOCK{elif section == 'education' and education}
+\cvsection{Education}
+\BLOCK{for ed in education}
+\textbf{\VAR{ed.degree}} \hfill \BLOCK{if ed.start}\VAR{ed.start} -- \BLOCK{endif}\VAR{ed.end}\par
+\textit{\VAR{ed.org}}\par
+\BLOCK{if ed.bullets}
+\begin{itemize}
+\BLOCK{for b in ed.bullets}
+  \item \VAR{b.text} % id:\VAR{b.id}
+\BLOCK{endfor}
+\end{itemize}
+\BLOCK{endif}
+\vspace{4pt}
+\BLOCK{endfor}
+\BLOCK{endif}
+\BLOCK{endfor}
+
+\end{document}

@@ -262,3 +262,41 @@ def test_semantic_unavailable_says_why_and_how(
     assert "not installed" in result.scores["semantic_unavailable"]
     assert "cvforge[semantic]" in result.scores["semantic_fix"]
     assert "SentenceTransformer(" in result.scores["semantic_fix"]
+
+
+class _Scrambled:
+    """Returns every fact, but dates on their own line above the title, as pdftotext did."""
+
+    name = "scrambled"
+    default_gate = True
+    about = "test double"
+
+    def unavailable(self) -> str | None:
+        return None
+
+    def extract(self, pdf: Path) -> str:
+        dash = chr(0x2013)
+        return (
+            f"Jun 2025 {dash} Present\n\nSkills\nWriter\nAcme\nJane\n"
+            "one two three four five six seven eight"
+        )
+
+
+def test_roundtrip_is_order_independent() -> None:
+    from cvforge.check import Fact, roundtrip
+
+    facts = [
+        Fact("exp-01", "title", "Writer"),
+        Fact("exp-01", "start", "Jun 2025"),
+        Fact("exp-01", "end", "Present"),
+        Fact("exp-01.b1", "bullet", "one two three four five six seven eight"),
+    ]
+    result, _ = roundtrip(_Scrambled(), Path("unused.pdf"), facts, gate=True)
+    assert result.ok
+
+
+@pytest.mark.tex
+def test_right_aligned_dates_pass_every_gating_parser(workdir: Path) -> None:
+    tex = _build(TEMPLATES / "minimal-right-dates.tex", workdir / "out" / "right.tex")
+    result = check(tex, None, Thresholds(), semantic=False)
+    assert result.roundtrip_ok, [(p.name, p.misses) for p in result.gating]
