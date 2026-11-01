@@ -1,0 +1,10 @@
+%% cvforge-template v1
+%% sections: experience
+\documentclass{article}
+\begin{document}
+\BLOCK{for job in experience}
+\BLOCK{for b in job.bullets}
+\VAR{b.text}\par
+\BLOCK{endfor}
+\BLOCK{endfor}
+\end{document}

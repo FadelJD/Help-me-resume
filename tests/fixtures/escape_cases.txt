@@ -1,0 +1,15 @@
+C#
+.NET / C#
+R&D
+100%
+~/bin
+file_name
+$5k budget
+a^2 + b^2
+{braces}
+back\slash
+<tag> & </tag>
+pipe | char
+github.com/jane_doe/my_repo
+https://example.com/path_with_underscores?a=1&b=2#frag
+50% of R&D spend on C# & F#

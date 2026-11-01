@@ -2,13 +2,34 @@
 
 from __future__ import annotations
 
+import json
+import os
+import re
+import urllib.error
+import urllib.request
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from html.parser import HTMLParser
 from pathlib import Path
+from typing import Any
 
-from cvforge.config import Config, load_config
+from cvforge import __version__
+from cvforge.compile import compile_pdf
+from cvforge.config import LOCALES, Config, Locale, load_config
 from cvforge.errors import CVForgeError, Issue, errors_only
-from cvforge.parse import ParsedProfile, load_profile
-from cvforge.validate import validate_profile
+from cvforge.escape import escape
+from cvforge.parse import ParsedProfile, load_hat, load_profile
+from cvforge.schema import Hat, Profile, Selection
+from cvforge.select import select
+from cvforge.template import (
+    TemplateReport,
+    build_context,
+    check_traceability,
+    format_date,
+    render,
+    validate_template,
+)
+from cvforge.validate import validate_hat, validate_profile
 
 
 @dataclass
@@ -40,6 +61,31 @@ class ValidateResult:
         }
 
 
+_LOCALE_OVERRIDE: list[str] = []
+
+
+def override_locale(locale: str) -> None:
+    """--locale beats cvforge.toml for this process."""
+    if locale not in LOCALES:
+        raise CVForgeError(
+            [
+                Issue(
+                    file="--locale",
+                    message=f"unknown locale `{locale}`.",
+                    fix=f"use one of: {', '.join(LOCALES)}.",
+                )
+            ]
+        )
+    _LOCALE_OVERRIDE[:] = [locale]
+
+
+def _config() -> Config:
+    cfg = load_config()
+    if _LOCALE_OVERRIDE:
+        cfg = cfg.model_copy(update={"locale": _LOCALE_OVERRIDE[0]})
+    return cfg
+
+
 def resolve_profile(profile: Path | None, cfg: Config) -> Path:
     return profile if profile is not None else Path(cfg.profile)
 
@@ -65,3 +111,404 @@ def validate(profile: Path | None) -> ValidateResult:
         "skills": len(p.skills),
     }
     return ValidateResult(file=str(path), issues=issues, counts=counts)
+
+
+# ---------------------------------------------------------------- inputs
+
+
+def resolve_hat(name: str | None, cfg: Config) -> tuple[Hat | None, str]:
+    name = name if name is not None else cfg.hat
+    if not name:
+        return None, ""
+    path = (
+        Path(name) if name.endswith(".toml") or "/" in name else Path(cfg.hats_dir) / f"{name}.toml"
+    )
+    return load_hat(path), str(path)
+
+
+def read_job(job: str | None) -> str | None:
+    """A job ad from a file, or from a URL (the only network use outside --rewrite)."""
+    if not job:
+        return None
+    if re.match(r"^https?://", job):
+        return fetch_job(job)
+    path = Path(job)
+    if not path.exists():
+        raise CVForgeError(
+            [
+                Issue(
+                    file=job, message="job ad not found.", fix="pass a text file or an http(s) URL."
+                )
+            ]
+        )
+    return path.read_text(encoding="utf-8")
+
+
+class _TextOnly(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.parts: list[str] = []
+        self._skip = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag in ("script", "style", "noscript"):
+            self._skip += 1
+        elif tag in ("p", "br", "li", "div", "h1", "h2", "h3", "tr"):
+            self.parts.append("\n")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in ("script", "style", "noscript") and self._skip:
+            self._skip -= 1
+
+    def handle_data(self, data: str) -> None:
+        if not self._skip:
+            self.parts.append(data)
+
+
+def html_to_text(html: str) -> str:
+    parser = _TextOnly()
+    parser.feed(html)
+    lines = (" ".join(line.split()) for line in "".join(parser.parts).splitlines())
+    return "\n".join(line for line in lines if line)
+
+
+def fetch_job(url: str) -> str:
+    req = urllib.request.Request(url, headers={"User-Agent": f"cvforge/{__version__}"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            body = resp.read().decode(resp.headers.get_content_charset() or "utf-8", "replace")
+    except (urllib.error.URLError, TimeoutError) as exc:
+        raise CVForgeError(
+            [
+                Issue(
+                    file=url,
+                    message=f"could not fetch the job ad: {exc}.",
+                    fix="save the ad as a .txt file and pass that path instead.",
+                )
+            ]
+        ) from exc
+    return html_to_text(body) if "<" in body[:2000] else body
+
+
+def job_title(job: str | None) -> str:
+    if not job:
+        return ""
+    first = next((line.strip() for line in job.splitlines() if line.strip()), "")
+    return first[:100]
+
+
+def build_date() -> str:
+    epoch = os.environ.get("SOURCE_DATE_EPOCH")
+    when = datetime.fromtimestamp(int(epoch), tz=UTC) if epoch else datetime.now(tz=UTC)
+    return when.strftime("%Y-%m-%d")
+
+
+# ---------------------------------------------------------------- build
+
+
+@dataclass
+class BuildResult:
+    tex: Path
+    report_path: Path
+    report: dict[str, Any]
+    selection: Selection
+    warnings: list[Issue] = field(default_factory=list)
+    pdf: Path | None = None
+
+    @property
+    def summary(self) -> str:
+        n_b = len(self.report["emitted"]["bullets"])
+        n_d = sum(1 for d in self.selection.dropped if d.kind == "bullet")
+        pdf = f", pdf {self.pdf}" if self.pdf else ""
+        return f"wrote {self.tex} ({n_b} bullets, {n_d} dropped){pdf}"
+
+
+@dataclass
+class Prepared:
+    cfg: Config
+    parsed: ParsedProfile
+    hat: Hat | None
+    hat_file: str
+    job: str | None
+    selection: Selection
+    template_text: str
+    template_report: TemplateReport
+    template_path: Path
+    warnings: list[Issue]
+
+
+def resolve_template(template: Path | None, cfg: Config) -> Path:
+    if template is not None:
+        return template
+    if cfg.template:
+        return Path(cfg.template)
+    raise CVForgeError(
+        [
+            Issue(
+                file="cvforge.toml",
+                message="no template given.",
+                fix="pass --template my.tex, or set template = in cvforge.toml.",
+            )
+        ]
+    )
+
+
+def prepare(
+    *,
+    profile: Path | None,
+    template: Path | None,
+    hat: str | None,
+    job: str | None,
+    max_bullets: int | None,
+    need_template: bool = True,
+) -> Prepared:
+    cfg = _config()
+    parsed = load_valid_profile(resolve_profile(profile, cfg))
+    hat_model, hat_file = resolve_hat(hat, cfg)
+    if hat_model is not None:
+        errs = errors_only(validate_hat(hat_model, parsed.profile, hat_file))
+        if errs:
+            raise CVForgeError(errs)
+    job_text = read_job(job)
+    warnings: list[Issue] = []
+    limit = max_bullets
+    template_text, t_report, t_path = "", TemplateReport(file="", header=None), Path()
+    if need_template:
+        t_path = resolve_template(template, cfg)
+        template_text, t_report = validate_template(t_path, parsed.profile.sections_with_items())
+        if not t_report.ok:
+            raise CVForgeError(errors_only(t_report.issues))
+        assert t_report.header is not None
+        declared = t_report.header.max_bullets
+        if declared is not None and max_bullets is not None and max_bullets > declared:
+            warnings.append(
+                Issue(
+                    file=str(t_path),
+                    severity="warning",
+                    message=f"--max-bullets {max_bullets} is above the template limit {declared}.",
+                    fix="--max-bullets can only lower the template limit; using the template's.",
+                )
+            )
+        candidates = [x for x in (declared, max_bullets) if x is not None]
+        limit = min(candidates) if candidates else None
+    selection = select(parsed.profile, hat_model, job_text, limit)
+    return Prepared(
+        cfg,
+        parsed,
+        hat_model,
+        hat_file,
+        job_text,
+        selection,
+        template_text,
+        t_report,
+        t_path,
+        warnings,
+    )
+
+
+def default_output(cfg: Config, profile: Profile, hat: Hat | None) -> Path:
+    slug = re.sub(r"[^a-z0-9]+", "-", profile.person.name.lower()).strip("-") or "cv"
+    suffix = f"-{hat.name}" if hat else ""
+    return Path(cfg.out_dir) / f"{slug}{suffix}.tex"
+
+
+def render_selection(prep: Prepared, output: Path | None, job_ref: str | None) -> BuildResult:
+    cfg, profile = prep.cfg, prep.parsed.profile
+    locale = LOCALES[cfg.locale]
+    meta = {
+        "hat": prep.hat.name if prep.hat else "",
+        "job_title": job_title(prep.job),
+        "build_date": build_date(),
+        "version": __version__,
+    }
+    context = build_context(prep.selection, profile, prep.hat, locale, meta)
+    tex = render(prep.template_text, context, str(prep.template_path))
+    header = prep.template_report.header
+    assert header is not None
+    shown_sections = set(header.sections)
+    emitted = {
+        sb.qid: escape(sb.text)
+        for si in prep.selection.items()
+        if si.section in shown_sections
+        for sb in si.bullets
+    }
+    found, trace_issues = check_traceability(tex, emitted, str(prep.template_path))
+    if trace_issues:
+        raise CVForgeError(trace_issues)
+    warnings = list(prep.warnings)
+    for qid in emitted:
+        if qid not in found:
+            warnings.append(
+                Issue(
+                    file=str(prep.template_path),
+                    item=qid,
+                    severity="warning",
+                    message="selected bullet does not appear in the output.",
+                    fix="the template does not render bullets for this section; that is allowed.",
+                )
+            )
+    out_path = output or default_output(cfg, profile, prep.hat)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(tex, encoding="utf-8")
+    report = make_report(prep, out_path, job_ref, locale, found, warnings)
+    report_path = out_path.with_suffix(".report.json")
+    report_path.write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return BuildResult(out_path, report_path, report, prep.selection, warnings)
+
+
+def make_report(
+    prep: Prepared,
+    out_path: Path,
+    job_ref: str | None,
+    locale: Locale,
+    found: set[str],
+    warnings: list[Issue],
+) -> dict[str, Any]:
+    sel, profile = prep.selection, prep.parsed.profile
+    header = prep.template_report.header
+    assert header is not None
+    shown = set(header.sections)
+    items = []
+    for si in sel.items():
+        if si.section not in shown:
+            continue
+        it = si.item
+        items.append(
+            {
+                "id": it.id,
+                "section": si.section,
+                "title": getattr(it, "title", None)
+                or getattr(it, "name", None)
+                or getattr(it, "degree", ""),
+                "org": getattr(it, "org", None) or "",
+                "start": format_date(getattr(it, "start", None), locale),
+                "end": format_date(getattr(it, "end", None), locale),
+                "bullets": [
+                    {"id": sb.qid, "text": sb.text} for sb in si.bullets if sb.qid in found
+                ],
+            }
+        )
+    p = profile.person
+    return {
+        "tool": "cvforge",
+        "version": __version__,
+        "built": build_date(),
+        "tex": str(out_path),
+        "profile": prep.parsed.source.file,
+        "template": str(prep.template_path),
+        "hat": sel.hat,
+        "job": job_ref or "",
+        "locale": locale.name,
+        "template_header": {
+            "sections": list(header.sections),
+            "supports": list(header.supports),
+            "max_bullets_per_role": header.max_bullets,
+            "max_pages": header.max_pages,
+        },
+        "emitted": {
+            "person": {"name": p.name, "email": p.email or "", "phone": p.phone or ""},
+            "items": items,
+            "bullets": sorted(found),
+            "skills": [s.name for s in sel.skills] if "skills" in shown else [],
+        },
+        "ranking": ranking(sel),
+        "dropped": [{"id": d.id, "kind": d.kind, "reason": d.reason} for d in sel.dropped],
+        "rewrites": [],
+        "warnings": [w.to_dict() for w in warnings],
+    }
+
+
+def ranking(sel: Selection) -> list[dict[str, Any]]:
+    return [
+        {"id": sb.qid, "score": sb.score, **sb.parts, "text": sb.text}
+        for si in sel.items()
+        for sb in si.bullets
+    ]
+
+
+def build(
+    *,
+    profile: Path | None,
+    template: Path | None,
+    hat: str | None,
+    job: str | None,
+    output: Path | None,
+    max_bullets: int | None,
+    compile_pdf_too: bool,
+) -> BuildResult:
+    prep = prepare(profile=profile, template=template, hat=hat, job=job, max_bullets=max_bullets)
+    result = render_selection(prep, output, job)
+    if compile_pdf_too:
+        result.pdf = compile_pdf(result.tex)
+    return result
+
+
+# ---------------------------------------------------------------- explain
+
+
+@dataclass
+class ExplainResult:
+    selection: Selection
+    hat: str
+    job: str
+
+    def to_dict(self) -> dict[str, Any]:
+        sel = self.selection
+        return {
+            "hat": self.hat,
+            "job": self.job,
+            "sections": sel.sections,
+            "max_bullets_per_role": sel.max_bullets,
+            "items": [
+                {
+                    "id": si.item.id,
+                    "section": si.section,
+                    "bullets": [
+                        {"id": sb.qid, "score": sb.score, **sb.parts, "text": sb.text}
+                        for sb in si.bullets
+                    ],
+                }
+                for si in sel.items()
+            ],
+            "skills": [
+                {"id": s.id, "name": s.name, "score": s.score, "evidence": s.evidence}
+                for s in sel.skills
+            ],
+            "dropped": [{"id": d.id, "kind": d.kind, "reason": d.reason} for d in sel.dropped],
+        }
+
+
+def explain(
+    *,
+    profile: Path | None,
+    template: Path | None,
+    hat: str | None,
+    job: str | None,
+    max_bullets: int | None,
+) -> ExplainResult:
+    cfg = load_config()
+    use_template = template is not None or bool(cfg.template)
+    prep = prepare(
+        profile=profile,
+        template=template,
+        hat=hat,
+        job=job,
+        max_bullets=max_bullets,
+        need_template=use_template,
+    )
+    return ExplainResult(prep.selection, prep.selection.hat, job or "")
+
+
+# ---------------------------------------------------------------- template validate
+
+
+def template_validate(template: Path, profile: Path | None) -> TemplateReport:
+    cfg = load_config()
+    sections: list[str] | None = None
+    path = resolve_profile(profile, cfg)
+    if path.exists():
+        sections = load_profile(path).profile.sections_with_items()
+    _, report = validate_template(template, sections)
+    return report

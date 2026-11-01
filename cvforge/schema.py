@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
+from dataclasses import field as dc_field
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -151,3 +153,61 @@ class Hat(Strict):
             if weight < 0:
                 raise ValueError(f"skill weight for {key!r} must be >= 0")
         return v
+
+
+# ---------------------------------------------------------------- selection (output of select.py)
+
+
+@dataclass(frozen=True)
+class ScoredBullet:
+    item_id: str
+    bullet: Bullet
+    score: float
+    parts: dict[str, float]
+    text: str  # what is emitted; equals bullet.text unless an approved rewrite replaced it
+
+    @property
+    def qid(self) -> str:
+        return f"{self.item_id}.{self.bullet.id}"
+
+
+@dataclass(frozen=True)
+class SelectedItem:
+    section: str
+    item: Experience | Project | Education
+    bullets: list[ScoredBullet]
+    score: float
+
+
+@dataclass(frozen=True)
+class SelectedSkill:
+    id: str
+    name: str
+    score: float
+    evidence: list[str]  # qualified ids of selected bullets that show this skill
+
+
+@dataclass(frozen=True)
+class Dropped:
+    id: str
+    kind: str  # "bullet" | "skill" | "section"
+    reason: str
+
+
+@dataclass
+class Selection:
+    sections: list[str]
+    experience: list[SelectedItem] = dc_field(default_factory=list)
+    projects: list[SelectedItem] = dc_field(default_factory=list)
+    education: list[SelectedItem] = dc_field(default_factory=list)
+    skills: list[SelectedSkill] = dc_field(default_factory=list)
+    skill_groups: list[tuple[str, list[SelectedSkill]]] = dc_field(default_factory=list)
+    dropped: list[Dropped] = dc_field(default_factory=list)
+    hat: str = ""
+    max_bullets: int | None = None
+
+    def items(self) -> list[SelectedItem]:
+        return [*self.experience, *self.projects, *self.education]
+
+    def bullets(self) -> list[ScoredBullet]:
+        return [b for item in self.items() for b in item.bullets]

@@ -1,0 +1,34 @@
+%% cvforge-template v1
+%% sections: experience, skills, education
+%% max-bullets-per-role: 4
+%
+% Two-column fixture: must raise the two-column lint warning.
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{paracol}
+\setlength{\parindent}{0pt}
+\begin{document}
+{\LARGE\bfseries \VAR{person.name}}\par
+\VAR{person.email}\par
+\begin{paracol}{2}
+\textbf{Skills}\par
+\BLOCK{for s in skills}
+\VAR{s}\par
+\BLOCK{endfor}
+\textbf{Education}\par
+\BLOCK{for ed in education}
+\VAR{ed.degree}, \VAR{ed.org}, \VAR{ed.end}\par
+\BLOCK{endfor}
+\switchcolumn
+\BLOCK{for job in experience}
+\textbf{\VAR{job.title}}, \VAR{job.org}, \VAR{job.start} -- \VAR{job.end}\par
+\begin{itemize}
+\BLOCK{for b in job.bullets}
+  \item \VAR{b.text} % id:\VAR{b.id}
+\BLOCK{endfor}
+\end{itemize}
+\BLOCK{endfor}
+\end{paracol}
+\end{document}

@@ -1,0 +1,31 @@
+%% cvforge-template v1
+%% sections: experience, skills, education
+%% supports: person.phone
+%% max-bullets-per-role: 4
+%
+% Deliberately parser-hostile fixture: icon glyphs glued to text. Must fail the round-trip.
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{marvosym}
+\input{glyphtounicode}
+\pdfgentounicode=1
+\setlength{\parindent}{0pt}
+\begin{document}
+{\LARGE\bfseries \VAR{person.name}}\par
+\Letter\,\VAR{person.email} \quad \Mobilefone\,\VAR{person.phone}\par
+\BLOCK{for job in experience}
+\textbf{\VAR{job.title}} \quad \Industry\,\VAR{job.org} \quad \Clocklogo\,\VAR{job.start} -- \VAR{job.end}\par
+\begin{itemize}
+\BLOCK{for b in job.bullets}
+  \item \VAR{b.text} % id:\VAR{b.id}
+\BLOCK{endfor}
+\end{itemize}
+\BLOCK{endfor}
+\textbf{Skills}\par
+\VAR{skills|join('\\,\\Pointinghand\\,')}\par
+\BLOCK{for ed in education}
+\textbf{\VAR{ed.degree}} \quad \VAR{ed.org} \quad \Clocklogo\,\VAR{ed.end}\par
+\BLOCK{endfor}
+\end{document}
