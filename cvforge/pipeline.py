@@ -7,19 +7,34 @@ import os
 import re
 import urllib.error
 import urllib.request
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
+from pydantic import ValidationError
+
 from cvforge import __version__
 from cvforge.compile import compile_pdf
-from cvforge.config import LOCALES, Config, Locale, load_config
+from cvforge.config import DEFAULT_CONFIG_TEXT, LOCALES, Config, Locale, load_config
 from cvforge.errors import CVForgeError, Issue, errors_only
 from cvforge.escape import escape
-from cvforge.parse import ParsedProfile, load_hat, load_profile
-from cvforge.schema import Hat, Profile, Selection
+from cvforge.interview import Ask, Confirm, Say, hat_text, run_interview
+from cvforge.parse import (
+    ParsedProfile,
+    append_bullet,
+    append_item,
+    append_skill,
+    bullet_ids,
+    dump_profile,
+    item_ids,
+    load_hat,
+    load_profile,
+    next_id,
+    parse_text,
+)
+from cvforge.schema import Bullet, Education, Experience, Hat, Profile, Project, Selection
 from cvforge.select import select
 from cvforge.template import (
     TemplateReport,
@@ -512,3 +527,166 @@ def template_validate(template: Path, profile: Path | None) -> TemplateReport:
         sections = load_profile(path).profile.sections_with_items()
     _, report = validate_template(template, sections)
     return report
+
+
+# ---------------------------------------------------------------- init and add
+
+
+@dataclass
+class WriteResult:
+    path: Path
+    message: str
+    written: list[Path] = field(default_factory=list)
+
+
+def init(
+    ask: Ask, confirm: Confirm, say: Say, *, directory: Path = Path("."), force: bool = False
+) -> WriteResult:
+    profile_path = directory / "profile.cv.txt"
+    config_path = directory / "cvforge.toml"
+    for path in (profile_path, config_path):
+        if path.exists() and not force:
+            raise CVForgeError(
+                [
+                    Issue(
+                        file=str(path),
+                        message="already exists; init will not overwrite it.",
+                        fix="use `cvforge add ...` to extend it, or pass --force to start over.",
+                    )
+                ]
+            )
+    result = run_interview(ask, confirm, say)
+    text = dump_profile(result.profile)
+    parsed = parse_text(text, str(profile_path))  # never write a profile we cannot read back
+    errs = errors_only(validate_profile(parsed))
+    if errs:
+        raise CVForgeError(errs)
+    profile_path.write_text(text, encoding="utf-8")
+    config_path.write_text(
+        DEFAULT_CONFIG_TEXT.format(template=result.template, hat=result.hat, locale=result.locale),
+        encoding="utf-8",
+    )
+    written = [profile_path, config_path]
+    hats_dir = directory / "hats"
+    hats_dir.mkdir(exist_ok=True)
+    for name, title in result.hats.items():
+        hat_path = hats_dir / f"{name}.toml"
+        if not hat_path.exists():
+            hat_path.write_text(hat_text(name, title, result.profile), encoding="utf-8")
+            written.append(hat_path)
+    return WriteResult(profile_path, f"wrote {', '.join(str(p) for p in written)}", written)
+
+
+def _write_checked(path: Path, new_text: str) -> None:
+    """Validate the would-be file; on error nothing is written, so no line numbers are cited."""
+    try:
+        parsed = parse_text(new_text, str(path))
+    except CVForgeError as exc:
+        raise CVForgeError([replace(i, line=None) for i in exc.issues]) from exc
+    errs = errors_only(validate_profile(parsed))
+    if errs:
+        raise CVForgeError([replace(i, line=None) for i in errs])
+    path.write_text(new_text, encoding="utf-8")
+
+
+def _profile_text(profile: Path | None) -> tuple[Path, str]:
+    path = resolve_profile(profile, _config())
+    if not path.exists():
+        raise CVForgeError(
+            [Issue(file=str(path), message="profile file not found.", fix="run `cvforge init`.")]
+        )
+    return path, path.read_text(encoding="utf-8")
+
+
+def add_skill(profile: Path | None, sid: str, name: str) -> WriteResult:
+    path, text = _profile_text(profile)
+    _write_checked(path, append_skill(text, str(path), sid, name))
+    return WriteResult(path, f"added skill {sid}: {name} to {path}")
+
+
+def add_role(
+    profile: Path | None,
+    *,
+    title: str,
+    org: str,
+    start: str,
+    end: str,
+    location: str | None,
+    tags: list[str],
+    item_id: str | None,
+) -> WriteResult:
+    path, text = _profile_text(profile)
+    new_id = item_id or next_id(item_ids(text, str(path), "experience"), "exp-")
+    try:
+        role = Experience(
+            id=new_id, title=title, org=org, start=start, end=end, location=location, tags=tags
+        )
+    except ValidationError as exc:
+        raise _arg_error(exc, str(path)) from exc
+    _write_checked(path, append_item(text, str(path), "experience", role))
+    return WriteResult(path, f"added role {new_id}: {title}, {org} to {path}")
+
+
+def add_project(
+    profile: Path | None, *, name: str, url: str | None, item_id: str | None
+) -> WriteResult:
+    path, text = _profile_text(profile)
+    new_id = item_id or next_id(item_ids(text, str(path), "projects"), "prj-")
+    try:
+        project = Project(id=new_id, name=name, url=url)
+    except ValidationError as exc:
+        raise _arg_error(exc, str(path)) from exc
+    _write_checked(path, append_item(text, str(path), "projects", project))
+    return WriteResult(path, f"added project {new_id}: {name} to {path}")
+
+
+def add_education(
+    profile: Path | None,
+    *,
+    degree: str,
+    org: str,
+    start: str | None,
+    end: str,
+    item_id: str | None,
+) -> WriteResult:
+    path, text = _profile_text(profile)
+    new_id = item_id or next_id(item_ids(text, str(path), "education"), "edu-")
+    try:
+        edu = Education(id=new_id, degree=degree, org=org, start=start, end=end)
+    except ValidationError as exc:
+        raise _arg_error(exc, str(path)) from exc
+    _write_checked(path, append_item(text, str(path), "education", edu))
+    return WriteResult(path, f"added education {new_id}: {degree} to {path}")
+
+
+def add_bullet(
+    profile: Path | None,
+    *,
+    item_id: str,
+    text_: str,
+    skills: list[str],
+    weight: int,
+    bullet_id: str | None,
+) -> WriteResult:
+    path, text = _profile_text(profile)
+    new_id = bullet_id or next_id(bullet_ids(text, str(path), item_id), "b", width=0)
+    try:
+        bullet = Bullet(id=new_id, text=text_, skills=skills, weight=weight)
+    except ValidationError as exc:
+        raise _arg_error(exc, str(path)) from exc
+    _write_checked(path, append_bullet(text, str(path), item_id, bullet))
+    return WriteResult(path, f"added bullet {item_id}.{new_id} to {path}")
+
+
+def _arg_error(exc: ValidationError, file: str) -> CVForgeError:
+    return CVForgeError(
+        [
+            Issue(
+                file=file,
+                message=f"--{'-'.join(map(str, e['loc']))}: {e['msg']}.",
+                fix="dates are YYYY-MM (end may be present); weight is 1-5; ids use letters, "
+                "digits and hyphens.",
+            )
+            for e in exc.errors()
+        ]
+    )

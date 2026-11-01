@@ -40,3 +40,12 @@ Choices the spec leaves open. One line each, newest last.
 - `views.py` holds rich terminal rendering so `cli.py` stays thin.
 - BM25 is implemented in `score.py` (about 30 lines) instead of `rank-bm25`, which pulls numpy; `build --job` stays dependency-free and offline.
 - TeX system packages for dev and CI: texlive-latex-base, texlive-latex-extra, texlive-fonts-recommended, lmodern, latexmk, poppler-utils.
+
+## Step 4: init and add
+
+- `init` asks for the name with default "Your Name" so an all-defaults run still yields a valid profile; nothing else is required.
+- In the interview, skills can be named freely; unknown names become new skills with a slug id (".NET / C#" becomes `net-c`).
+- An invalid date is re-asked; a start date defaults to the current month and an end date to `present`.
+- `init` also writes starter hats (full-stack-engineer, developer, technical-writer) with every declared skill at weight 1.0, ready to tune.
+- `init --defaults` runs the interview non-interactively; `init` refuses to overwrite without `--force`.
+- `add` commands validate the whole would-be file and write nothing on error.

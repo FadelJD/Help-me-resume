@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, NoReturn
 
@@ -171,3 +172,134 @@ def template_validate(
         views.print_template_report(out, report)
     if not report.ok:
         raise typer.Exit(1)
+
+
+@app.command()
+def init(
+    force: Annotated[bool, typer.Option("--force", help="Overwrite existing files.")] = False,
+    defaults: Annotated[
+        bool, typer.Option("--defaults", help="Accept every default without asking.")
+    ] = False,
+) -> None:
+    """Interview: writes profile.cv.txt, cvforge.toml and starter hats in this folder."""
+
+    def ask(prompt: str, default: str) -> str:
+        if defaults:
+            return default
+        return str(typer.prompt(prompt, default=default, show_default=bool(default)))
+
+    def confirm(prompt: str, default: bool) -> bool:
+        return False if defaults else typer.confirm(prompt, default=default)
+
+    def say(message: str) -> None:
+        if not defaults:
+            console.print(escape(message), highlight=False)
+
+    try:
+        result = pipeline.init(ask, confirm, say, force=force)
+    except CVForgeError as exc:
+        _fail(exc, False)
+    out.print(result.path.read_text(encoding="utf-8"), highlight=False, markup=False)
+    out.print(result.message, highlight=False, soft_wrap=True)
+
+
+add_app = typer.Typer(no_args_is_help=True, help="Append to the profile without opening it.")
+app.add_typer(add_app, name="add")
+
+
+def _report_write(fn: Callable[[], pipeline.WriteResult]) -> None:
+    try:
+        result = fn()
+    except CVForgeError as exc:
+        _fail(exc, False)
+    out.print(result.message, highlight=False, soft_wrap=True)
+
+
+def _csv(value: str) -> list[str]:
+    return [x.strip() for x in value.split(",") if x.strip()]
+
+
+@add_app.command("skill")
+def add_skill(
+    skill_id: Annotated[str, typer.Argument(help="Short id bullets will reference, e.g. rust.")],
+    name: Annotated[str, typer.Argument(help="Name as shown on the CV, e.g. Rust.")],
+    profile: ProfileOpt = None,
+) -> None:
+    """Declare a skill."""
+    _report_write(lambda: pipeline.add_skill(profile, skill_id, name))
+
+
+@add_app.command("role")
+def add_role(
+    title: Annotated[str, typer.Argument(help="Job title.")],
+    org: Annotated[str, typer.Option("--org", help="Employer.")],
+    start: Annotated[str, typer.Option("--start", help="YYYY-MM.")],
+    end: Annotated[str, typer.Option("--end", help="YYYY-MM or present.")] = "present",
+    location: Annotated[str | None, typer.Option("--location")] = None,
+    tags: Annotated[str, typer.Option("--tags", help="Skill ids, comma separated.")] = "",
+    item_id: Annotated[str | None, typer.Option("--id", help="Default: next exp-NN.")] = None,
+    profile: ProfileOpt = None,
+) -> None:
+    """Add a role to experience."""
+    _report_write(
+        lambda: pipeline.add_role(
+            profile,
+            title=title,
+            org=org,
+            start=start,
+            end=end,
+            location=location,
+            tags=_csv(tags),
+            item_id=item_id,
+        )
+    )
+
+
+@add_app.command("bullet")
+def add_bullet(
+    item: Annotated[str, typer.Argument(help="Role, project or education id, e.g. exp-02.")],
+    text: Annotated[str, typer.Argument(help="One line: what you did and the result.")],
+    skills: Annotated[str, typer.Option("--skills", help="Skill ids, comma separated.")] = "",
+    weight: Annotated[int, typer.Option("--weight", min=1, max=5, help="1-5.")] = 3,
+    bullet_id: Annotated[str | None, typer.Option("--id", help="Default: next bN.")] = None,
+    profile: ProfileOpt = None,
+) -> None:
+    """Add a bullet to a role, project or education entry."""
+    _report_write(
+        lambda: pipeline.add_bullet(
+            profile,
+            item_id=item,
+            text_=text,
+            skills=_csv(skills),
+            weight=weight,
+            bullet_id=bullet_id,
+        )
+    )
+
+
+@add_app.command("project")
+def add_project(
+    name: Annotated[str, typer.Argument(help="Project name.")],
+    url: Annotated[str | None, typer.Option("--url")] = None,
+    item_id: Annotated[str | None, typer.Option("--id", help="Default: next prj-NN.")] = None,
+    profile: ProfileOpt = None,
+) -> None:
+    """Add a project."""
+    _report_write(lambda: pipeline.add_project(profile, name=name, url=url, item_id=item_id))
+
+
+@add_app.command("education")
+def add_education(
+    degree: Annotated[str, typer.Argument(help="Degree or certificate.")],
+    org: Annotated[str, typer.Option("--org", help="Institution.")],
+    end: Annotated[str, typer.Option("--end", help="YYYY-MM or present.")],
+    start: Annotated[str | None, typer.Option("--start", help="YYYY-MM.")] = None,
+    item_id: Annotated[str | None, typer.Option("--id", help="Default: next edu-NN.")] = None,
+    profile: ProfileOpt = None,
+) -> None:
+    """Add an education entry."""
+    _report_write(
+        lambda: pipeline.add_education(
+            profile, degree=degree, org=org, start=start, end=end, item_id=item_id
+        )
+    )

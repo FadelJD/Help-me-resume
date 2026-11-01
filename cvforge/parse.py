@@ -281,6 +281,8 @@ def _item_map(item: BaseModel) -> CommentedMap:
     m = CommentedMap()
     for key, value in item.model_dump(exclude_none=True).items():
         if key == "bullets":
+            if not value:
+                continue
             m["bullets"] = CommentedSeq(
                 [_bullet_map(b) for b in getattr(item, "bullets")]  # noqa: B009
             )
