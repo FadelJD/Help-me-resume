@@ -170,3 +170,34 @@ def test_init_then_build(fresh: Path) -> None:
         compile_pdf_too=False,
     )
     assert "% id:exp-01.b1" in result.tex.read_text()
+
+
+def test_init_example_writes_a_working_sample(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    result = pipeline.init(
+        lambda _p, d: d, lambda _p, _d: False, lambda _m: None, directory=tmp_path, example=True
+    )
+    assert load_profile(result.path).profile.person.name == "Jane Doe"
+    assert (tmp_path / "hats" / "developer.toml").exists()
+    built = pipeline.build(
+        profile=None,
+        template=None,
+        hat=None,
+        job=None,
+        output=tmp_path / "out" / "cv.tex",
+        max_bullets=None,
+        compile_pdf_too=False,
+    )
+    assert "Software Developer" in built.tex.read_text()  # template minimal, hat developer
+
+
+def test_builtin_template_names() -> None:
+    from cvforge.config import Config
+    from cvforge.resources import builtin_template, builtin_templates
+
+    assert {"minimal", "minimal-right-dates"} <= set(builtin_templates())
+    assert builtin_template("minimal") is not None
+    assert builtin_template("nope") is None and builtin_template("x/minimal.tex") is None
+    assert pipeline.resolve_template(Path("minimal"), Config()).name == "minimal.tex"

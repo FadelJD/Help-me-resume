@@ -36,6 +36,7 @@ from cvforge.parse import (
     next_id,
     parse_text,
 )
+from cvforge.resources import builtin_template, data_path
 from cvforge.rewrite import LiteLLMRewriter, Proposal, Rewriter, apply, propose
 from cvforge.schema import Bullet, Education, Experience, Hat, Profile, Project, Selection
 from cvforge.select import select
@@ -260,10 +261,14 @@ class Prepared:
 
 
 def resolve_template(template: Path | None, cfg: Config) -> Path:
-    if template is not None:
-        return template
-    if cfg.template:
-        return Path(cfg.template)
+    """A path, or the name of a built-in template (`minimal`, `minimal-right-dates`)."""
+    chosen = template if template is not None else (Path(cfg.template) if cfg.template else None)
+    if chosen is not None:
+        if not chosen.exists():
+            builtin = builtin_template(str(chosen))
+            if builtin is not None:
+                return builtin
+        return chosen
     raise CVForgeError(
         [
             Issue(
@@ -562,8 +567,15 @@ class WriteResult:
 
 
 def init(
-    ask: Ask, confirm: Confirm, say: Say, *, directory: Path = Path("."), force: bool = False
+    ask: Ask,
+    confirm: Confirm,
+    say: Say,
+    *,
+    directory: Path = Path("."),
+    force: bool = False,
+    example: bool = False,
 ) -> WriteResult:
+    """Interview, or with `example` copy the fictional sample profile and hats to try the tool."""
     profile_path = directory / "profile.cv.txt"
     config_path = directory / "cvforge.toml"
     for path in (profile_path, config_path):
@@ -572,11 +584,14 @@ def init(
                 [
                     Issue(
                         file=str(path),
+                        item="--force",
                         message="already exists; init will not overwrite it.",
                         fix="use `cvforge add ...` to extend it, or pass --force to start over.",
                     )
                 ]
             )
+    if example:
+        return _init_example(directory, profile_path, config_path)
     result = run_interview(ask, confirm, say)
     text = dump_profile(result.profile)
     parsed = parse_text(text, str(profile_path))  # never write a profile we cannot read back
@@ -597,6 +612,38 @@ def init(
             hat_path.write_text(hat_text(name, title, result.profile), encoding="utf-8")
             written.append(hat_path)
     return WriteResult(profile_path, f"wrote {', '.join(str(p) for p in written)}", written)
+
+
+def _init_example(directory: Path, profile_path: Path, config_path: Path) -> WriteResult:
+    sample = data_path("examples", "profile.cv.txt")
+    hats = data_path("examples", "hats")
+    if sample is None or hats is None:  # pragma: no cover - broken installation
+        raise CVForgeError(
+            [
+                Issue(
+                    file="cvforge",
+                    item="--example",
+                    message="the example profile is missing from this installation.",
+                    fix="reinstall cvforge, or run `cvforge init` without --example.",
+                )
+            ]
+        )
+    profile_path.write_text(sample.read_text(encoding="utf-8"), encoding="utf-8")
+    config_path.write_text(
+        DEFAULT_CONFIG_TEXT.format(template="minimal", hat="developer", locale="th"),
+        encoding="utf-8",
+    )
+    written = [profile_path, config_path]
+    (directory / "hats").mkdir(exist_ok=True)
+    for hat in sorted(hats.glob("*.toml")):
+        target = directory / "hats" / hat.name
+        target.write_text(hat.read_text(encoding="utf-8"), encoding="utf-8")
+        written.append(target)
+    return WriteResult(
+        profile_path,
+        f"wrote {', '.join(str(p) for p in written)} (fictional example: Jane Doe)",
+        written,
+    )
 
 
 def _write_checked(path: Path, new_text: str) -> None:

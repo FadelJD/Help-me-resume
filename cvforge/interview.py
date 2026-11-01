@@ -135,7 +135,7 @@ def run_interview(ask: Ask, confirm: Confirm, say: Say, today: date | None = Non
         education=education,
     )
     say("Project defaults (saved to cvforge.toml).")
-    template = ask("LaTeX template path (Enter to set later)", "").strip()
+    template = ask("LaTeX template: a path, or `minimal` for the built-in one", "minimal").strip()
     hat = ask(f"Default hat ({', '.join(DEFAULT_HATS)})", "developer").strip()
     locale = ask("Locale (au, uk, us, th)", "th").strip()
     if locale not in ("au", "uk", "us", "th"):

@@ -347,6 +347,10 @@ def init(
     defaults: Annotated[
         bool, typer.Option("--defaults", help="Accept every default without asking.")
     ] = False,
+    example: Annotated[
+        bool,
+        typer.Option("--example", help="Write a fictional example profile to try the tool."),
+    ] = False,
 ) -> None:
     """Interview: writes profile.cv.txt, cvforge.toml and starter hats in this folder."""
 
@@ -363,7 +367,7 @@ def init(
             console.print(escape(message), highlight=False)
 
     try:
-        result = pipeline.init(ask, confirm, say, force=force)
+        result = pipeline.init(ask, confirm, say, force=force, example=example)
     except CVForgeError as exc:
         _fail(exc, False)
     out.print(result.path.read_text(encoding="utf-8"), highlight=False, markup=False)
