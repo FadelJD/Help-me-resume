@@ -23,7 +23,8 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parents[2]
 ASSETS = ROOT / "docs" / "assets"
 MONO = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
-BG, FG, PROMPT, DIM, OK = (24, 26, 33), (220, 223, 228), (110, 200, 140), (140, 146, 158), (120, 210, 150)
+BG, FG = (24, 26, 33), (220, 223, 228)
+PROMPT, DIM, OK = (110, 200, 140), (140, 146, 158), (120, 210, 150)
 CVFORGE = str(Path(sys.executable).with_name("cvforge"))
 
 
@@ -96,11 +97,15 @@ def png(target: Path) -> None:
     with tempfile.TemporaryDirectory() as d:
         run_template(entry, Path(d))
         pdf = Path(d) / "awesome-cv" / "awesome-cv.pdf"
-        subprocess.run(["pdftoppm", "-r", "70", "-png", "-f", "1", "-l", "1", str(pdf),
-                        str(Path(d) / "page")], check=True)
+        subprocess.run(
+            ["pdftoppm", "-r", "70", "-png", "-f", "1", "-l", "1", str(pdf), str(Path(d) / "page")],
+            check=True,
+        )
         page = Image.open(next(Path(d).glob("page*.png"))).convert("RGB")
-        summary = run([CVFORGE, "check", str(Path(d) / "awesome-cv" / "awesome-cv.tex"),
-                       "--no-semantic"], Path(d))
+        summary = run(
+            [CVFORGE, "check", str(Path(d) / "awesome-cv" / "awesome-cv.tex"), "--no-semantic"],
+            Path(d),
+        )
     lines = ["cvforge check  (Awesome-CV, unchanged design)", ""]
     for ln in summary.splitlines():
         if "[gate]" in ln or "[advisory]" in ln or ln.startswith(("check ", "evidence", "density")):
