@@ -17,7 +17,7 @@ from cvforge.check import miss_issues
 from cvforge.errors import CVForgeError, Issue
 from cvforge.rewrite import Proposal
 
-app = typer.Typer(no_args_is_help=True, add_completion=False, help=__doc__)
+app = typer.Typer(no_args_is_help=True, add_completion=False)
 console = Console(stderr=True)
 out = Console()
 

@@ -1,0 +1,136 @@
+# Reusable workflow: build a CV from a profile and template, compile it, run the screening check,
+# and upload the PDF, .tex and report.json. Call it from your CV repository:
+#
+#   on: [push]
+#   jobs:
+#     cv:
+#       uses: FadelJD/Help-me-resume/.github/workflows/cv-check.yml@main
+#       with:
+#         template: cv.tex
+#         hat: developer
+#         strict: false
+name: cv-check
+
+on:
+  workflow_call:
+    inputs:
+      template:
+        description: Path to your cvforge template (.tex) in the calling repository.
+        required: true
+        type: string
+      profile:
+        description: Path to the profile.
+        type: string
+        default: profile.cv.txt
+      hat:
+        description: Hat name in hats/ or a path to a .toml file. Empty means no hat.
+        type: string
+        default: ""
+      job:
+        description: Job ad file or URL to score against. Empty skips keyword scoring.
+        type: string
+        default: ""
+      strict:
+        description: Fail on scores below the thresholds in cvforge.toml.
+        type: boolean
+        default: false
+      output:
+        description: Where to write the .tex (the PDF and report.json land beside it).
+        type: string
+        default: out/cv.tex
+      cvforge-spec:
+        description: pip requirement used to install cvforge.
+        type: string
+        default: "cvforge[check] @ git+https://github.com/FadelJD/Help-me-resume@main"
+      python-version:
+        type: string
+        default: "3.12"
+    outputs:
+      badge:
+        description: 'One-line summary, for example "parsed: 3/3 · keyword: 0.71 · evidence: 100%".'
+        value: ${{ jobs.cv.outputs.badge }}
+
+permissions:
+  contents: read
+
+jobs:
+  cv:
+    runs-on: ubuntu-latest
+    outputs:
+      badge: ${{ steps.check.outputs.badge }}
+    env:
+      TEMPLATE: ${{ inputs.template }}
+      PROFILE: ${{ inputs.profile }}
+      HAT: ${{ inputs.hat }}
+      JOB: ${{ inputs.job }}
+      STRICT: ${{ inputs.strict }}
+      OUTPUT: ${{ inputs.output }}
+      CVFORGE_SPEC: ${{ inputs.cvforge-spec }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install TeX and poppler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base texlive-latex-extra texlive-fonts-recommended lmodern \
+            latexmk poppler-utils
+
+      - name: Install cvforge
+        run: pip install "$CVFORGE_SPEC"
+
+      - name: Validate profile and template
+        run: |
+          cvforge validate --profile "$PROFILE"
+          cvforge template validate "$TEMPLATE" --profile "$PROFILE"
+
+      - name: Build
+        run: |
+          args=(--template "$TEMPLATE" --profile "$PROFILE" -o "$OUTPUT")
+          if [ -n "$HAT" ]; then args+=(--hat "$HAT"); fi
+          if [ -n "$JOB" ]; then args+=(--job "$JOB"); fi
+          cvforge build "${args[@]}"
+
+      - name: Check
+        id: check
+        run: |
+          set +e
+          args=("$OUTPUT" --json --no-semantic --lint-template)
+          if [ -n "$JOB" ]; then args+=(--job "$JOB"); fi
+          if [ "$STRICT" = "true" ]; then args+=(--strict); fi
+          cvforge check "${args[@]}" > check.json
+          status=$?
+          python - <<'PY'
+          import json, os
+          data = json.load(open("check.json"))
+          badge = data.get("badge", "check error")
+          lines = ["### CV check", "", f"`{badge}`", ""]
+          for p in data.get("parsers", []):
+              for m in p["misses"]:
+                  lines.append(f"- {p['name']}: lost {m['field']} `{m['expected']}` ({m['item']})")
+          for i in data.get("issues", []) + data.get("lint", []):
+              lines.append(f"- {i['severity']}: {i['message']} Fix: {i['fix']}")
+          for f in data.get("strict_failures", []):
+              lines.append(f"- strict: {f}")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as fh:
+              fh.write("\n".join(lines) + "\n")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"badge={badge}\n")
+          print(badge)
+          PY
+          exit $status
+
+      - name: Upload CV
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cv
+          path: |
+            ${{ inputs.output }}
+            out/*.pdf
+            out/*.report.json
+          if-no-files-found: warn

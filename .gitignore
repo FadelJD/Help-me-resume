@@ -20,3 +20,4 @@ out/
 # the user's real data never goes in git by accident
 /profile.cv.txt
 /cvforge.toml
+check.json

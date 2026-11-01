@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install TeX and poppler (compile and check tests are real, not mocked)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base texlive-latex-extra texlive-fonts-recommended lmodern \
+            latexmk poppler-utils
+
+      - name: Install package
+        run: pip install -e ".[dev,check]"
+
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Type-check
+        run: mypy cvforge
+
+      - name: Test
+        run: pytest -q
+
+  example-cv:
+    # The reusable CV workflow, run on the fictional example profile with this checkout.
+    uses: ./.github/workflows/cv-check.yml
+    with:
+      template: templates/minimal.tex
+      profile: examples/profile.cv.txt
+      hat: examples/hats/developer.toml
+      job: examples/job.txt
+      cvforge-spec: ".[check]"

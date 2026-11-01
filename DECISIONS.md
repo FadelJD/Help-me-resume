@@ -80,3 +80,15 @@ Choices the spec leaves open. One line each, newest last.
 - Approval: `--yes` accepts every rewrite that passed; without a TTY or with `--json` and no `--yes`, all are rejected; interactively the user accepts all, picks, or rejects all.
 - LiteLLM is imported lazily via importlib, so the base install and mypy never need it. Temperature is 0.
 - report.json records every proposal with its status and the facts that caused a rejection.
+
+## Step 8: CI, reusable workflow, README
+
+- `ci.yml` runs ruff, mypy strict and pytest on Python 3.11 and 3.12 with real TeX, then calls the reusable CV workflow on the example profile as a live demo.
+- `cv-check.yml` installs cvforge from this repository's `main` by default (`cvforge-spec` input overrides it); there is no `v1` tag yet. Inputs reach shell steps through env vars, never inline expressions.
+- `check --json` output drives the job summary and the `badge` output.
+- Python 3.11 was verified locally alongside 3.13.
+
+## Open
+
+- Step 3 (convert the user's own template) waits for the template file.
+- Final name: still `cvforge` / Help-me-resume.
