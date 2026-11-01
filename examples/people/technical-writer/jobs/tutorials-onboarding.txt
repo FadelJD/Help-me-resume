@@ -1,0 +1,13 @@
+Technical Writer, Developer Onboarding - Lanternfield Learning (fictional), Hybrid
+
+New customers decide in their first week whether our product works for them. Help them succeed.
+
+You will:
+- Write getting-started tutorials and step-by-step guides for new developers.
+- Design the first-week onboarding path and measure where people get stuck.
+- Use content analytics to find unhelpful pages and rewrite them.
+- Improve error messages and interface text with the design team.
+
+You have:
+- A portfolio of tutorials or onboarding guides.
+- Plain, friendly writing and an eye for conversion and support ticket trends.

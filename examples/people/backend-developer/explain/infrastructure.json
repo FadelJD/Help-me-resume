@@ -1,0 +1,256 @@
+{
+  "hat": "backend-developer",
+  "job": "examples/people/backend-developer/jobs/infrastructure.txt",
+  "sections": [
+    "experience",
+    "projects",
+    "skills",
+    "education"
+  ],
+  "max_bullets_per_role": 5,
+  "items": [
+    {
+      "id": "exp-01",
+      "section": "experience",
+      "bullets": [
+        {
+          "id": "exp-01.b2",
+          "score": 12.0,
+          "weight": 5.0,
+          "hat": 1.2,
+          "job": 1.0,
+          "text": "Migrated 22 services from VMs to Kubernetes on Terraform-managed AWS, cutting hosting cost 35%."
+        },
+        {
+          "id": "exp-01.b1",
+          "score": 10.764,
+          "weight": 5.0,
+          "hat": 2.0,
+          "job": 0.0764,
+          "text": "Designed a public REST API in Go with OpenAPI 3 specs, serving 40M requests a month to 300 partner integrations."
+        },
+        {
+          "id": "exp-01.b3",
+          "score": 9.2928,
+          "weight": 4.0,
+          "hat": 2.0,
+          "job": 0.1616,
+          "text": "Introduced gRPC between internal services, reducing p99 latency from 480 ms to 90 ms."
+        },
+        {
+          "id": "exp-01.b4",
+          "score": 6.6164,
+          "weight": 3.0,
+          "hat": 1.2,
+          "job": 0.8379,
+          "text": "Built Prometheus alerting and SLO dashboards that cut mean time to recovery from 3 hours to 25 minutes."
+        }
+      ]
+    },
+    {
+      "id": "exp-02",
+      "section": "experience",
+      "bullets": [
+        {
+          "id": "exp-02.b1",
+          "score": 9.7587,
+          "weight": 5.0,
+          "hat": 1.8,
+          "job": 0.0843,
+          "text": "Built an idempotent payments API in Python and PostgreSQL processing 1.2M transactions a day."
+        },
+        {
+          "id": "exp-02.b2",
+          "score": 7.5924,
+          "weight": 4.0,
+          "hat": 1.8,
+          "job": 0.0545,
+          "text": "Replaced nightly batch jobs with Kafka event streams, delivering settlement data 6 hours sooner."
+        },
+        {
+          "id": "exp-02.b3",
+          "score": 4.8,
+          "weight": 3.0,
+          "hat": 1.6,
+          "job": 0.0,
+          "text": "Added Redis caching to the account lookup path, cutting database load 60%."
+        },
+        {
+          "id": "exp-02.b4",
+          "score": 3.3799,
+          "weight": 2.0,
+          "hat": 1.2,
+          "job": 0.4083,
+          "text": "Containerised 9 services with Docker and wrote the local setup used by 25 engineers."
+        }
+      ]
+    },
+    {
+      "id": "exp-03",
+      "section": "experience",
+      "bullets": [
+        {
+          "id": "exp-03.b1",
+          "score": 5.8941,
+          "weight": 3.0,
+          "hat": 1.8,
+          "job": 0.0915,
+          "text": "Wrote 14 REST endpoints in Python for a reporting product used by 120 clients."
+        },
+        {
+          "id": "exp-03.b2",
+          "score": 4.8,
+          "weight": 3.0,
+          "hat": 1.6,
+          "job": 0.0,
+          "text": "Tuned slow PostgreSQL queries, bringing the 10 heaviest reports under 2 seconds."
+        },
+        {
+          "id": "exp-03.b3",
+          "score": 1.3379,
+          "weight": 1.0,
+          "hat": 1.2,
+          "job": 0.1149,
+          "text": "Automated test database provisioning with Docker, saving each developer 30 minutes a day."
+        }
+      ]
+    },
+    {
+      "id": "prj-01",
+      "section": "projects",
+      "bullets": [
+        {
+          "id": "prj-01.b1",
+          "score": 6.5058,
+          "weight": 3.0,
+          "hat": 2.0,
+          "job": 0.0843,
+          "text": "Open-source Go CLI for inspecting Kafka consumer lag, with 1,400 GitHub stars."
+        }
+      ]
+    },
+    {
+      "id": "edu-01",
+      "section": "education",
+      "bullets": []
+    }
+  ],
+  "skills": [
+    {
+      "id": "go",
+      "name": "Go",
+      "score": 106.2504,
+      "evidence": [
+        "exp-01.b1",
+        "exp-01.b3",
+        "prj-01.b1"
+      ]
+    },
+    {
+      "id": "py",
+      "name": "Python",
+      "score": 83.6827,
+      "evidence": [
+        "exp-02.b1",
+        "exp-02.b2",
+        "exp-03.b1"
+      ]
+    },
+    {
+      "id": "k8s",
+      "name": "Kubernetes",
+      "score": 44.6794,
+      "evidence": [
+        "exp-01.b2",
+        "exp-01.b4"
+      ]
+    },
+    {
+      "id": "rest",
+      "name": "REST APIs",
+      "score": 39.6252,
+      "evidence": [
+        "exp-01.b1",
+        "exp-02.b1",
+        "exp-03.b1"
+      ]
+    },
+    {
+      "id": "pg",
+      "name": "PostgreSQL",
+      "score": 30.9739,
+      "evidence": [
+        "exp-02.b1",
+        "exp-02.b3",
+        "exp-03.b2"
+      ]
+    },
+    {
+      "id": "tf",
+      "name": "Terraform",
+      "score": 24.0,
+      "evidence": [
+        "exp-01.b2"
+      ]
+    },
+    {
+      "id": "aws",
+      "name": "AWS",
+      "score": 24.0,
+      "evidence": [
+        "exp-01.b2"
+      ]
+    },
+    {
+      "id": "kafka",
+      "name": "Apache Kafka",
+      "score": 19.7375,
+      "evidence": [
+        "exp-02.b2",
+        "prj-01.b1"
+      ]
+    },
+    {
+      "id": "prom",
+      "name": "Prometheus",
+      "score": 13.2328,
+      "evidence": [
+        "exp-01.b4"
+      ]
+    },
+    {
+      "id": "grpc",
+      "name": "gRPC",
+      "score": 13.0099,
+      "evidence": [
+        "exp-01.b3"
+      ]
+    },
+    {
+      "id": "openapi",
+      "name": "OpenAPI",
+      "score": 12.9168,
+      "evidence": [
+        "exp-01.b1"
+      ]
+    },
+    {
+      "id": "docker",
+      "name": "Docker",
+      "score": 11.3227,
+      "evidence": [
+        "exp-02.b4",
+        "exp-03.b3"
+      ]
+    },
+    {
+      "id": "redis",
+      "name": "Redis",
+      "score": 5.76,
+      "evidence": [
+        "exp-02.b3"
+      ]
+    }
+  ],
+  "dropped": []
+}

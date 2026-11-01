@@ -1,0 +1,13 @@
+Product Analyst, Experimentation - Thistledown Apps (fictional), Remote UK
+
+We run dozens of A/B tests a quarter and need an analyst who makes them rigorous.
+
+You will:
+- Design A/B tests, choose sample sizes and analyse results with sound statistics.
+- Run regression and significance tests to explain what drives conversion and revenue.
+- Build forecasts and models in Python or R.
+- Explain findings to product managers in plain language.
+
+You have:
+- A statistics background and hands-on A/B testing.
+- Python (pandas) or R, plus solid SQL.

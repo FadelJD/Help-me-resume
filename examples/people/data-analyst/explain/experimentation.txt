@@ -1,0 +1,47 @@
+hat: data-analyst   job: examples/people/data-analyst/jobs/experimentation.txt   max bullets per role: 5
+score = weight x hat x (1 + job)
+experience: exp-01                                                                                            
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ exp-01.b2 │ 16.00 │      5 │ 1.60 │ 1.00 │ Designed and analysed 30 A/B tests on checkout, finding changes │
+│           │       │        │      │      │ worth 4% more revenue.                                          │
+│ exp-01.b4 │ 10.82 │      4 │ 1.60 │ 0.69 │ Built a weekly demand forecast in Python with 8% mean error     │
+│           │       │        │      │      │ across 1,500 products.                                          │
+│ exp-01.b3 │  9.00 │      4 │ 2.00 │ 0.13 │ Modelled sales tables in dbt, cutting dashboard refresh time    │
+│           │       │        │      │      │ from 40 to 6 minutes.                                           │
+│ exp-01.b1 │  8.80 │      5 │ 1.50 │ 0.17 │ Built 12 Tableau dashboards on BigQuery used weekly by 200      │
+│           │       │        │      │      │ store managers.                                                 │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+experience: exp-02                                                                                            
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ exp-02.b2 │  8.85 │      4 │ 1.60 │ 0.38 │ Used regression in R to find the 5 factors behind 70% of late   │
+│           │       │        │      │      │ claims.                                                         │
+│ exp-02.b3 │  7.16 │      3 │ 2.00 │ 0.19 │ Wrote SQL pipelines joining 6 source systems into one claims    │
+│           │       │        │      │      │ table.                                                          │
+│ exp-02.b4 │  6.11 │      3 │ 1.60 │ 0.27 │ Cleaned 3M policy records with pandas, raising match rates from │
+│           │       │        │      │      │ 81% to 97%.                                                     │
+│ exp-02.b1 │  6.00 │      4 │ 1.50 │ 0.00 │ Replaced 25 monthly Excel reports with one Power BI dashboard   │
+│           │       │        │      │      │ for the claims team.                                            │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+experience: exp-03                                                                                            
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ exp-03.b2 │  8.89 │      3 │ 1.60 │ 0.85 │ Ran significance tests on survey samples of up to 10,000        │
+│           │       │        │      │      │ respondents.                                                    │
+│ exp-03.b1 │  2.80 │      2 │ 1.40 │ 0.00 │ Built survey reporting dashboards in Excel for 40 client        │
+│           │       │        │      │      │ studies a year.                                                 │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+projects: prj-01                                                                                              
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ prj-01.b1 │  4.10 │      2 │ 1.60 │ 0.28 │ Python and pandas notebook charting 5 years of city bus         │
+│           │       │        │      │      │ ridership, featured in a local data newsletter.                 │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+skills: Python (118.5), Statistics (108.0), SQL (64.6), pandas (54.7), A/B testing (48.0), Data visualisation 
+(30.4), BigQuery (23.1), Tableau (13.2), Forecasting (13.0), dbt (11.7), R (10.6), Power BI (9.0), Excel (8.8)
+11 bullets selected, 0 items dropped

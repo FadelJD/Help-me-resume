@@ -1,0 +1,51 @@
+hat: technical-writer   job: examples/people/technical-writer/jobs/tutorials-onboarding.txt   max bullets per 
+role: 5
+score = weight x hat x (1 + job)
+experience: exp-01                                                                                            
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ exp-01.b2 │ 17.09 │      5 │ 2.00 │ 0.71 │ Wrote a 6-part getting-started tutorial series that lifted      │
+│           │       │        │      │      │ trial-to-paid conversion 12%.                                   │
+│ exp-01.b1 │  9.00 │      5 │ 1.80 │ 0.00 │ Rebuilt the API reference for 180 endpoints from OpenAPI specs, │
+│           │       │        │      │      │ regenerated on every release.                                   │
+│ exp-01.b4 │  7.57 │      3 │ 2.00 │ 0.26 │ Created the docs style guide adopted by 40 engineers who        │
+│           │       │        │      │      │ contribute pages.                                               │
+│ exp-01.b3 │  7.51 │      4 │ 1.80 │ 0.04 │ Added runnable Python and JavaScript code samples to every      │
+│           │       │        │      │      │ endpoint page, tested in CI.                                    │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+experience: exp-02                                                                                            
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ exp-02.b2 │ 14.40 │      4 │ 1.80 │ 1.00 │ Designed a first-week onboarding path for new developers,       │
+│           │       │        │      │      │ cutting support tickets from new accounts 30%.                  │
+│ exp-02.b3 │  6.37 │      3 │ 1.20 │ 0.77 │ Rewrote error messages and interface text across 3 products     │
+│           │       │        │      │      │ with the design team.                                           │
+│ exp-02.b1 │  6.26 │      4 │ 1.50 │ 0.04 │ Moved 650 wiki pages to a Markdown docs-as-code site in Git,    │
+│           │       │        │      │      │ with review on every pull request.                              │
+│ exp-02.b4 │  5.89 │      2 │ 2.00 │ 0.47 │ Set up page analytics to find the 20 least helpful pages, then  │
+│           │       │        │      │      │ rewrote each one.                                               │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+experience: exp-03                                                                                            
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ exp-03.b1 │  6.58 │      3 │ 2.00 │ 0.10 │ Wrote installation and user manuals for 8 lab instruments       │
+│           │       │        │      │      │ shipped to 15 countries.                                        │
+│ exp-03.b2 │  5.40 │      3 │ 1.80 │ 0.00 │ Documented a serial command API with 90 commands and a worked   │
+│           │       │        │      │      │ example for each.                                               │
+│ exp-03.b3 │  2.63 │      2 │ 1.20 │ 0.09 │ Cut translation costs 25% with a reusable Markdown glossary of  │
+│           │       │        │      │      │ 400 terms.                                                      │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+projects: prj-01                                                                                              
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ prj-01.b1 │  3.93 │      3 │ 1.20 │ 0.09 │ Open-source prose linting rule pack with 60 checks, used by 30  │
+│           │       │        │      │      │ docs teams.                                                     │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+skills: Technical writing (148.5), Tutorials (113.4), Developer onboarding (100.8), API reference 
+documentation (39.4), Style guides (33.9), Docs-as-code (22.9), UX writing (15.3), OpenAPI (12.6), Content 
+analytics (11.8), Markdown (10.7), Git (10.2), Python (7.5), JavaScript (7.5)
+12 bullets selected, 0 items dropped

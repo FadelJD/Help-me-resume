@@ -1,0 +1,13 @@
+BI Analyst, Dashboards and Reporting - Coralpoint Groceries (fictional), Leeds
+
+Store and regional managers run the business from our dashboards. Make them fast and trusted.
+
+You will:
+- Build and maintain Tableau and Power BI dashboards for store managers and finance.
+- Model reporting tables in dbt on BigQuery and keep dashboard refresh times low.
+- Replace manual Excel reports with self-serve dashboards.
+- Write SQL that joins sales, stock and staffing data.
+
+You have:
+- Strong SQL and data visualisation.
+- Tableau or Power BI in production, ideally with dbt and BigQuery.

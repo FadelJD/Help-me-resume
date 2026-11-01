@@ -1,0 +1,50 @@
+hat: backend-developer   job: examples/people/backend-developer/jobs/api-platform.txt   max bullets per role: 
+5
+score = weight x hat x (1 + job)
+experience: exp-01                                                                                            
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ exp-01.b1 │ 20.00 │      5 │ 2.00 │ 1.00 │ Designed a public REST API in Go with OpenAPI 3 specs, serving  │
+│           │       │        │      │      │ 40M requests a month to 300 partner integrations.               │
+│ exp-01.b3 │ 12.90 │      4 │ 2.00 │ 0.61 │ Introduced gRPC between internal services, reducing p99 latency │
+│           │       │        │      │      │ from 480 ms to 90 ms.                                           │
+│ exp-01.b2 │  6.36 │      5 │ 1.20 │ 0.06 │ Migrated 22 services from VMs to Kubernetes on                  │
+│           │       │        │      │      │ Terraform-managed AWS, cutting hosting cost 35%.                │
+│ exp-01.b4 │  3.60 │      3 │ 1.20 │ 0.00 │ Built Prometheus alerting and SLO dashboards that cut mean time │
+│           │       │        │      │      │ to recovery from 3 hours to 25 minutes.                         │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+experience: exp-02                                                                                            
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ exp-02.b1 │ 15.08 │      5 │ 1.80 │ 0.68 │ Built an idempotent payments API in Python and PostgreSQL       │
+│           │       │        │      │      │ processing 1.2M transactions a day.                             │
+│ exp-02.b2 │  7.61 │      4 │ 1.80 │ 0.06 │ Replaced nightly batch jobs with Kafka event streams,           │
+│           │       │        │      │      │ delivering settlement data 6 hours sooner.                      │
+│ exp-02.b3 │  5.25 │      3 │ 1.60 │ 0.09 │ Added Redis caching to the account lookup path, cutting         │
+│           │       │        │      │      │ database load 60%.                                              │
+│ exp-02.b4 │  2.87 │      2 │ 1.20 │ 0.20 │ Containerised 9 services with Docker and wrote the local setup  │
+│           │       │        │      │      │ used by 25 engineers.                                           │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+experience: exp-03                                                                                            
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ exp-03.b1 │  7.99 │      3 │ 1.80 │ 0.48 │ Wrote 14 REST endpoints in Python for a reporting product used  │
+│           │       │        │      │      │ by 120 clients.                                                 │
+│ exp-03.b2 │  5.47 │      3 │ 1.60 │ 0.14 │ Tuned slow PostgreSQL queries, bringing the 10 heaviest reports │
+│           │       │        │      │      │ under 2 seconds.                                                │
+│ exp-03.b3 │  1.20 │      1 │ 1.20 │ 0.00 │ Automated test database provisioning with Docker, saving each   │
+│           │       │        │      │      │ developer 30 minutes a day.                                     │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+projects: prj-01                                                                                              
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ prj-01.b1 │  6.75 │      3 │ 2.00 │ 0.13 │ Open-source Go CLI for inspecting Kafka consumer lag, with      │
+│           │       │        │      │      │ 1,400 GitHub stars.                                             │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+skills: Go (158.6), REST APIs (129.2), Python (110.5), PostgreSQL (82.6), OpenAPI (48.0), gRPC (36.1), Apache 
+Kafka (20.1), Kubernetes (12.0), Terraform (6.4), AWS (6.4), Redis (6.3), Docker (4.9), Prometheus (3.6)
+12 bullets selected, 0 items dropped

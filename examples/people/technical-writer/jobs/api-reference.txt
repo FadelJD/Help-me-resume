@@ -1,0 +1,13 @@
+Technical Writer, API Reference - Gridmoor Payments (fictional), Remote
+
+Our API reference is generated from OpenAPI specs and read by thousands of developers a day.
+
+You will:
+- Own the API reference for 200+ REST endpoints, generated from OpenAPI specs.
+- Write and test code samples in Python and JavaScript for every endpoint.
+- Keep reference docs in Git with a docs-as-code workflow and review on every pull request.
+- Document request, response and error formats precisely.
+
+You have:
+- Experience writing API reference documentation for developers.
+- Comfort reading code and OpenAPI specs.

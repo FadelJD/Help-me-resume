@@ -1,0 +1,19 @@
+# Weights skills and section order for technical writing roles. Holds no facts about the person.
+name = "technical-writer"
+title_line = "Technical Writer"
+sections = ["experience", "skills", "projects", "education"]
+
+[skill_weights]
+docs = 2.0
+apiref = 1.8
+tutorials = 1.8
+onboarding = 1.6
+dac = 1.5
+openapi = 1.4
+md = 1.2
+style = 1.2
+ux = 1.2
+git = 1.0
+py = 1.0
+js = 1.0
+analytics = 1.0

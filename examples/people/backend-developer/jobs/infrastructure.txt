@@ -1,0 +1,14 @@
+Backend Infrastructure Engineer - Stonegate Health Cloud (fictional), Hybrid
+
+We are moving our platform off VMs and need an engineer who writes backend code and runs it.
+
+You will:
+- Run services on Kubernetes and manage AWS infrastructure with Terraform.
+- Own Prometheus monitoring, alerting and SLO dashboards; reduce mean time to recovery.
+- Containerise services with Docker and keep hosting cost under control.
+- Migrate legacy services from VMs to Kubernetes.
+
+You have:
+- Hands-on Kubernetes, Terraform and AWS in production.
+- Backend experience in Go or Python.
+- On-call experience and a habit of measuring before optimising.

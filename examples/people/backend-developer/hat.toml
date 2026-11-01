@@ -1,0 +1,19 @@
+# Weights skills and section order for backend roles. Holds no facts about the person.
+name = "backend-developer"
+title_line = "Backend Developer"
+sections = ["experience", "projects", "skills", "education"]
+
+[skill_weights]
+go = 2.0
+py = 1.8
+pg = 1.6
+rest = 1.5
+grpc = 1.4
+kafka = 1.4
+openapi = 1.2
+redis = 1.2
+docker = 1.2
+k8s = 1.2
+tf = 1.0
+aws = 1.0
+prom = 1.0

@@ -1,0 +1,105 @@
+# profile.cv.txt  -  fictional data analyst. Sample data only; no real person or company.
+person:
+  name: Noor Haddad
+  email: noor.haddad@example.com
+  phone: +44 7700 900000
+  location: Leeds, UK
+  links: [github.com/noorhaddad-example, linkedin.com/in/noorhaddad-example]
+
+skills:
+  sql: SQL
+  py: Python
+  pandas: pandas
+  tableau: Tableau
+  pbi: Power BI
+  excel: Excel
+  stats: Statistics
+  ab: A/B testing
+  r: R
+  dbt: dbt
+  bq: BigQuery
+  viz: Data visualisation
+  forecast: Forecasting
+
+experience:
+  - id: exp-01
+    title: Senior Data Analyst
+    org: Hollowfield Retail Group
+    location: Leeds, UK
+    start: 2023-01
+    end: present
+    tags: [sql, tableau]
+    bullets:
+      - id: b1
+        text: Built 12 Tableau dashboards on BigQuery used weekly by 200 store managers.
+        skills: [tableau, bq, viz]
+        weight: 5
+      - id: b2
+        text: Designed and analysed 30 A/B tests on checkout, finding changes worth 4% more revenue.
+        skills: [ab, stats, py]
+        weight: 5
+      - id: b3
+        text: Modelled sales tables in dbt, cutting dashboard refresh time from 40 to 6 minutes.
+        skills: [dbt, sql, bq]
+        weight: 4
+      - id: b4
+        text: Built a weekly demand forecast in Python with 8% mean error across 1,500 products.
+        skills: [forecast, py, pandas]
+        weight: 4
+  - id: exp-02
+    title: Data Analyst
+    org: Saltmarsh Insurance
+    location: Manchester, UK
+    start: 2020-08
+    end: 2022-12
+    tags: [sql, pbi]
+    bullets:
+      - id: b1
+        text: Replaced 25 monthly Excel reports with one Power BI dashboard for the claims team.
+        skills: [pbi, excel, viz]
+        weight: 4
+      - id: b2
+        text: Used regression in R to find the 5 factors behind 70% of late claims.
+        skills: [r, stats]
+        weight: 4
+      - id: b3
+        text: Wrote SQL pipelines joining 6 source systems into one claims table.
+        skills: [sql]
+        weight: 3
+      - id: b4
+        text: Cleaned 3M policy records with pandas, raising match rates from 81% to 97%.
+        skills: [pandas, py]
+        weight: 3
+  - id: exp-03
+    title: Junior Analyst
+    org: Brackenridge Market Research
+    location: Manchester, UK
+    start: 2018-09
+    end: 2020-07
+    tags: [excel]
+    bullets:
+      - id: b1
+        text: Built survey reporting dashboards in Excel for 40 client studies a year.
+        skills: [excel, viz]
+        weight: 2
+      - id: b2
+        text: Ran significance tests on survey samples of up to 10,000 respondents.
+        skills: [stats]
+        weight: 3
+
+projects:
+  - id: prj-01
+    name: Ridership explorer
+    url: github.com/noorhaddad-example/ridership-explorer
+    bullets:
+      - id: b1
+        text: Python and pandas notebook charting 5 years of city bus ridership, featured in a local data newsletter.
+        skills: [py, pandas, viz]
+        weight: 2
+
+education:
+  - id: edu-01
+    degree: B.Sc. Statistics
+    org: Riverside Metropolitan University
+    start: 2015-09
+    end: 2018-06

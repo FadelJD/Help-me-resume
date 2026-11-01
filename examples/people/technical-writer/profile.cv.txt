@@ -1,0 +1,109 @@
+# profile.cv.txt  -  fictional technical writer. Sample data only; no real person or company.
+person:
+  name: Elena Vasquez-Hart
+  email: elena.vh@example.org
+  phone: +34 600 000 000
+  location: Valencia, ES
+  links: [github.com/evh-docs-example, linkedin.com/in/evh-example]
+
+skills:
+  docs: Technical writing
+  apiref: API reference documentation
+  openapi: OpenAPI
+  md: Markdown
+  dac: Docs-as-code
+  git: Git
+  py: Python
+  js: JavaScript
+  ux: UX writing
+  tutorials: Tutorials
+  onboarding: Developer onboarding
+  style: Style guides
+  analytics: Content analytics
+
+experience:
+  - id: exp-01
+    title: Senior Technical Writer
+    org: Quillstone Cloud
+    location: Valencia, ES
+    start: 2022-09
+    end: present
+    tags: [docs, apiref]
+    bullets:
+      - id: b1
+        text: Rebuilt the API reference for 180 endpoints from OpenAPI specs, regenerated on every release.
+        skills: [apiref, openapi, dac]
+        weight: 5
+      - id: b2
+        text: Wrote a 6-part getting-started tutorial series that lifted trial-to-paid conversion 12%.
+        skills: [tutorials, onboarding, docs]
+        weight: 5
+      - id: b3
+        text: Added runnable Python and JavaScript code samples to every endpoint page, tested in CI.
+        skills: [py, js, apiref]
+        weight: 4
+      - id: b4
+        text: Created the docs style guide adopted by 40 engineers who contribute pages.
+        skills: [style, docs]
+        weight: 3
+  - id: exp-02
+    title: Technical Writer
+    org: Marrowbank Software
+    location: Madrid, ES
+    start: 2020-01
+    end: 2022-08
+    tags: [docs, dac]
+    bullets:
+      - id: b1
+        text: Moved 650 wiki pages to a Markdown docs-as-code site in Git, with review on every pull request.
+        skills: [md, dac, git]
+        weight: 4
+      - id: b2
+        text: Designed a first-week onboarding path for new developers, cutting support tickets from new accounts 30%.
+        skills: [onboarding, tutorials]
+        weight: 4
+      - id: b3
+        text: Rewrote error messages and interface text across 3 products with the design team.
+        skills: [ux]
+        weight: 3
+      - id: b4
+        text: Set up page analytics to find the 20 least helpful pages, then rewrote each one.
+        skills: [analytics, docs]
+        weight: 2
+  - id: exp-03
+    title: Documentation Specialist
+    org: Tallowbrook Instruments
+    location: Madrid, ES
+    start: 2017-06
+    end: 2019-12
+    tags: [docs]
+    bullets:
+      - id: b1
+        text: Wrote installation and user manuals for 8 lab instruments shipped to 15 countries.
+        skills: [docs]
+        weight: 3
+      - id: b2
+        text: Documented a serial command API with 90 commands and a worked example for each.
+        skills: [apiref]
+        weight: 3
+      - id: b3
+        text: Cut translation costs 25% with a reusable Markdown glossary of 400 terms.
+        skills: [md, style]
+        weight: 2
+
+projects:
+  - id: prj-01
+    name: plainspoken
+    url: github.com/evh-docs-example/plainspoken
+    bullets:
+      - id: b1
+        text: Open-source prose linting rule pack with 60 checks, used by 30 docs teams.
+        skills: [style, git]
+        weight: 3
+
+education:
+  - id: edu-01
+    degree: B.A. English and Linguistics
+    org: Eastmoor University
+    start: 2013-09
+    end: 2017-06

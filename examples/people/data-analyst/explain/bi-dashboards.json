@@ -1,0 +1,250 @@
+{
+  "hat": "data-analyst",
+  "job": "examples/people/data-analyst/jobs/bi-dashboards.txt",
+  "sections": [
+    "experience",
+    "skills",
+    "projects",
+    "education"
+  ],
+  "max_bullets_per_role": 5,
+  "items": [
+    {
+      "id": "exp-01",
+      "section": "experience",
+      "bullets": [
+        {
+          "id": "exp-01.b3",
+          "score": 16.0,
+          "weight": 4.0,
+          "hat": 2.0,
+          "job": 1.0,
+          "text": "Modelled sales tables in dbt, cutting dashboard refresh time from 40 to 6 minutes."
+        },
+        {
+          "id": "exp-01.b1",
+          "score": 14.9722,
+          "weight": 5.0,
+          "hat": 1.5,
+          "job": 0.9963,
+          "text": "Built 12 Tableau dashboards on BigQuery used weekly by 200 store managers."
+        },
+        {
+          "id": "exp-01.b2",
+          "score": 8.0,
+          "weight": 5.0,
+          "hat": 1.6,
+          "job": 0.0,
+          "text": "Designed and analysed 30 A/B tests on checkout, finding changes worth 4% more revenue."
+        },
+        {
+          "id": "exp-01.b4",
+          "score": 6.4,
+          "weight": 4.0,
+          "hat": 1.6,
+          "job": 0.0,
+          "text": "Built a weekly demand forecast in Python with 8% mean error across 1,500 products."
+        }
+      ]
+    },
+    {
+      "id": "exp-02",
+      "section": "experience",
+      "bullets": [
+        {
+          "id": "exp-02.b1",
+          "score": 11.4702,
+          "weight": 4.0,
+          "hat": 1.5,
+          "job": 0.9117,
+          "text": "Replaced 25 monthly Excel reports with one Power BI dashboard for the claims team."
+        },
+        {
+          "id": "exp-02.b3",
+          "score": 7.6728,
+          "weight": 3.0,
+          "hat": 2.0,
+          "job": 0.2788,
+          "text": "Wrote SQL pipelines joining 6 source systems into one claims table."
+        },
+        {
+          "id": "exp-02.b2",
+          "score": 6.4,
+          "weight": 4.0,
+          "hat": 1.6,
+          "job": 0.0,
+          "text": "Used regression in R to find the 5 factors behind 70% of late claims."
+        },
+        {
+          "id": "exp-02.b4",
+          "score": 4.8,
+          "weight": 3.0,
+          "hat": 1.6,
+          "job": 0.0,
+          "text": "Cleaned 3M policy records with pandas, raising match rates from 81% to 97%."
+        }
+      ]
+    },
+    {
+      "id": "exp-03",
+      "section": "experience",
+      "bullets": [
+        {
+          "id": "exp-03.b2",
+          "score": 4.8,
+          "weight": 3.0,
+          "hat": 1.6,
+          "job": 0.0,
+          "text": "Ran significance tests on survey samples of up to 10,000 respondents."
+        },
+        {
+          "id": "exp-03.b1",
+          "score": 4.3574,
+          "weight": 2.0,
+          "hat": 1.4,
+          "job": 0.5562,
+          "text": "Built survey reporting dashboards in Excel for 40 client studies a year."
+        }
+      ]
+    },
+    {
+      "id": "prj-01",
+      "section": "projects",
+      "bullets": [
+        {
+          "id": "prj-01.b1",
+          "score": 3.6755,
+          "weight": 2.0,
+          "hat": 1.6,
+          "job": 0.1486,
+          "text": "Python and pandas notebook charting 5 years of city bus ridership, featured in a local data newsletter."
+        }
+      ]
+    },
+    {
+      "id": "edu-01",
+      "section": "education",
+      "bullets": []
+    }
+  ],
+  "skills": [
+    {
+      "id": "viz",
+      "name": "Data visualisation",
+      "score": 96.5308,
+      "evidence": [
+        "exp-01.b1",
+        "exp-02.b1",
+        "exp-03.b1",
+        "prj-01.b1"
+      ]
+    },
+    {
+      "id": "sql",
+      "name": "SQL",
+      "score": 94.6912,
+      "evidence": [
+        "exp-01.b3",
+        "exp-02.b3"
+      ]
+    },
+    {
+      "id": "bq",
+      "name": "BigQuery",
+      "score": 80.5277,
+      "evidence": [
+        "exp-01.b3",
+        "exp-01.b1"
+      ]
+    },
+    {
+      "id": "tableau",
+      "name": "Tableau",
+      "score": 44.9166,
+      "evidence": [
+        "exp-01.b1"
+      ]
+    },
+    {
+      "id": "dbt",
+      "name": "dbt",
+      "score": 41.6,
+      "evidence": [
+        "exp-01.b3"
+      ]
+    },
+    {
+      "id": "py",
+      "name": "Python",
+      "score": 36.6008,
+      "evidence": [
+        "exp-01.b2",
+        "exp-01.b4",
+        "exp-02.b4",
+        "prj-01.b1"
+      ]
+    },
+    {
+      "id": "pbi",
+      "name": "Power BI",
+      "score": 34.4106,
+      "evidence": [
+        "exp-02.b1"
+      ]
+    },
+    {
+      "id": "excel",
+      "name": "Excel",
+      "score": 31.6552,
+      "evidence": [
+        "exp-02.b1",
+        "exp-03.b1"
+      ]
+    },
+    {
+      "id": "stats",
+      "name": "Statistics",
+      "score": 30.72,
+      "evidence": [
+        "exp-01.b2",
+        "exp-02.b2",
+        "exp-03.b2"
+      ]
+    },
+    {
+      "id": "pandas",
+      "name": "pandas",
+      "score": 19.3381,
+      "evidence": [
+        "exp-01.b4",
+        "exp-02.b4",
+        "prj-01.b1"
+      ]
+    },
+    {
+      "id": "ab",
+      "name": "A/B testing",
+      "score": 12.0,
+      "evidence": [
+        "exp-01.b2"
+      ]
+    },
+    {
+      "id": "r",
+      "name": "R",
+      "score": 7.68,
+      "evidence": [
+        "exp-02.b2"
+      ]
+    },
+    {
+      "id": "forecast",
+      "name": "Forecasting",
+      "score": 7.68,
+      "evidence": [
+        "exp-01.b4"
+      ]
+    }
+  ],
+  "dropped": []
+}

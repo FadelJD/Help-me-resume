@@ -1,0 +1,257 @@
+{
+  "hat": "technical-writer",
+  "job": "examples/people/technical-writer/jobs/tutorials-onboarding.txt",
+  "sections": [
+    "experience",
+    "skills",
+    "projects",
+    "education"
+  ],
+  "max_bullets_per_role": 5,
+  "items": [
+    {
+      "id": "exp-01",
+      "section": "experience",
+      "bullets": [
+        {
+          "id": "exp-01.b2",
+          "score": 17.093,
+          "weight": 5.0,
+          "hat": 2.0,
+          "job": 0.7093,
+          "text": "Wrote a 6-part getting-started tutorial series that lifted trial-to-paid conversion 12%."
+        },
+        {
+          "id": "exp-01.b1",
+          "score": 9.0,
+          "weight": 5.0,
+          "hat": 1.8,
+          "job": 0.0,
+          "text": "Rebuilt the API reference for 180 endpoints from OpenAPI specs, regenerated on every release."
+        },
+        {
+          "id": "exp-01.b4",
+          "score": 7.572,
+          "weight": 3.0,
+          "hat": 2.0,
+          "job": 0.262,
+          "text": "Created the docs style guide adopted by 40 engineers who contribute pages."
+        },
+        {
+          "id": "exp-01.b3",
+          "score": 7.5096,
+          "weight": 4.0,
+          "hat": 1.8,
+          "job": 0.043,
+          "text": "Added runnable Python and JavaScript code samples to every endpoint page, tested in CI."
+        }
+      ]
+    },
+    {
+      "id": "exp-02",
+      "section": "experience",
+      "bullets": [
+        {
+          "id": "exp-02.b2",
+          "score": 14.4,
+          "weight": 4.0,
+          "hat": 1.8,
+          "job": 1.0,
+          "text": "Designed a first-week onboarding path for new developers, cutting support tickets from new accounts 30%."
+        },
+        {
+          "id": "exp-02.b3",
+          "score": 6.3666,
+          "weight": 3.0,
+          "hat": 1.2,
+          "job": 0.7685,
+          "text": "Rewrote error messages and interface text across 3 products with the design team."
+        },
+        {
+          "id": "exp-02.b1",
+          "score": 6.258,
+          "weight": 4.0,
+          "hat": 1.5,
+          "job": 0.043,
+          "text": "Moved 650 wiki pages to a Markdown docs-as-code site in Git, with review on every pull request."
+        },
+        {
+          "id": "exp-02.b4",
+          "score": 5.8876,
+          "weight": 2.0,
+          "hat": 2.0,
+          "job": 0.4719,
+          "text": "Set up page analytics to find the 20 least helpful pages, then rewrote each one."
+        }
+      ]
+    },
+    {
+      "id": "exp-03",
+      "section": "experience",
+      "bullets": [
+        {
+          "id": "exp-03.b1",
+          "score": 6.5772,
+          "weight": 3.0,
+          "hat": 2.0,
+          "job": 0.0962,
+          "text": "Wrote installation and user manuals for 8 lab instruments shipped to 15 countries."
+        },
+        {
+          "id": "exp-03.b2",
+          "score": 5.4,
+          "weight": 3.0,
+          "hat": 1.8,
+          "job": 0.0,
+          "text": "Documented a serial command API with 90 commands and a worked example for each."
+        },
+        {
+          "id": "exp-03.b3",
+          "score": 2.6254,
+          "weight": 2.0,
+          "hat": 1.2,
+          "job": 0.0939,
+          "text": "Cut translation costs 25% with a reusable Markdown glossary of 400 terms."
+        }
+      ]
+    },
+    {
+      "id": "prj-01",
+      "section": "projects",
+      "bullets": [
+        {
+          "id": "prj-01.b1",
+          "score": 3.9251,
+          "weight": 3.0,
+          "hat": 1.2,
+          "job": 0.0903,
+          "text": "Open-source prose linting rule pack with 60 checks, used by 30 docs teams."
+        }
+      ]
+    },
+    {
+      "id": "edu-01",
+      "section": "education",
+      "bullets": []
+    }
+  ],
+  "skills": [
+    {
+      "id": "docs",
+      "name": "Technical writing",
+      "score": 148.5192,
+      "evidence": [
+        "exp-01.b2",
+        "exp-01.b4",
+        "exp-02.b4",
+        "exp-03.b1"
+      ]
+    },
+    {
+      "id": "tutorials",
+      "name": "Tutorials",
+      "score": 113.3748,
+      "evidence": [
+        "exp-01.b2",
+        "exp-02.b2"
+      ]
+    },
+    {
+      "id": "onboarding",
+      "name": "Developer onboarding",
+      "score": 100.7776,
+      "evidence": [
+        "exp-01.b2",
+        "exp-02.b2"
+      ]
+    },
+    {
+      "id": "apiref",
+      "name": "API reference documentation",
+      "score": 39.4373,
+      "evidence": [
+        "exp-01.b1",
+        "exp-01.b3",
+        "exp-03.b2"
+      ]
+    },
+    {
+      "id": "style",
+      "name": "Style guides",
+      "score": 33.894,
+      "evidence": [
+        "exp-01.b4",
+        "exp-03.b3",
+        "prj-01.b1"
+      ]
+    },
+    {
+      "id": "dac",
+      "name": "Docs-as-code",
+      "score": 22.887,
+      "evidence": [
+        "exp-01.b1",
+        "exp-02.b1"
+      ]
+    },
+    {
+      "id": "ux",
+      "name": "UX writing",
+      "score": 15.2798,
+      "evidence": [
+        "exp-02.b3"
+      ]
+    },
+    {
+      "id": "openapi",
+      "name": "OpenAPI",
+      "score": 12.6,
+      "evidence": [
+        "exp-01.b1"
+      ]
+    },
+    {
+      "id": "analytics",
+      "name": "Content analytics",
+      "score": 11.7752,
+      "evidence": [
+        "exp-02.b4"
+      ]
+    },
+    {
+      "id": "md",
+      "name": "Markdown",
+      "score": 10.6601,
+      "evidence": [
+        "exp-02.b1",
+        "exp-03.b3"
+      ]
+    },
+    {
+      "id": "git",
+      "name": "Git",
+      "score": 10.1831,
+      "evidence": [
+        "exp-02.b1",
+        "prj-01.b1"
+      ]
+    },
+    {
+      "id": "py",
+      "name": "Python",
+      "score": 7.5096,
+      "evidence": [
+        "exp-01.b3"
+      ]
+    },
+    {
+      "id": "js",
+      "name": "JavaScript",
+      "score": 7.5096,
+      "evidence": [
+        "exp-01.b3"
+      ]
+    }
+  ],
+  "dropped": []
+}

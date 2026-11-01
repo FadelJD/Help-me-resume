@@ -1,0 +1,247 @@
+{
+  "hat": "marketing-manager",
+  "job": "examples/people/marketing-manager/jobs/brand-content.txt",
+  "sections": [
+    "experience",
+    "skills",
+    "projects",
+    "education"
+  ],
+  "max_bullets_per_role": 5,
+  "items": [
+    {
+      "id": "exp-01",
+      "section": "experience",
+      "bullets": [
+        {
+          "id": "exp-01.b1",
+          "score": 16.0,
+          "weight": 5.0,
+          "hat": 1.6,
+          "job": 1.0,
+          "text": "Led a brand refresh across packaging, website and social channels, lifting aided brand awareness from 18% to 31%."
+        },
+        {
+          "id": "exp-01.b2",
+          "score": 8.7752,
+          "weight": 5.0,
+          "hat": 1.6,
+          "job": 0.0969,
+          "text": "Ran paid search and paid social on a 1.2M EUR annual budget at a 4.1x return on ad spend."
+        },
+        {
+          "id": "exp-01.b3",
+          "score": 6.6906,
+          "weight": 4.0,
+          "hat": 1.6,
+          "job": 0.0454,
+          "text": "Cut cost per acquisition 28% through landing page tests and conversion rate work."
+        },
+        {
+          "id": "exp-01.b4",
+          "score": 5.2164,
+          "weight": 3.0,
+          "hat": 1.4,
+          "job": 0.242,
+          "text": "Managed a team of 5 across content, design and paid media."
+        }
+      ]
+    },
+    {
+      "id": "exp-02",
+      "section": "experience",
+      "bullets": [
+        {
+          "id": "exp-02.b1",
+          "score": 12.657,
+          "weight": 5.0,
+          "hat": 1.5,
+          "job": 0.6876,
+          "text": "Built an editorial calendar of 300 articles a year that grew organic traffic from 40k to 210k monthly visits."
+        },
+        {
+          "id": "exp-02.b3",
+          "score": 8.5344,
+          "weight": 3.0,
+          "hat": 1.6,
+          "job": 0.778,
+          "text": "Placed 25 stories in travel press through a small PR programme."
+        },
+        {
+          "id": "exp-02.b2",
+          "score": 5.4621,
+          "weight": 4.0,
+          "hat": 1.3,
+          "job": 0.0504,
+          "text": "Grew the email list from 15k to 90k subscribers with segmented CRM journeys."
+        }
+      ]
+    },
+    {
+      "id": "exp-03",
+      "section": "experience",
+      "bullets": [
+        {
+          "id": "exp-03.b1",
+          "score": 6.5461,
+          "weight": 3.0,
+          "hat": 1.5,
+          "job": 0.4547,
+          "text": "Ran social media channels for 12 studios, tripling followers in 18 months."
+        },
+        {
+          "id": "exp-03.b2",
+          "score": 4.1865,
+          "weight": 2.0,
+          "hat": 1.5,
+          "job": 0.3955,
+          "text": "Set up the first marketing analytics reports, tracking leads from 6 channels."
+        },
+        {
+          "id": "exp-03.b3",
+          "score": 3.576,
+          "weight": 2.0,
+          "hat": 1.6,
+          "job": 0.1175,
+          "text": "Launched local paid social campaigns that brought in 1,100 trial sign-ups."
+        }
+      ]
+    },
+    {
+      "id": "prj-01",
+      "section": "projects",
+      "bullets": [
+        {
+          "id": "prj-01.b1",
+          "score": 3.3592,
+          "weight": 2.0,
+          "hat": 1.4,
+          "job": 0.1997,
+          "text": "Volunteer workshops teaching SEO and email marketing to 60 local business owners."
+        }
+      ]
+    },
+    {
+      "id": "edu-01",
+      "section": "education",
+      "bullets": []
+    }
+  ],
+  "skills": [
+    {
+      "id": "brand",
+      "name": "Brand strategy",
+      "score": 78.5101,
+      "evidence": [
+        "exp-01.b1",
+        "exp-02.b3"
+      ]
+    },
+    {
+      "id": "social",
+      "name": "Social media",
+      "score": 58.6199,
+      "evidence": [
+        "exp-01.b1",
+        "exp-03.b1"
+      ]
+    },
+    {
+      "id": "content",
+      "name": "Content marketing",
+      "score": 57.6093,
+      "evidence": [
+        "exp-02.b1",
+        "exp-03.b1"
+      ]
+    },
+    {
+      "id": "seo",
+      "name": "SEO",
+      "score": 44.8454,
+      "evidence": [
+        "exp-02.b1",
+        "prj-01.b1"
+      ]
+    },
+    {
+      "id": "psocial",
+      "name": "Paid social",
+      "score": 39.5238,
+      "evidence": [
+        "exp-01.b2",
+        "exp-03.b3"
+      ]
+    },
+    {
+      "id": "analytics",
+      "name": "Marketing analytics",
+      "score": 32.6313,
+      "evidence": [
+        "exp-01.b3",
+        "exp-03.b2"
+      ]
+    },
+    {
+      "id": "lead",
+      "name": "Team leadership",
+      "score": 29.703,
+      "evidence": [
+        "exp-01.b1",
+        "exp-01.b4"
+      ]
+    },
+    {
+      "id": "ppc",
+      "name": "Paid search",
+      "score": 24.7453,
+      "evidence": [
+        "exp-01.b2",
+        "exp-01.b3"
+      ]
+    },
+    {
+      "id": "email",
+      "name": "Email marketing",
+      "score": 22.9354,
+      "evidence": [
+        "exp-02.b2",
+        "prj-01.b1"
+      ]
+    },
+    {
+      "id": "pr",
+      "name": "Public relations",
+      "score": 18.7757,
+      "evidence": [
+        "exp-02.b3"
+      ]
+    },
+    {
+      "id": "budget",
+      "name": "Budget management",
+      "score": 12.2853,
+      "evidence": [
+        "exp-01.b2"
+      ]
+    },
+    {
+      "id": "crm",
+      "name": "CRM",
+      "score": 11.5783,
+      "evidence": [
+        "exp-02.b2",
+        "exp-03.b2"
+      ]
+    },
+    {
+      "id": "cro",
+      "name": "Conversion rate optimisation",
+      "score": 10.0359,
+      "evidence": [
+        "exp-01.b3"
+      ]
+    }
+  ],
+  "dropped": []
+}

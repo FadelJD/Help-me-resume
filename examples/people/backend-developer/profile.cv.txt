@@ -1,0 +1,109 @@
+# profile.cv.txt  -  fictional backend developer. Sample data only; no real person or company.
+person:
+  name: Tomasz Lindqvist
+  email: tomasz.lindqvist@example.com
+  phone: +48 500 000 000
+  location: Gdansk, PL
+  links: [github.com/tlindqvist-example, linkedin.com/in/tlindqvist-example]
+
+skills:
+  go: Go
+  py: Python
+  pg: PostgreSQL
+  redis: Redis
+  kafka: Apache Kafka
+  grpc: gRPC
+  rest: REST APIs
+  openapi: OpenAPI
+  docker: Docker
+  k8s: Kubernetes
+  tf: Terraform
+  aws: AWS
+  prom: Prometheus
+
+experience:
+  - id: exp-01
+    title: Senior Backend Engineer
+    org: Brightharbor Logistics
+    location: Gdansk, PL
+    start: 2023-03
+    end: present
+    tags: [go, k8s]
+    bullets:
+      - id: b1
+        text: Designed a public REST API in Go with OpenAPI 3 specs, serving 40M requests a month to 300 partner integrations.
+        skills: [rest, openapi, go]
+        weight: 5
+      - id: b2
+        text: Migrated 22 services from VMs to Kubernetes on Terraform-managed AWS, cutting hosting cost 35%.
+        skills: [k8s, tf, aws]
+        weight: 5
+      - id: b3
+        text: Introduced gRPC between internal services, reducing p99 latency from 480 ms to 90 ms.
+        skills: [grpc, go]
+        weight: 4
+      - id: b4
+        text: Built Prometheus alerting and SLO dashboards that cut mean time to recovery from 3 hours to 25 minutes.
+        skills: [prom, k8s]
+        weight: 3
+  - id: exp-02
+    title: Backend Developer
+    org: Copperline Payments
+    location: Warsaw, PL
+    start: 2020-06
+    end: 2023-02
+    tags: [py, pg]
+    bullets:
+      - id: b1
+        text: Built an idempotent payments API in Python and PostgreSQL processing 1.2M transactions a day.
+        skills: [py, pg, rest]
+        weight: 5
+      - id: b2
+        text: Replaced nightly batch jobs with Kafka event streams, delivering settlement data 6 hours sooner.
+        skills: [kafka, py]
+        weight: 4
+      - id: b3
+        text: Added Redis caching to the account lookup path, cutting database load 60%.
+        skills: [redis, pg]
+        weight: 3
+      - id: b4
+        text: Containerised 9 services with Docker and wrote the local setup used by 25 engineers.
+        skills: [docker]
+        weight: 2
+  - id: exp-03
+    title: Junior Software Developer
+    org: Fernwood Analytics
+    location: Warsaw, PL
+    start: 2018-07
+    end: 2020-05
+    tags: [py]
+    bullets:
+      - id: b1
+        text: Wrote 14 REST endpoints in Python for a reporting product used by 120 clients.
+        skills: [py, rest]
+        weight: 3
+      - id: b2
+        text: Tuned slow PostgreSQL queries, bringing the 10 heaviest reports under 2 seconds.
+        skills: [pg]
+        weight: 3
+      - id: b3
+        text: Automated test database provisioning with Docker, saving each developer 30 minutes a day.
+        skills: [docker]
+        weight: 1
+
+projects:
+  - id: prj-01
+    name: queuectl
+    url: github.com/tlindqvist-example/queuectl
+    bullets:
+      - id: b1
+        text: Open-source Go CLI for inspecting Kafka consumer lag, with 1,400 GitHub stars.
+        skills: [go, kafka]
+        weight: 3
+
+education:
+  - id: edu-01
+    degree: B.Sc. Computer Science
+    org: Lakeside Technical University
+    start: 2014-10
+    end: 2018-06

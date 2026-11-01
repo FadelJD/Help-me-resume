@@ -1,0 +1,47 @@
+hat: marketing-manager   job: examples/people/marketing-manager/jobs/performance-marketing.txt   max bullets 
+per role: 5
+score = weight x hat x (1 + job)
+experience: exp-01                                                                                            
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ exp-01.b2 │ 13.17 │      5 │ 1.60 │ 0.65 │ Ran paid search and paid social on a 1.2M EUR annual budget at  │
+│           │       │        │      │      │ a 4.1x return on ad spend.                                      │
+│ exp-01.b3 │ 12.80 │      4 │ 1.60 │ 1.00 │ Cut cost per acquisition 28% through landing page tests and     │
+│           │       │        │      │      │ conversion rate work.                                           │
+│ exp-01.b1 │  8.84 │      5 │ 1.60 │ 0.11 │ Led a brand refresh across packaging, website and social        │
+│           │       │        │      │      │ channels, lifting aided brand awareness from 18% to 31%.        │
+│ exp-01.b4 │  4.57 │      3 │ 1.40 │ 0.09 │ Managed a team of 5 across content, design and paid media.      │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+experience: exp-02                                                                                            
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ exp-02.b1 │  7.76 │      5 │ 1.50 │ 0.04 │ Built an editorial calendar of 300 articles a year that grew    │
+│           │       │        │      │      │ organic traffic from 40k to 210k monthly visits.                │
+│ exp-02.b2 │  5.39 │      4 │ 1.30 │ 0.04 │ Grew the email list from 15k to 90k subscribers with segmented  │
+│           │       │        │      │      │ CRM journeys.                                                   │
+│ exp-02.b3 │  4.80 │      3 │ 1.60 │ 0.00 │ Placed 25 stories in travel press through a small PR programme. │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+experience: exp-03                                                                                            
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ exp-03.b1 │  5.20 │      3 │ 1.50 │ 0.16 │ Ran social media channels for 12 studios, tripling followers in │
+│           │       │        │      │      │ 18 months.                                                      │
+│ exp-03.b2 │  4.14 │      2 │ 1.50 │ 0.38 │ Set up the first marketing analytics reports, tracking leads    │
+│           │       │        │      │      │ from 6 channels.                                                │
+│ exp-03.b3 │  4.02 │      2 │ 1.60 │ 0.26 │ Launched local paid social campaigns that brought in 1,100      │
+│           │       │        │      │      │ trial sign-ups.                                                 │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+projects: prj-01                                                                                              
+┏━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ id        ┃ score ┃ weight ┃  hat ┃  job ┃ text                                                            ┃
+┡━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ prj-01.b1 │  2.95 │      2 │ 1.40 │ 0.05 │ Volunteer workshops teaching SEO and email marketing to 60      │
+│           │       │        │      │      │ local business owners.                                          │
+└───────────┴───────┴────────┴──────┴──────┴─────────────────────────────────────────────────────────────────┘
+skills: Paid search (83.1), Paid social (55.0), Marketing analytics (50.8), Content marketing (38.9), 
+Conversion rate optimisation (38.4), Budget management (36.9), Social media (36.5), Brand strategy (21.8), 
+Email marketing (21.7), Team leadership (18.8), SEO (15.0), CRM (11.4), Public relations (5.3)
+11 bullets selected, 0 items dropped

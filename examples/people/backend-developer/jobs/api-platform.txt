@@ -1,0 +1,14 @@
+Backend Engineer, API Platform - Orbitwell Commerce (fictional), Remote EU
+
+Orbitwell runs the public API that 2,000 merchants and partner integrations build on.
+
+You will:
+- Design and ship public REST APIs in Go, documented with OpenAPI specs.
+- Own partner integrations end to end, from API design to versioning and deprecation.
+- Build idempotent payment and order endpoints backed by PostgreSQL.
+- Define gRPC contracts between internal services.
+
+You have:
+- Production experience designing REST APIs used by external partners.
+- Strong Go or Python, and solid PostgreSQL.
+- Care for API design, latency and backwards compatibility.

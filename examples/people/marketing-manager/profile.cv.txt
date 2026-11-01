@@ -1,0 +1,105 @@
+# profile.cv.txt  -  fictional marketing manager. Sample data only; no real person or company.
+person:
+  name: Sofia Brennan-Ito
+  email: sofia.brennan@example.org
+  phone: +353 85 000 0000
+  location: Dublin, IE
+  links: [linkedin.com/in/sofiabrennan-example, sofiabrennan.example.org]
+
+skills:
+  brand: Brand strategy
+  content: Content marketing
+  seo: SEO
+  social: Social media
+  email: Email marketing
+  ppc: Paid search
+  psocial: Paid social
+  analytics: Marketing analytics
+  cro: Conversion rate optimisation
+  budget: Budget management
+  crm: CRM
+  pr: Public relations
+  lead: Team leadership
+
+experience:
+  - id: exp-01
+    title: Marketing Manager
+    org: Larkspur Home Goods
+    location: Dublin, IE
+    start: 2022-04
+    end: present
+    tags: [brand, ppc, lead]
+    bullets:
+      - id: b1
+        text: Led a brand refresh across packaging, website and social channels, lifting aided brand awareness from 18% to 31%.
+        skills: [brand, social, lead]
+        weight: 5
+      - id: b2
+        text: Ran paid search and paid social on a 1.2M EUR annual budget at a 4.1x return on ad spend.
+        skills: [ppc, psocial, budget]
+        weight: 5
+      - id: b3
+        text: Cut cost per acquisition 28% through landing page tests and conversion rate work.
+        skills: [cro, analytics, ppc]
+        weight: 4
+      - id: b4
+        text: Managed a team of 5 across content, design and paid media.
+        skills: [lead]
+        weight: 3
+  - id: exp-02
+    title: Content Marketing Lead
+    org: Ferncastle Travel
+    location: Galway, IE
+    start: 2019-05
+    end: 2022-03
+    tags: [content, seo]
+    bullets:
+      - id: b1
+        text: Built an editorial calendar of 300 articles a year that grew organic traffic from 40k to 210k monthly visits.
+        skills: [content, seo]
+        weight: 5
+      - id: b2
+        text: Grew the email list from 15k to 90k subscribers with segmented CRM journeys.
+        skills: [email, crm]
+        weight: 4
+      - id: b3
+        text: Placed 25 stories in travel press through a small PR programme.
+        skills: [pr, brand]
+        weight: 3
+  - id: exp-03
+    title: Marketing Coordinator
+    org: Pebblecrest Fitness
+    location: Galway, IE
+    start: 2017-02
+    end: 2019-04
+    tags: [social]
+    bullets:
+      - id: b1
+        text: Ran social media channels for 12 studios, tripling followers in 18 months.
+        skills: [social, content]
+        weight: 3
+      - id: b2
+        text: Set up the first marketing analytics reports, tracking leads from 6 channels.
+        skills: [analytics, crm]
+        weight: 2
+      - id: b3
+        text: Launched local paid social campaigns that brought in 1,100 trial sign-ups.
+        skills: [psocial]
+        weight: 2
+
+projects:
+  - id: prj-01
+    name: Small Business Marketing Clinic
+    url: clinic.example.org
+    bullets:
+      - id: b1
+        text: Volunteer workshops teaching SEO and email marketing to 60 local business owners.
+        skills: [seo, email]
+        weight: 2
+
+education:
+  - id: edu-01
+    degree: B.A. Communications
+    org: Harbourview University
+    start: 2013-09
+    end: 2016-06
