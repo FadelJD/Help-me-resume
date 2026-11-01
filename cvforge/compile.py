@@ -62,7 +62,10 @@ def compile_pdf(
             cmd,
             cwd=tex.parent,
             capture_output=True,
-            text=True,
+            # TeX wraps its terminal and log output at a fixed byte width, which can split a
+            # multi-byte UTF-8 character; decode leniently so that never crashes a build.
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             check=False,
             env=search_env(search),
