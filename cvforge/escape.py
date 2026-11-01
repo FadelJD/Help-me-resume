@@ -23,6 +23,10 @@ _SPECIAL = {
     "<": r"\textless{}",
     ">": r"\textgreater{}",
     "|": r"\textbar{}",
+    # A bullet starting with `[` would become \item's optional argument ("File ended while
+    # scanning use of \@item", found by the escaper fuzz); braces make brackets plain text.
+    "[": "{[}",
+    "]": "{]}",
 }
 _WS = re.compile(r"\s+")
 # Characters with no business in a CV that would break LaTeX or hide text.
@@ -36,7 +40,9 @@ _CONTROL = re.compile(
 # longer than LONG_TOKEN, allow a line break after URL punctuation, and after every LONG_TOKEN
 # characters without one. Not for fields templates may reuse in links (email, link text).
 LONG_TOKEN = 24
-BREAK = r"\allowbreak{}"
+# A break with its own stretch, cancelled when not taken. A bare \allowbreak inside a token has
+# no glue around it, so TeX finds every line infeasible and still overflows (escaper fuzz).
+BREAK = r"\hspace{0pt plus 1fil}\penalty0\hspace{0pt plus -1fil}"
 _BREAK_AFTER = frozenset("/._-?&=#@:,;")
 
 

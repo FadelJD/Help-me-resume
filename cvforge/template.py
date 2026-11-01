@@ -770,31 +770,38 @@ def render(text: str, context: dict[str, Any], file: str) -> str:
 def check_traceability(
     tex: str, emitted: dict[str, str], file: str
 ) -> tuple[set[str], list[Issue]]:
-    """Every line carrying a bullet's text must carry that bullet's `% id:` comment.
+    """Every emitted bullet must sit on a line carrying its own `% id:` comment.
 
-    `emitted` maps qualified bullet id -> escaped text. Returns the ids found in the output.
+    `emitted` maps qualified bullet id -> escaped text; `file` is the output .tex. A bullet counts
+    as found on the line whose id comment names it. It is an error when a bullet's id appears on
+    no line but its text does: that text was emitted without its id. Text that merely repeats
+    elsewhere (the same wording in two roles, a short bullet inside another) is not an error.
+    Returns the ids found in the output.
     """
     issues: list[Issue] = []
     found: set[str] = set()
     lines = tex.splitlines()
+    for line in lines:
+        body, marker, comment = _split_id(line)
+        qid = comment.strip()
+        if marker and qid in emitted and emitted[qid] and emitted[qid] in body:
+            found.add(qid)
     for qid, text in emitted.items():
+        if qid in found or not text:
+            continue
         for idx, line in enumerate(lines):
-            # The id comment is an unescaped "% id:"; user text may contain an escaped "\% id:".
-            body, _, comment = _split_id(line)
-            if text and text in body:
-                if comment.strip() != qid:
-                    issues.append(
-                        Issue(
-                            file=file,
-                            line=idx + 1,
-                            item=qid,
-                            message="output line carries bullet text without a matching "
-                            f"`% id:{qid}` comment.",
-                            fix="end the bullet line in the template with `% id:\\VAR{b.id}`.",
-                        )
+            body, _, _ = _split_id(line)
+            if text in body:
+                issues.append(
+                    Issue(
+                        file=file,
+                        line=idx + 1,
+                        item=qid,
+                        message=f"bullet text is in the output without its `% id:{qid}` comment.",
+                        fix="end the bullet line in the template with `% id:\\VAR{b.id}`.",
                     )
-                else:
-                    found.add(qid)
+                )
+                break
     return found, issues
 
 

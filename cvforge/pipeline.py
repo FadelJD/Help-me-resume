@@ -360,7 +360,8 @@ def render_selection(prep: Prepared, output: Path | None, job_ref: str | None) -
         if si.section in shown_sections
         for sb in si.bullets
     }
-    found, trace_issues = check_traceability(tex, emitted, str(prep.template_path))
+    out_path = output or default_output(cfg, profile, prep.hat)
+    found, trace_issues = check_traceability(tex, emitted, str(out_path))
     if trace_issues:
         raise CVForgeError(trace_issues)
     warnings = list(prep.warnings)
@@ -375,7 +376,6 @@ def render_selection(prep: Prepared, output: Path | None, job_ref: str | None) -
                     fix="the template does not render bullets for this section; that is allowed.",
                 )
             )
-    out_path = output or default_output(cfg, profile, prep.hat)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(tex, encoding="utf-8")
     report = make_report(prep, out_path, job_ref, locale, found, warnings)
