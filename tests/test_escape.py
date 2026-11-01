@@ -9,11 +9,12 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from cvforge.escape import _SPECIAL, escape, escape_url
+from cvforge.escape import _SPECIAL, BREAK, escape, escape_url
 
 from .conftest import FIXTURES
 
 _INVERSE = {v: k for k, v in _SPECIAL.items()}
+_INVERSE[BREAK] = ""  # an invisible line-break opportunity
 _TOKEN = re.compile("|".join(re.escape(v) for v in sorted(_INVERSE, key=len, reverse=True)))
 _BARE = set("\\&%$#_{}~^<>|")
 
@@ -96,3 +97,34 @@ def test_fixture_cases_compile_and_extract(tmp_path: Path) -> None:
     flat = " ".join(text.split())
     for line in lines:
         assert line in flat, line
+
+
+def test_long_tokens_get_break_opportunities() -> None:
+    url = "github.com/jane_doe/a_really_long_repository_name"
+    out = escape(url, breakable=True)
+    assert BREAK in out
+    assert BREAK not in escape(url)  # emails and links may be reused inside URLs
+    assert escape("short words stay as they are") == "short words stay as they are"
+
+
+@pytest.mark.tex
+def test_regression_long_url_is_not_cut_at_the_margin(tmp_path: Path) -> None:
+    # Found by the escaper fuzz: an unbreakable URL ran past the margin and pdftotext lost it.
+    url = "https://example.com/" + "/".join(f"segment_{i:02d}_abcdefgh" for i in range(12))
+    tex = tmp_path / "u.tex"
+    tex.write_text(
+        "\\documentclass{article}\n\\usepackage[T1]{fontenc}\n\\usepackage{lmodern}\n"
+        f"\\pagestyle{{empty}}\\begin{{document}}\n{escape(url, breakable=True)}\n"
+        "\\end{document}\n",
+        encoding="utf-8",
+    )
+    subprocess.run(
+        ["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error", tex.name],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+    )
+    text = subprocess.run(
+        ["pdftotext", str(tmp_path / "u.pdf"), "-"], capture_output=True, text=True, check=True
+    ).stdout
+    assert "".join(text.split()) == url

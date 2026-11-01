@@ -779,7 +779,8 @@ def check_traceability(
     lines = tex.splitlines()
     for qid, text in emitted.items():
         for idx, line in enumerate(lines):
-            body, _, comment = line.partition("% id:")
+            # The id comment is an unescaped "% id:"; user text may contain an escaped "\% id:".
+            body, _, comment = _split_id(line)
             if text and text in body:
                 if comment.strip() != qid:
                     issues.append(
@@ -798,7 +799,18 @@ def check_traceability(
 
 
 def ids_in_tex(tex: str) -> list[str]:
-    return re.findall(r"% id:([A-Za-z0-9-]+\.[A-Za-z0-9-]+)\s*$", tex, flags=re.MULTILINE)
+    return re.findall(r"(?<!\\)% id:([A-Za-z0-9-]+\.[A-Za-z0-9-]+)\s*$", tex, flags=re.MULTILINE)
+
+
+_ID_COMMENT = re.compile(r"(?<!\\)% id:")
+
+
+def _split_id(line: str) -> tuple[str, str, str]:
+    """(text before, marker, comment after) for the first unescaped `% id:` on a line."""
+    m = _ID_COMMENT.search(line)
+    if m is None:
+        return line, "", ""
+    return line[: m.start()], m.group(0), line[m.end() :]
 
 
 def header_of_tex(tex: str, file: str) -> Header | None:
@@ -836,7 +848,7 @@ def build_context(
         return [
             {
                 "id": sb.qid,
-                "text": escape(sb.text),
+                "text": escape(sb.text, breakable=True),
                 "skills": [escape(profile.skills[s]) for s in sb.bullet.skills],
             }
             for sb in item.bullets

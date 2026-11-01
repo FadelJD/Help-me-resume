@@ -263,3 +263,12 @@ def test_lint_icon_package_used() -> None:
 def test_lint_fontspec_accepts_commonoff() -> None:
     src = "\\usepackage{fontspec}\n\\setmainfont{Lato}[Ligatures=CommonOff]\n"
     assert not any("fontspec" in i.message for i in lint(src, "x"))
+
+
+def test_regression_user_text_containing_id_marker() -> None:
+    # Found by the escaper fuzz: text "50% id:x" escapes to "50\\% id:x", which the
+    # traceability split mistook for the id comment.
+    tex = "\\item Cut 50\\% id:x of costs % id:exp-01.b1\n"
+    found, issues = check_traceability(tex, {"exp-01.b1": "Cut 50\\% id:x of costs"}, "t")
+    assert issues == [] and found == {"exp-01.b1"}
+    assert ids_in_tex(tex) == ["exp-01.b1"]

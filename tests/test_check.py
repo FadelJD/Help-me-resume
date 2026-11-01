@@ -39,8 +39,12 @@ def test_normalize_maps_ligatures_dashes_and_cid() -> None:
     assert normalize("2--3") == "2-3"
 
 
+def test_wrapped_long_token_is_rejoined() -> None:
+    assert "github.com/jane_doe/my_repo" in extracted_variants("github.com/jane_doe/\nmy_repo")[2]
+
+
 def test_hyphenation_variants() -> None:
-    joined, kept = extracted_variants("documen-\ntation end-to-\nend")
+    joined, kept, _ = extracted_variants("documen-\ntation end-to-\nend")
     assert "documentation" in joined
     assert "end-to-end" in kept
 

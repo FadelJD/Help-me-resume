@@ -56,11 +56,13 @@ def squash(text: str) -> str:
 
 
 def extracted_variants(raw: str) -> list[str]:
-    """Two readings of line-end hyphens: a soft hyphen (join) or a real one (keep)."""
+    """Readings of line ends: hyphen as soft (join) or real (keep), and long tokens rejoined."""
     text = normalize(raw)
     joined = re.sub(r"-\n(?=[a-z])", "", text)
     kept = re.sub(r"-\n", "-", text)
-    return [squash(joined), squash(kept)]
+    # A long token (URL, path) wrapped at one of escape.py's break points: rejoin it.
+    unwrapped = re.sub(r"(?<=[/._?&=#@:,;])\n", "", kept)
+    return [squash(joined), squash(kept), squash(unwrapped)]
 
 
 def _is_junk(ch: str) -> bool:

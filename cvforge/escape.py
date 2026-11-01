@@ -31,11 +31,35 @@ _CONTROL = re.compile(
 )
 
 
-def escape(text: str) -> str:
-    """Escape user text for LaTeX body text."""
+# Long unbroken tokens (URLs, paths, identifiers) cannot wrap and run off the right margin, where
+# text is cut from the PDF (found by the escaper fuzz). For free text (bullets), inside a token
+# longer than LONG_TOKEN, allow a line break after URL punctuation, and after every LONG_TOKEN
+# characters without one. Not for fields templates may reuse in links (email, link text).
+LONG_TOKEN = 24
+BREAK = r"\allowbreak{}"
+_BREAK_AFTER = frozenset("/._-?&=#@:,;")
+
+
+def _escape_token(token: str, breakable: bool) -> str:
+    if not breakable or len(token) <= LONG_TOKEN:
+        return "".join(_SPECIAL.get(ch, ch) for ch in token)
+    out: list[str] = []
+    run = 0
+    for i, ch in enumerate(token):
+        out.append(_SPECIAL.get(ch, ch))
+        run += 1
+        last = i == len(token) - 1
+        if not last and (ch in _BREAK_AFTER or run >= LONG_TOKEN):
+            out.append(BREAK)
+            run = 0
+    return "".join(out)
+
+
+def escape(text: str, *, breakable: bool = False) -> str:
+    """Escape user text for LaTeX body text; `breakable` adds line-break points to long tokens."""
     text = _CONTROL.sub("", text)
     text = _WS.sub(" ", text).strip()
-    return "".join(_SPECIAL.get(ch, ch) for ch in text)
+    return " ".join(_escape_token(token, breakable) for token in text.split(" "))
 
 
 def escape_url(url: str) -> str:
