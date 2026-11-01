@@ -7,6 +7,7 @@ import os
 import re
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from html.parser import HTMLParser
@@ -35,6 +36,7 @@ from cvforge.parse import (
     next_id,
     parse_text,
 )
+from cvforge.rewrite import LiteLLMRewriter, Proposal, Rewriter, apply, propose
 from cvforge.schema import Bullet, Education, Experience, Hat, Profile, Project, Selection
 from cvforge.select import select
 from cvforge.template import (
@@ -716,3 +718,66 @@ def run_check(
         lint_template=lint_template,
         semantic=semantic,
     )
+
+
+# ---------------------------------------------------------------- tailor
+
+
+Approve = Callable[[list[Proposal]], None]
+
+
+def rewriter_from_config(cfg: Config) -> Rewriter:
+    if not cfg.llm.model:
+        raise CVForgeError(
+            [
+                Issue(
+                    file="cvforge.toml",
+                    message="--rewrite is unavailable: no LLM is configured.",
+                    fix='set [llm] model = "<provider>/<model>" in cvforge.toml (e.g. '
+                    "\"ollama/llama3\") and pip install 'cvforge[llm]'; everything else works "
+                    "without it.",
+                )
+            ]
+        )
+    return LiteLLMRewriter(cfg.llm.model, cfg.llm.api_key_env)
+
+
+def tailor(
+    *,
+    profile: Path | None,
+    template: Path | None,
+    hat: str | None,
+    job: str,
+    output: Path | None,
+    max_bullets: int | None,
+    compile_pdf_too: bool,
+    rewrite: bool,
+    approve: Approve,
+    rewriter: Rewriter | None = None,
+) -> tuple[BuildResult, list[Proposal]]:
+    prep = prepare(profile=profile, template=template, hat=hat, job=job, max_bullets=max_bullets)
+    proposals: list[Proposal] = []
+    if rewrite:
+        engine = rewriter or rewriter_from_config(prep.cfg)
+        assert prep.job is not None
+        proposals = propose(
+            prep.selection,
+            prep.parsed.profile,
+            engine,
+            job=prep.job,
+            title_line=prep.hat.title_line if prep.hat else "",
+        )
+        approve(proposals)
+        for p in proposals:
+            if p.status == "pending":
+                p.status = "rejected"
+        prep.selection = apply(prep.selection, proposals)
+    result = render_selection(prep, output, job)
+    if proposals:
+        result.report["rewrites"] = [p.to_dict() for p in proposals]
+        result.report_path.write_text(
+            json.dumps(result.report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+    if compile_pdf_too:
+        result.pdf = compile_pdf(result.tex)
+    return result, proposals

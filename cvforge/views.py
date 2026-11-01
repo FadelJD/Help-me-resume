@@ -11,6 +11,7 @@ from rich.table import Table
 if TYPE_CHECKING:
     from cvforge.check import CheckReport
     from cvforge.pipeline import ExplainResult
+    from cvforge.rewrite import Proposal
     from cvforge.template import TemplateReport
 
 
@@ -115,3 +116,23 @@ def print_check(console: Console, result: CheckReport) -> None:
         console.print(f"strict: {escape(failure)}", style="red", highlight=False)
     verdict = "passed" if result.ok else "failed"
     console.print(f"check {verdict}: {result.badge}", highlight=False)
+
+
+def print_proposals(console: Console, proposals: list[Proposal]) -> None:
+    changed = [p for p in proposals if p.status != "unchanged"]
+    if not changed:
+        console.print("the model proposed no changes", highlight=False)
+        return
+    table = Table(title="proposed rewrites", title_justify="left", expand=True, show_lines=True)
+    table.add_column("id", no_wrap=True)
+    table.add_column("before")
+    table.add_column("after")
+    table.add_column("fact check")
+    for p in changed:
+        verdict = (
+            "[red]rejected: adds " + escape(", ".join(p.new_facts)) + "[/red]"
+            if p.status == "auto-rejected"
+            else "[green]ok[/green]"
+        )
+        table.add_row(p.qid, escape(p.original), escape(p.rewritten), verdict)
+    console.print(table)

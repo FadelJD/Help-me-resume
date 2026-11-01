@@ -70,3 +70,13 @@ Choices the spec leaves open. One line each, newest last.
 - The icon fixture uses Marvosym, which ships with texlive-fonts-recommended. Font Awesome needs the 1.7 GB texlive-fonts-extra and garbles the same way.
 - `semantic` score moved to its own `cvforge[semantic]` extra because sentence-transformers pulls PyTorch. When absent, check says so and continues. It is untested in this container: the network policy blocks huggingface.co and download.pytorch.org.
 - Density flags: bullets per role or pages above the template's declared limits, and more than 750 words per page.
+
+## Step 7: rewrite
+
+- A rewrite's source is the bullet's text plus the names of the skills that bullet declares; skills declared elsewhere in the profile do not count, so moving "Python" into an unrelated bullet is rejected.
+- A rewrite is auto-rejected if it adds a number, number word, month, tool-like token (digits, `#+/.`, inner capitals, all caps), a capitalised name, a word from a built-in tool lexicon, or a word from the profile's skill names or employers. Hyphenated compounds are judged part by part.
+- An opening verb from a built-in list of action verbs is allowed even when new; any other new capitalised opening word is rejected.
+- Rewrites more than twice the original length (or over 240 characters) are rejected.
+- Approval: `--yes` accepts every rewrite that passed; without a TTY or with `--json` and no `--yes`, all are rejected; interactively the user accepts all, picks, or rejects all.
+- LiteLLM is imported lazily via importlib, so the base install and mypy never need it. Temperature is 0.
+- report.json records every proposal with its status and the facts that caused a rejection.

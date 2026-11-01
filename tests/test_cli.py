@@ -76,3 +76,20 @@ def test_check_cli_exit_codes() -> None:
         r = runner.invoke(app, ["check", out, "--no-semantic", "--json"])
         assert r.exit_code == code, r.stdout
         assert json.loads(r.stdout)["badge"].startswith("parsed: ")
+
+
+def test_tailor_without_rewrite_and_rewrite_unavailable() -> None:
+    common = [
+        "tailor",
+        "-p",
+        str(EXAMPLES / "profile.cv.txt"),
+        "-t",
+        str(TEMPLATES / "minimal.tex"),
+        "--job",
+        str(FIXTURES / "job_backend.txt"),
+    ]
+    r = runner.invoke(app, [*common, "-o", "out/t.tex"])
+    assert r.exit_code == 0, r.stderr
+    r = runner.invoke(app, [*common, "--rewrite"])
+    assert r.exit_code == 1
+    assert "no LLM is configured" in r.stderr

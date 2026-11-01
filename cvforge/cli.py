@@ -15,6 +15,7 @@ from rich.markup import escape
 from cvforge import pipeline, views
 from cvforge.check import miss_issues
 from cvforge.errors import CVForgeError, Issue
+from cvforge.rewrite import Proposal
 
 app = typer.Typer(no_args_is_help=True, add_completion=False, help=__doc__)
 console = Console(stderr=True)
@@ -127,6 +128,88 @@ def build(
         return
     _print_issues(result.warnings)
     out.print(result.summary, highlight=False, soft_wrap=True)
+
+
+@app.command()
+def tailor(
+    job: Annotated[str, typer.Option("--job", help="Job ad: a text file or an http(s) URL.")],
+    template: TemplateOpt = None,
+    hat: HatOpt = None,
+    rewrite: Annotated[
+        bool, typer.Option("--rewrite", help="Offer LLM rewording; every change needs approval.")
+    ] = False,
+    yes: Annotated[
+        bool, typer.Option("--yes", "-y", help="Accept every rewrite that passed the fact check.")
+    ] = False,
+    output: Annotated[Path | None, typer.Option("-o", "--output", help="Output .tex path.")] = None,
+    compile_pdf: Annotated[bool, typer.Option("--compile", help="Also build the PDF.")] = False,
+    max_bullets: MaxOpt = None,
+    locale: LocaleOpt = None,
+    profile: ProfileOpt = None,
+    as_json: JsonOpt = False,
+) -> None:
+    """Build against a job ad, optionally with LLM rewording you approve bullet by bullet."""
+
+    def approve(proposals: list[Proposal]) -> None:
+        views.print_proposals(console, proposals)
+        valid = [p for p in proposals if p.valid]
+        if not valid:
+            return
+        if yes:
+            choice = "a"
+        elif as_json or not sys.stdin.isatty():
+            choice = "r"
+        else:
+            choice = (
+                typer.prompt(
+                    f"{len(valid)} rewrite(s) passed the fact check: "
+                    "[a]ccept all, [p]ick, [r]eject all",
+                    default="p",
+                )
+                .strip()
+                .lower()[:1]
+            )
+        for p in valid:
+            if choice == "a":
+                p.status = "accepted"
+            elif choice == "p":
+                accept = typer.confirm(f"Use the rewrite for {p.qid}?", default=True)
+                p.status = "accepted" if accept else "rejected"
+            else:
+                p.status = "rejected"
+
+    try:
+        _apply_locale(locale)
+        result, proposals = pipeline.tailor(
+            profile=profile,
+            template=template,
+            hat=hat,
+            job=job,
+            output=output,
+            max_bullets=max_bullets,
+            compile_pdf_too=compile_pdf,
+            rewrite=rewrite,
+            approve=approve,
+        )
+    except CVForgeError as exc:
+        _fail(exc, as_json)
+    accepted = sum(1 for p in proposals if p.status == "accepted")
+    if as_json:
+        out.print_json(
+            json.dumps(
+                {
+                    "ok": True,
+                    "tex": str(result.tex),
+                    "pdf": str(result.pdf) if result.pdf else None,
+                    "report": str(result.report_path),
+                    "rewrites": [p.to_dict() for p in proposals],
+                }
+            )
+        )
+        return
+    _print_issues(result.warnings)
+    tail = f", {accepted} rewrite(s) applied" if rewrite else ""
+    out.print(result.summary + tail, highlight=False, soft_wrap=True)
 
 
 @app.command()
