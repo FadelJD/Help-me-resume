@@ -1,0 +1,12 @@
+# Weights skills and section order for a role family. Holds no facts about the person.
+name = "developer"
+title_line = "Software Developer"
+sections = ["experience", "projects", "skills", "education"]
+
+[skill_weights]
+py = 2.0
+dotnet = 1.5
+ts = 1.5
+node = 1.5
+ci = 1.2
+docs = 0.5

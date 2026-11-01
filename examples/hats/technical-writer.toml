@@ -1,0 +1,12 @@
+name = "technical-writer"
+title_line = "Technical Writer"
+sections = ["experience", "skills", "projects", "education"]
+
+[skill_weights]
+docs = 3.0
+latex = 1.5
+dotnet = 1.2
+py = 1.0
+ci = 1.0
+react = 0.5
+node = 0.5

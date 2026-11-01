@@ -1,0 +1,108 @@
+# profile.cv.txt  -  one person, every role, every fact once.
+# Fictional sample data. Your real profile lives outside examples/.
+person:
+  name: Jane Doe
+  email: jane@example.com
+  phone: +66 80 000 0000
+  location: Chiang Mai, TH
+  links: [github.com/janedoe, linkedin.com/in/janedoe]
+
+skills:                      # id: name - the id is what bullets reference
+  py: Python
+  dotnet: .NET / C#
+  docs: Technical documentation
+  latex: LaTeX
+  ts: TypeScript
+  react: React
+  node: Node.js
+  sql: PostgreSQL
+  docker: Docker
+  ci: GitHub Actions
+  rest: REST APIs
+
+experience:
+  - id: exp-01
+    title: Technical Writer
+    org: Acme Software
+    location: Bangkok, TH
+    start: 2025-06
+    end: present
+    tags: [docs, dotnet]      # skills this role as a whole evidences
+    bullets:
+      - id: b1
+        text: Owned end-to-end documentation for a .NET PDF library used by 2,000 teams.
+        skills: [docs, dotnet]
+        weight: 3
+      - id: b2
+        text: Built a Python pipeline migrating 400 knowledge-base articles to DocFX.
+        skills: [py, docs]
+        weight: 4
+      - id: b3
+        text: Wrote C# code samples for every public API & kept them compiling in CI.
+        skills: [dotnet, ci, docs]
+        weight: 3
+      - id: b4
+        text: Cut docs build time 40% by caching DocFX output in GitHub Actions.
+        skills: [ci, docs]
+        weight: 4
+      - id: b5
+        text: Interviewed support engineers to rewrite the 10 most-visited troubleshooting pages.
+        skills: [docs]
+        weight: 2
+      - id: b6
+        text: Typeset the printed API reference in LaTeX from the same Markdown sources.
+        skills: [latex, docs]
+        weight: 2
+  - id: exp-02
+    title: Junior Full-Stack Developer
+    org: Lanna Digital Co., Ltd.
+    location: Chiang Mai, TH
+    start: 2024-01
+    end: 2025-05
+    tags: [ts, react, node]
+    bullets:
+      - id: b1
+        text: Shipped a REST API in Node.js and PostgreSQL serving 1M requests a day.
+        skills: [node, sql, rest]
+        weight: 4
+      - id: b2
+        text: Built a React and TypeScript dashboard used by 30 field staff for daily reporting.
+        skills: [react, ts]
+        weight: 4
+      - id: b3
+        text: Containerised three services with Docker, cutting onboarding from two days to one hour.
+        skills: [docker]
+        weight: 3
+      - id: b4
+        text: Added GitHub Actions pipelines running tests on every pull request.
+        skills: [ci]
+        weight: 3
+      - id: b5
+        text: Wrote the internal API guide that new developers read in their first week.
+        skills: [docs, rest]
+        weight: 2
+
+projects:
+  - id: prj-01
+    name: Portfolio site
+    url: janedoe.example.dev
+    bullets:
+      - id: b1
+        text: Static site in TypeScript, deployed on Cloudflare Pages with a 100% Lighthouse score.
+        skills: [ts]
+        weight: 3
+  - id: prj-02
+    name: thai_date_utils
+    url: github.com/janedoe/thai_date_utils
+    bullets:
+      - id: b1
+        text: Python library converting Buddhist-era dates, 98% test coverage, published on PyPI.
+        skills: [py]
+        weight: 3
+
+education:
+  - id: edu-01
+    degree: B.Eng. Computer Innovation Engineering
+    org: KMITL, Bangkok
+    start: 2020-08
+    end: 2024-05

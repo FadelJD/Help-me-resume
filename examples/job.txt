@@ -1,0 +1,13 @@
+Backend Developer (Node.js / PostgreSQL) - Remote, Thailand
+
+We are hiring a backend developer to build and run REST APIs for our logistics platform.
+
+You will:
+- Design and ship REST APIs in Node.js and TypeScript backed by PostgreSQL.
+- Containerise services with Docker and deploy them through CI pipelines (GitHub Actions).
+- Write clear API documentation for partner developers.
+
+You have:
+- 1+ years building production APIs.
+- Strong SQL and PostgreSQL experience.
+- Experience with Docker and automated testing.

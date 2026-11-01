@@ -1,0 +1,6 @@
+Technical Writer, Developer Documentation - Bangkok
+
+Own the documentation for our .NET SDK. You will write API reference pages, tutorials and C# code
+samples, migrate legacy knowledge-base articles to a docs-as-code toolchain such as DocFX, and keep
+the documentation build fast and reliable. Experience with Markdown, LaTeX or other typesetting tools
+is a plus. You interview engineers and support staff to turn tribal knowledge into clear docs.

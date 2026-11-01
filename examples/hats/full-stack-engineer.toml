@@ -1,0 +1,19 @@
+name = "full-stack-engineer"
+title_line = "Full-Stack Engineer"
+sections = ["experience", "projects", "skills", "education"]
+
+[skill_weights]
+ts = 2.0
+react = 2.0
+node = 2.0
+sql = 1.8
+rest = 1.8
+docker = 1.5
+ci = 1.2
+py = 1.2
+docs = 0.5
+
+[skill_groups]
+Frontend = ["ts", "react"]
+Backend = ["node", "sql", "rest", "py", "dotnet"]
+Tooling = ["docker", "ci", "latex", "docs"]
