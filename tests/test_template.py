@@ -191,3 +191,40 @@ def test_right_aligned_dates_lint_warning() -> None:
 def test_right_dates_template_is_valid() -> None:
     _, report = validate_template(TEMPLATES / "minimal-right-dates.tex", ALL)
     assert report.ok
+
+
+def test_fixed_text_is_everything_outside_tags() -> None:
+    _, report = validate_template(TEMPLATES / "minimal.tex", ALL)
+    assert [t for _, t in report.fixed_text] == ["Experience", "Projects", "Skills", "Education"]
+    assert "person.name" in report.fields
+    assert "fixed_text" in report.to_dict() and "filled_fields" in report.to_dict()
+
+
+def test_fixed_text_flags_personal_facts(tmp_path: Path) -> None:
+    body = (
+        "\\documentclass{article}\n\\begin{document}\n"
+        "{\\Large Jane Doe}\\\\ % hard-coded name\n"
+        "\\href{mailto:jane@example.com}{jane@example.com} \\vspace{4pt}\n"
+        "\\textbf{Profile:} \\VAR{person.title_line}\n"
+        "\\BLOCK{for job in experience}\\VAR{job.title}\\BLOCK{endfor}\n"
+        "\\end{document}\n"
+    )
+    f = tmp_path / "t.tex"
+    f.write_text(HEADER + body)
+    _, report = validate_template(f, ALL)
+    texts = dict(report.fixed_text)
+    assert texts[5] == "Jane Doe"
+    assert texts[6] == "jane@example.com"  # the href target and \vspace are not printed
+    assert texts[7] == "Profile:"
+    assert 8 not in texts  # only tags on that line
+    warned = [i for i in report.issues if "personal fact" in i.message]
+    assert [i.line for i in warned] == [6]
+    assert report.ok  # a warning, not an error
+
+
+def test_visible_text() -> None:
+    from cvforge.template import visible_text
+
+    assert visible_text("\\section*{Work \\& Projects}") == "Work & Projects"
+    assert visible_text("\\textcolor{gray}{Skills} \\hspace{1em}") == "Skills"
+    assert visible_text("\\begin{tabular*}{\\textwidth}{l@{\\extracolsep{\\fill}}r}") == ""

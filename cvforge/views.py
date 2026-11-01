@@ -76,6 +76,13 @@ def print_template_report(console: Console, report: TemplateReport) -> None:
         console.print(
             f"in profile but not in template: {', '.join(report.left_out) or '-'}", highlight=False
         )
+    console.print(f"filled fields: {', '.join(report.fields) or '-'}", highlight=False)
+    if report.fixed_text:
+        console.print("fixed text (printed as written, never filled):", highlight=False)
+        for line, text in report.fixed_text:
+            console.print(f"  line {line}: {escape(text)}", highlight=False)
+    else:
+        console.print("fixed text: none", highlight=False)
     status = "valid" if report.ok else "invalid"
     lint = f", {len(report.lint)} parser-safety warning(s)" if report.lint else ""
     console.print(f"{report.file}: {status}{lint}", highlight=False)

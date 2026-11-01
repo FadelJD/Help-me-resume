@@ -116,6 +116,7 @@ class TemplateReport:
     empty: list[str] = field(default_factory=list)
     left_out: list[str] = field(default_factory=list)
     fields: list[str] = field(default_factory=list)  # placeholder paths the template uses
+    fixed_text: list[tuple[int, str]] = field(default_factory=list)  # (line, visible text)
 
     @property
     def ok(self) -> bool:
@@ -131,6 +132,8 @@ class TemplateReport:
             "will_fill": self.will_fill,
             "empty": self.empty,
             "left_out": self.left_out,
+            "filled_fields": self.fields,
+            "fixed_text": [{"line": line, "text": text} for line, text in self.fixed_text],
             "issues": [i.to_dict() for i in self.issues],
             "lint": [i.to_dict() for i in self.lint],
         }
@@ -350,6 +353,153 @@ def analyze(text: str, file: str) -> tuple[list[Use], list[Issue]]:
     return analyzer.uses, []
 
 
+# ---------------------------------------------------------------- fixed text
+
+# Commands whose arguments are never printed: drop the command and all its brace/bracket groups.
+_INVISIBLE = {
+    "begin",
+    "end",
+    "vspace",
+    "hspace",
+    "vskip",
+    "hskip",
+    "setlength",
+    "addtolength",
+    "label",
+    "ref",
+    "includegraphics",
+    "input",
+    "include",
+    "pagestyle",
+    "thispagestyle",
+    "newcommand",
+    "renewcommand",
+    "setlist",
+    "rule",
+    "fontsize",
+    "linespread",
+    "definecolor",
+    "usepackage",
+    "color",
+    "titleformat",
+    "titlespacing",
+    "geometry",
+    "setcounter",
+    "addtocounter",
+    "phantom",
+    "extracolsep",
+    "arraystretch",
+    "pdfgentounicode",
+    "selectfont",
+    "fontspec",
+    "newpage",
+}
+# Commands whose first argument is invisible and the rest printed.
+_FIRST_INVISIBLE = {"href", "textcolor", "colorbox", "raisebox", "parbox", "makebox"}
+
+
+def _skip_group(text: str, i: int) -> int:
+    """Index after a balanced {...} or [...] group starting at text[i]."""
+    open_ch = text[i]
+    close_ch = "}" if open_ch == "{" else "]"
+    depth = 0
+    while i < len(text):
+        if text[i] == "\\":
+            i += 2
+            continue
+        if text[i] == open_ch:
+            depth += 1
+        elif text[i] == close_ch:
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        i += 1
+    return i
+
+
+def visible_text(code: str) -> str:
+    """Rough plain text a LaTeX fragment prints. Used to list fixed text, not to typeset."""
+    out: list[str] = []
+    i = 0
+    while i < len(code):
+        ch = code[i]
+        if ch == "\\":
+            m = re.match(r"\\([A-Za-z@]+\*?|.)", code[i:])
+            assert m is not None
+            name = m.group(1).rstrip("*")
+            i += len(m.group(0))
+            if len(name) == 1 and not name.isalpha():
+                out.append(name if name in "&%$#_{}" else " ")
+                continue
+            while i < len(code) and code[i] == " ":
+                i += 1
+            if name in _INVISIBLE:
+                while i < len(code) and code[i] in "{[":
+                    i = _skip_group(code, i)
+            elif name in _FIRST_INVISIBLE:
+                while i < len(code) and code[i] == "[":
+                    i = _skip_group(code, i)
+                if i < len(code) and code[i] == "{":
+                    i = _skip_group(code, i)
+            else:
+                while i < len(code) and code[i] == "[":
+                    i = _skip_group(code, i)
+                out.append(" ")
+            continue
+        out.append(" " if ch in "{}&~^$" else ch)
+        i += 1
+    return " ".join("".join(out).split())
+
+
+def fixed_text(text: str) -> list[tuple[int, str]]:
+    """Visible text in the document body that is not inside \\VAR{}, \\BLOCK{} or \\#{}.
+
+    Anything outside those tags is fixed by definition: it is printed exactly as written.
+    """
+    try:
+        ast = environment().parse(text)
+    except jinja2.TemplateSyntaxError:
+        return []
+    lines = text.splitlines()
+    begin = next((i for i, row in enumerate(lines) if "\\begin{document}" in _code(row)), None)
+    end = next((i for i, row in enumerate(lines) if "\\end{document}" in _code(row)), len(lines))
+    if begin is None:
+        return []
+    found: list[tuple[int, str]] = []
+    for node in ast.find_all(nodes.TemplateData):
+        for offset, row in enumerate(node.data.split("\n")):
+            line_no = node.lineno + offset
+            if not begin + 1 < line_no <= end:
+                continue
+            words = visible_text(_code(row))
+            if any(c.isalpha() for c in words):
+                found.append((line_no, words))
+    return found
+
+
+_PERSONAL = re.compile(
+    r"[\w.+-]+@[\w-]+\.[\w.]+|https?://|www\.|(?:github|linkedin)\.com|\+?\d[\d ()-]{7,}\d|"
+    r"\b(19|20)\d{2}\b"
+)
+
+
+def personal_fact_warnings(fixed: list[tuple[int, str]], file: str) -> list[Issue]:
+    issues = []
+    for line, text in fixed:
+        if _PERSONAL.search(text):
+            issues.append(
+                Issue(
+                    file=file,
+                    line=line,
+                    severity="warning",
+                    message=f"fixed text looks like a personal fact: {text!r}.",
+                    fix="facts about you belong in profile.cv.txt; replace it with a \\VAR{} "
+                    "placeholder unless it is meant to be constant.",
+                )
+            )
+    return issues
+
+
 # ---------------------------------------------------------------- lint
 
 
@@ -461,6 +611,8 @@ def validate_template(
     if syntax:
         return text, report
     report.fields = sorted({u.path for u in uses if u.path in ALLOWED})
+    report.fixed_text = fixed_text(text)
+    report.issues.extend(personal_fact_warnings(report.fixed_text, file))
     text_lines = text.splitlines()
     used_roots: set[str] = set()
     used_features: set[str] = set()
