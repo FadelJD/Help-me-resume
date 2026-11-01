@@ -464,13 +464,17 @@ def build(
     prep = prepare(profile=profile, template=template, hat=hat, job=job, max_bullets=max_bullets)
     result = render_selection(prep, output, job)
     if compile_pdf_too:
-        result.pdf = compile_pdf(result.tex, engine=_engine(prep))
+        result.pdf = _compile(prep, result.tex)
     return result
 
 
 def _engine(prep: Prepared) -> str:
     header = prep.template_report.header
     return header.engine if header else "pdflatex"
+
+
+def _compile(prep: Prepared, tex: Path) -> Path:
+    return compile_pdf(tex, engine=_engine(prep), search=[prep.template_path.parent])
 
 
 # ---------------------------------------------------------------- explain
@@ -786,5 +790,5 @@ def tailor(
             json.dumps(result.report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
     if compile_pdf_too:
-        result.pdf = compile_pdf(result.tex, engine=_engine(prep))
+        result.pdf = _compile(prep, result.tex)
     return result, proposals

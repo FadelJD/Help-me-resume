@@ -354,7 +354,12 @@ def check(
 ) -> CheckReport:
     report_path, report = load_report(tex)
     chosen = resolve_parsers(settings or {}, parsers)
-    pdf = compile_pdf(tex, engine=report.get("template_header", {}).get("engine") or "pdflatex")
+    template = Path(report.get("template", ""))
+    pdf = compile_pdf(
+        tex,
+        engine=report.get("template_header", {}).get("engine") or "pdflatex",
+        search=[template.parent] if template.is_file() else [],
+    )
     facts = expected_facts(report)
     results: list[ParserResult] = []
     primary_text = ""

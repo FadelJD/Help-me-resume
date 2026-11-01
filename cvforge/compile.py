@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
 
 from cvforge.errors import CVForgeError, Issue
@@ -17,7 +19,23 @@ def latexmk_available() -> bool:
 ENGINES = {"pdflatex": "-pdf", "xelatex": "-xelatex", "lualatex": "-lualatex"}
 
 
-def compile_pdf(tex: Path, timeout: int = 180, engine: str = "pdflatex") -> Path:
+def search_env(search: Sequence[Path]) -> dict[str, str]:
+    """Environment that lets TeX find a template's own .cls/.sty files and fonts.
+
+    Each folder is searched recursively (`//`); the trailing separator keeps TeX's defaults.
+    """
+    env = dict(os.environ)
+    if not search:
+        return env
+    dirs = os.pathsep.join(f"{p.resolve()}//" for p in search) + os.pathsep
+    for var in ("TEXINPUTS", "OPENTYPEFONTS", "TTFONTS", "TFMFONTS", "T1FONTS", "ENCFONTS"):
+        env[var] = dirs + env.get(var, "")
+    return env
+
+
+def compile_pdf(
+    tex: Path, timeout: int = 180, engine: str = "pdflatex", search: Sequence[Path] = ()
+) -> Path:
     if not latexmk_available():
         raise CVForgeError(
             [
@@ -41,7 +59,13 @@ def compile_pdf(tex: Path, timeout: int = 180, engine: str = "pdflatex") -> Path
     ]
     try:
         proc = subprocess.run(
-            cmd, cwd=tex.parent, capture_output=True, text=True, timeout=timeout, check=False
+            cmd,
+            cwd=tex.parent,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+            env=search_env(search),
         )
     except subprocess.TimeoutExpired as exc:
         raise CVForgeError(
