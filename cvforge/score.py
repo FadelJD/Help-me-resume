@@ -23,7 +23,7 @@ _TOKEN = re.compile(r"\.?[a-z0-9][a-z0-9+#]*(?:\.[a-z0-9+#]+)*")
 
 
 def _stem(token: str) -> str:
-    if len(token) > 4 and token.endswith("s") and not token.endswith("ss"):
+    if len(token) >= 4 and token.isalpha() and token.endswith("s") and not token.endswith("ss"):
         return token[:-1]
     return token
 

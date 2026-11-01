@@ -49,3 +49,12 @@ Choices the spec leaves open. One line each, newest last.
 - `init` also writes starter hats (full-stack-engineer, developer, technical-writer) with every declared skill at weight 1.0, ready to tune.
 - `init --defaults` runs the interview non-interactively; `init` refuses to overwrite without `--force`.
 - `add` commands validate the whole would-be file and write nothing on error.
+
+## Step 5: select, score, explain
+
+- Bullet score = weight x hat factor x (1 + job relevance). Hat factor is the largest hat weight among the bullet's skills (1.0 for unlisted skills and without a hat); job relevance is BM25 scaled to 0..1.
+- "No hat means every item at weight 1" is read as hat factor 1.0; the bullet's own weight still counts.
+- Roles stay reverse-chronological whatever the scores; only bullets within a role, projects and skills are reordered.
+- Emitted skills are exactly those evidenced by a selected bullet, so the evidence score is 100% by construction. A hat weight of 0 hides a skill.
+- Tokenizer keeps tech terms (`c#`, `.net`, `node.js`), drops stopwords and job-ad boilerplate, and strips a plural `s` from alphabetic words.
+- `explain` applies the template's bullet limit when a template is given or configured; otherwise it shows the full ranking.
