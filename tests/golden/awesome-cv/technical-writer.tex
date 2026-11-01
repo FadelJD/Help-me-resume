@@ -1,0 +1,160 @@
+%% cvforge-template v1
+%% sections: experience, education, skills
+%% supports: person.phone, person.links, experience.location, skills.groups
+%% max-bullets-per-role: 5
+%% engine: lualatex
+%
+% Awesome-CV resume.tex (LPPL 1.3c, Byungjin Park), converted to the cvforge contract. Class,
+% fonts (Source Sans 3, Roboto, Font Awesome 6), colours and layout are the original's.
+% Sections without profile data (summary, honors, certificates) are removed; skills use the
+% class's own cvskills environment. Needs tests/fixtures/templates/provision.sh for its fonts.
+%!TEX TS-program = lualatex
+%!TEX encoding = UTF-8 Unicode
+% Awesome CV LaTeX Template for CV/Resume
+%
+% This template has been downloaded from:
+% https://github.com/posquit0/Awesome-CV
+%
+% Author:
+% Claud D. Park <posquit0.bj@gmail.com>
+% http://www.posquit0.com
+%
+% Template license:
+% CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
+%
+
+
+%-------------------------------------------------------------------------------
+% CONFIGURATIONS
+% Build from the repository root with: latexmk examples/resume.tex
+%-------------------------------------------------------------------------------
+% A4 paper size by default, use 'letterpaper' for US letter
+\documentclass[11pt, a4paper]{awesome-cv}
+
+% Configure page margins with geometry
+\geometry{left=1.4cm, top=.8cm, right=1.4cm, bottom=1.8cm, footskip=.5cm}
+
+% Color for highlights
+% Awesome Colors: awesome-emerald, awesome-skyblue, awesome-red, awesome-pink, awesome-orange
+%                 awesome-nephritis, awesome-concrete, awesome-darknight
+\colorlet{awesome}{awesome-red}
+% Uncomment if you would like to specify your own color
+% \definecolor{awesome}{HTML}{3E6D9C}
+
+% Colors for text
+% Uncomment if you would like to specify your own color
+% \definecolor{darktext}{HTML}{414141}
+% \definecolor{text}{HTML}{333333}
+% \definecolor{graytext}{HTML}{5D5D5D}
+% \definecolor{lighttext}{HTML}{999999}
+% \definecolor{sectiondivider}{HTML}{5D5D5D}
+
+% Set false if you don't want to highlight section with awesome color
+\setbool{acvSectionColorHighlight}{true}
+
+% If you would like to change the social information separator from a pipe (|) to something else
+\renewcommand{\acvHeaderSocialSep}{\quad\textbar\quad}
+
+
+%-------------------------------------------------------------------------------
+%	PERSONAL INFORMATION
+%	Comment any of the lines below if they are not required
+%-------------------------------------------------------------------------------
+% Available options: circle|rectangle,edge/noedge,left/right
+%-------------------------------------------------------------------------------
+%	PERSONAL INFORMATION (cvforge: filled from the profile)
+%-------------------------------------------------------------------------------
+\name{Elena Vasquez-Hart}{}
+\position{Technical Writer}
+\address{Valencia, ES}
+\mobile{+34 600 000 000}
+\email{elena.vh@example.org}
+\github{evh-docs-example}
+\linkedin{evh-example}
+%% cvforge: the sample \quote is removed; the profile has no quote.
+
+\begin{document}
+
+\makecvheader[C]
+
+\makecvfooter
+  {\today}
+  {Elena Vasquez-Hart~~~·~~~Résumé}
+  {\thepage}
+
+%-------------------------------------------------------------------------------
+%	EXPERIENCE (as in examples/resume/experience.tex)
+%-------------------------------------------------------------------------------
+\cvsection{Work Experience}
+
+\begin{cventries}
+
+  \cventry
+    {Senior Technical Writer} % Job title
+    {Quillstone Cloud} % Organization
+    {Valencia, ES} % Location
+    {Sep 2022 - Present} % Date(s)
+    {
+      \begin{cvitems} % Description(s) of tasks/responsibilities
+        \item {Wrote a 6-part getting-started tutorial series that lifted trial-to-paid conversion 12\%.} % id:exp-01.b2
+        \item {Rebuilt the API reference for 180 endpoints from OpenAPI specs, regenerated on every release.} % id:exp-01.b1
+        \item {Added runnable Python and JavaScript code samples to every endpoint page, tested in CI.} % id:exp-01.b3
+        \item {Created the docs style guide adopted by 40 engineers who contribute pages.} % id:exp-01.b4
+      \end{cvitems}
+    }
+
+  \cventry
+    {Technical Writer} % Job title
+    {Marrowbank Software} % Organization
+    {Madrid, ES} % Location
+    {Jan 2020 - Aug 2022} % Date(s)
+    {
+      \begin{cvitems} % Description(s) of tasks/responsibilities
+        \item {Designed a first-week onboarding path for new developers, cutting support tickets from new accounts 30\%.} % id:exp-02.b2
+        \item {Moved 650 wiki pages to a Markdown docs-as-code site in Git, with review on every pull request.} % id:exp-02.b1
+        \item {Set up page analytics to find the 20 least helpful pages, then rewrote each one.} % id:exp-02.b4
+        \item {Rewrote error messages and interface text across 3 products with the design team.} % id:exp-02.b3
+      \end{cvitems}
+    }
+
+  \cventry
+    {Documentation Specialist} % Job title
+    {Tallowbrook Instruments} % Organization
+    {Madrid, ES} % Location
+    {Jun 2017 - Dec 2019} % Date(s)
+    {
+      \begin{cvitems} % Description(s) of tasks/responsibilities
+        \item {Wrote installation and user manuals for 8 lab instruments shipped to 15 countries.} % id:exp-03.b1
+        \item {Documented a serial command API with 90 commands and a worked example for each.} % id:exp-03.b2
+        \item {Cut translation costs 25\% with a reusable Markdown glossary of 400 terms.} % id:exp-03.b3
+      \end{cvitems}
+    }
+
+\end{cventries}
+
+%-------------------------------------------------------------------------------
+%	EDUCATION (as in examples/resume/education.tex)
+%-------------------------------------------------------------------------------
+\cvsection{Education}
+
+\begin{cventries}
+
+  \cventry
+    {B.A. English and Linguistics} % Degree
+    {Eastmoor University} % Institution
+    {} % Location
+    {Sep 2013 - Jun 2017} % Date(s)
+    {}
+
+\end{cventries}
+
+%-------------------------------------------------------------------------------
+%	SKILLS (the class's cvskills environment)
+%-------------------------------------------------------------------------------
+\cvsection{Skills}
+
+\begin{cvskills}
+  \cvskill{Skills}{Technical writing, API reference documentation, Tutorials, Developer onboarding, Docs-as-code, Style guides, OpenAPI, Markdown, Git, Python, JavaScript, UX writing, Content analytics}
+\end{cvskills}
+
+\end{document}

@@ -18,3 +18,12 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     for item in items:
         if "tex" in item.keywords and not HAVE_TEX:
             item.add_marker(skip)
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--update-goldens",
+        action="store_true",
+        default=False,
+        help="Rewrite tests/golden/ from the current renderer (say why in the commit message).",
+    )

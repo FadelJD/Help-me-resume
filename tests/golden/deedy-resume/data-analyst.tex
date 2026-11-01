@@ -1,0 +1,97 @@
+%% cvforge-template v1
+%% sections: experience, projects, skills, education
+%% supports: person.phone, person.links, experience.location, projects.url
+%% max-bullets-per-role: 5
+%% engine: xelatex
+%
+% Deedy Resume, OpenFonts version (Apache-2.0, Debarghya Das), converted to the cvforge contract.
+% The class, its fonts (Lato, Raleway, loaded from fonts/ by relative Path) and its two-column
+% minipage layout are the original's. The original sample .tex could not be fetched in this
+% environment (see LICENSE-NOTE.md); this body uses the class's own macros in the published
+% layout: a narrow left column (education, skills) and a wide right column (experience,
+% projects).
+\documentclass[]{deedy-resume-openfont}
+
+\begin{document}
+
+\namesection{Noor}{Haddad}{
+\href{https://github.com/noorhaddad-example}{github.com/noorhaddad-example} | \href{https://linkedin.com/in/noorhaddad-example}{linkedin.com/in/noorhaddad-example} | \href{mailto:noor.haddad@example.com}{noor.haddad@example.com} | +44 7700 900000
+}
+
+%----------------------------------------------------------------------------------------
+%	COLUMN ONE
+%----------------------------------------------------------------------------------------
+\begin{minipage}[t]{0.33\textwidth}
+
+\section{Education}
+\subsection{Riverside Metropolitan University}
+\descript{B.Sc. Statistics}
+\location{Sep 2015 -- Jun 2018}
+\sectionsep
+
+\section{Skills}
+Python \\
+Statistics \\
+SQL \\
+Data visualisation \\
+BigQuery \\
+pandas \\
+A/B testing \\
+Tableau \\
+dbt \\
+Power BI \\
+Excel \\
+R \\
+Forecasting \\
+\sectionsep
+
+\end{minipage}
+\hfill
+%----------------------------------------------------------------------------------------
+%	COLUMN TWO
+%----------------------------------------------------------------------------------------
+\begin{minipage}[t]{0.66\textwidth}
+
+\section{Experience}
+\runsubsection{Hollowfield Retail Group}
+\descript{| Senior Data Analyst}
+\location{Jan 2023 -- Present | Leeds, UK}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\item Designed and analysed 30 A/B tests on checkout, finding changes worth 4\% more revenue. % id:exp-01.b2
+\item Modelled sales tables in dbt, cutting dashboard refresh time from 40 to 6 minutes. % id:exp-01.b3
+\item Built 12 Tableau dashboards on BigQuery used weekly by 200 store managers. % id:exp-01.b1
+\item Built a weekly demand forecast in Python with 8\% mean error across 1,500 products. % id:exp-01.b4
+\end{tightemize}
+\sectionsep
+\runsubsection{Saltmarsh Insurance}
+\descript{| Data Analyst}
+\location{Aug 2020 -- Dec 2022 | Manchester, UK}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\item Used regression in R to find the 5 factors behind 70\% of late claims. % id:exp-02.b2
+\item Replaced 25 monthly Excel reports with one Power BI dashboard for the claims team. % id:exp-02.b1
+\item Wrote SQL pipelines joining 6 source systems into one claims table. % id:exp-02.b3
+\item Cleaned 3M policy records with pandas, raising match rates from 81\% to 97\%. % id:exp-02.b4
+\end{tightemize}
+\sectionsep
+\runsubsection{Brackenridge Market Research}
+\descript{| Junior Analyst}
+\location{Sep 2018 -- Jul 2020 | Manchester, UK}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\item Ran significance tests on survey samples of up to 10,000 respondents. % id:exp-03.b2
+\item Built survey reporting dashboards in Excel for 40 client studies a year. % id:exp-03.b1
+\end{tightemize}
+\sectionsep
+
+\section{Projects}
+\runsubsection{Ridership explorer}
+\descript{| github.com/noorhaddad-example/ridership-explorer}
+\begin{tightemize}
+\item Python and pandas notebook charting 5 years of city bus ridership, featured in a local data newsletter. % id:prj-01.b1
+\end{tightemize}
+\sectionsep
+
+\end{minipage}
+\end{document}

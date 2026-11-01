@@ -1,0 +1,98 @@
+%% cvforge-template v1
+%% sections: experience, projects, skills, education
+%% supports: person.phone, person.links, experience.location, projects.url
+%% max-bullets-per-role: 5
+%% engine: xelatex
+%
+% Deedy Resume, OpenFonts version (Apache-2.0, Debarghya Das), converted to the cvforge contract.
+% The class, its fonts (Lato, Raleway, loaded from fonts/ by relative Path) and its two-column
+% minipage layout are the original's. The original sample .tex could not be fetched in this
+% environment (see LICENSE-NOTE.md); this body uses the class's own macros in the published
+% layout: a narrow left column (education, skills) and a wide right column (experience,
+% projects).
+\documentclass[]{deedy-resume-openfont}
+
+\begin{document}
+
+\namesection{Elena}{Vasquez-Hart}{
+\href{https://github.com/evh-docs-example}{github.com/evh-docs-example} | \href{https://linkedin.com/in/evh-example}{linkedin.com/in/evh-example} | \href{mailto:elena.vh@example.org}{elena.vh@example.org} | +34 600 000 000
+}
+
+%----------------------------------------------------------------------------------------
+%	COLUMN ONE
+%----------------------------------------------------------------------------------------
+\begin{minipage}[t]{0.33\textwidth}
+
+\section{Education}
+\subsection{Eastmoor University}
+\descript{B.A. English and Linguistics}
+\location{Sep 2013 -- Jun 2017}
+\sectionsep
+
+\section{Skills}
+Technical writing \\
+API reference documentation \\
+Tutorials \\
+Developer onboarding \\
+Docs-as-code \\
+Style guides \\
+OpenAPI \\
+Markdown \\
+Git \\
+Python \\
+JavaScript \\
+UX writing \\
+Content analytics \\
+\sectionsep
+
+\end{minipage}
+\hfill
+%----------------------------------------------------------------------------------------
+%	COLUMN TWO
+%----------------------------------------------------------------------------------------
+\begin{minipage}[t]{0.66\textwidth}
+
+\section{Experience}
+\runsubsection{Quillstone Cloud}
+\descript{| Senior Technical Writer}
+\location{Sep 2022 -- Present | Valencia, ES}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\item Wrote a 6-part getting-started tutorial series that lifted trial-to-paid conversion 12\%. % id:exp-01.b2
+\item Rebuilt the API reference for 180 endpoints from OpenAPI specs, regenerated on every release. % id:exp-01.b1
+\item Added runnable Python and JavaScript code samples to every endpoint page, tested in CI. % id:exp-01.b3
+\item Created the docs style guide adopted by 40 engineers who contribute pages. % id:exp-01.b4
+\end{tightemize}
+\sectionsep
+\runsubsection{Marrowbank Software}
+\descript{| Technical Writer}
+\location{Jan 2020 -- Aug 2022 | Madrid, ES}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\item Designed a first-week onboarding path for new developers, cutting support tickets from new accounts 30\%. % id:exp-02.b2
+\item Moved 650 wiki pages to a Markdown docs-as-code site in Git, with review on every pull request. % id:exp-02.b1
+\item Set up page analytics to find the 20 least helpful pages, then rewrote each one. % id:exp-02.b4
+\item Rewrote error messages and interface text across 3 products with the design team. % id:exp-02.b3
+\end{tightemize}
+\sectionsep
+\runsubsection{Tallowbrook Instruments}
+\descript{| Documentation Specialist}
+\location{Jun 2017 -- Dec 2019 | Madrid, ES}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\item Wrote installation and user manuals for 8 lab instruments shipped to 15 countries. % id:exp-03.b1
+\item Documented a serial command API with 90 commands and a worked example for each. % id:exp-03.b2
+\item Cut translation costs 25\% with a reusable Markdown glossary of 400 terms. % id:exp-03.b3
+\end{tightemize}
+\sectionsep
+
+\section{Projects}
+\runsubsection{plainspoken}
+\descript{| github.com/evh-docs-example/plainspoken}
+\begin{tightemize}
+\item Open-source prose linting rule pack with 60 checks, used by 30 docs teams. % id:prj-01.b1
+\end{tightemize}
+\sectionsep
+
+\end{minipage}
+\end{document}

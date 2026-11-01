@@ -1,0 +1,189 @@
+%% cvforge-template v1
+%% sections: education, experience, projects, skills
+%% supports: person.phone, person.links, experience.location, projects.url, skills.groups
+%% max-bullets-per-role: 6
+%
+% Jake's Resume (MIT, Jake Gutierrez), converted to the cvforge contract. The preamble is the
+% original, unchanged; only the sample content in the body became placeholders.
+%-------------------------
+% Resume in Latex
+% Author : Jake Gutierrez
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\input{glyphtounicode}
+
+
+%----------FONT OPTIONS----------
+% sans-serif
+% \usepackage[sfdefault]{FiraSans}
+% \usepackage[sfdefault]{roboto}
+% \usepackage[sfdefault]{noto-sans}
+% \usepackage[default]{sourcesanspro}
+
+% serif
+% \usepackage{CormorantGaramond}
+% \usepackage{charter}
+
+
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.0in}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+% Ensure that generate pdf is machine readable/ATS parsable
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubSubheading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+%----------HEADING----------
+\begin{center}
+    \textbf{\Huge \scshape Noor Haddad} \\ \vspace{1pt}
+    \small +44 7700 900000 $|$ \href{mailto:noor.haddad@example.com}{\underline{noor.haddad@example.com}} $|$
+    \href{https://github.com/noorhaddad-example}{\underline{github.com/noorhaddad-example}} $|$
+    \href{https://linkedin.com/in/noorhaddad-example}{\underline{linkedin.com/in/noorhaddad-example}}
+\end{center}
+
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Riverside Metropolitan University}{}
+      {B.Sc. Statistics}{Sep 2015 -- Jun 2018}
+  \resumeSubHeadingListEnd
+
+
+%-----------EXPERIENCE-----------
+\section{Experience}
+  \resumeSubHeadingListStart
+
+    \resumeSubheading
+      {Senior Data Analyst}{Jan 2023 -- Present}
+      {Hollowfield Retail Group}{Leeds, UK}
+      \resumeItemListStart
+        \resumeItem{Designed and analysed 30 A/B tests on checkout, finding changes worth 4\% more revenue.} % id:exp-01.b2
+        \resumeItem{Modelled sales tables in dbt, cutting dashboard refresh time from 40 to 6 minutes.} % id:exp-01.b3
+        \resumeItem{Built 12 Tableau dashboards on BigQuery used weekly by 200 store managers.} % id:exp-01.b1
+        \resumeItem{Built a weekly demand forecast in Python with 8\% mean error across 1,500 products.} % id:exp-01.b4
+      \resumeItemListEnd
+
+    \resumeSubheading
+      {Data Analyst}{Aug 2020 -- Dec 2022}
+      {Saltmarsh Insurance}{Manchester, UK}
+      \resumeItemListStart
+        \resumeItem{Used regression in R to find the 5 factors behind 70\% of late claims.} % id:exp-02.b2
+        \resumeItem{Replaced 25 monthly Excel reports with one Power BI dashboard for the claims team.} % id:exp-02.b1
+        \resumeItem{Wrote SQL pipelines joining 6 source systems into one claims table.} % id:exp-02.b3
+        \resumeItem{Cleaned 3M policy records with pandas, raising match rates from 81\% to 97\%.} % id:exp-02.b4
+      \resumeItemListEnd
+
+    \resumeSubheading
+      {Junior Analyst}{Sep 2018 -- Jul 2020}
+      {Brackenridge Market Research}{Manchester, UK}
+      \resumeItemListStart
+        \resumeItem{Ran significance tests on survey samples of up to 10,000 respondents.} % id:exp-03.b2
+        \resumeItem{Built survey reporting dashboards in Excel for 40 client studies a year.} % id:exp-03.b1
+      \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+
+
+%-----------PROJECTS-----------
+\section{Projects}
+    \resumeSubHeadingListStart
+      \resumeProjectHeading
+          {\textbf{Ridership explorer} $|$ \emph{github.com/noorhaddad-example/ridership-explorer}}{}
+          \resumeItemListStart
+            \resumeItem{Python and pandas notebook charting 5 years of city bus ridership, featured in a local data newsletter.} % id:prj-01.b1
+          \resumeItemListEnd
+    \resumeSubHeadingListEnd
+
+
+%-----------PROGRAMMING SKILLS-----------
+\section{Technical Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+     \textbf{Skills}{: Python, Statistics, SQL, Data visualisation, BigQuery, pandas, A/B testing, Tableau, dbt, Power BI, Excel, R, Forecasting}
+    }}
+ \end{itemize}
+
+
+%-------------------------------------------
+\end{document}

@@ -1,0 +1,98 @@
+%% cvforge-template v1
+%% sections: experience, projects, skills, education
+%% supports: person.phone, person.links, experience.location, projects.url
+%% max-bullets-per-role: 5
+%% engine: xelatex
+%
+% Deedy Resume, OpenFonts version (Apache-2.0, Debarghya Das), converted to the cvforge contract.
+% The class, its fonts (Lato, Raleway, loaded from fonts/ by relative Path) and its two-column
+% minipage layout are the original's. The original sample .tex could not be fetched in this
+% environment (see LICENSE-NOTE.md); this body uses the class's own macros in the published
+% layout: a narrow left column (education, skills) and a wide right column (experience,
+% projects).
+\documentclass[]{deedy-resume-openfont}
+
+\begin{document}
+
+\namesection{Tomasz}{Lindqvist}{
+\href{https://github.com/tlindqvist-example}{github.com/tlindqvist-example} | \href{https://linkedin.com/in/tlindqvist-example}{linkedin.com/in/tlindqvist-example} | \href{mailto:tomasz.lindqvist@example.com}{tomasz.lindqvist@example.com} | +48 500 000 000
+}
+
+%----------------------------------------------------------------------------------------
+%	COLUMN ONE
+%----------------------------------------------------------------------------------------
+\begin{minipage}[t]{0.33\textwidth}
+
+\section{Education}
+\subsection{Lakeside Technical University}
+\descript{B.Sc. Computer Science}
+\location{Oct 2014 -- Jun 2018}
+\sectionsep
+
+\section{Skills}
+Go \\
+Python \\
+REST APIs \\
+PostgreSQL \\
+Apache Kafka \\
+OpenAPI \\
+Kubernetes \\
+gRPC \\
+Terraform \\
+AWS \\
+Redis \\
+Docker \\
+Prometheus \\
+\sectionsep
+
+\end{minipage}
+\hfill
+%----------------------------------------------------------------------------------------
+%	COLUMN TWO
+%----------------------------------------------------------------------------------------
+\begin{minipage}[t]{0.66\textwidth}
+
+\section{Experience}
+\runsubsection{Brightharbor Logistics}
+\descript{| Senior Backend Engineer}
+\location{Mar 2023 -- Present | Gdansk, PL}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\item Designed a public REST API in Go with OpenAPI 3 specs, serving 40M requests a month to 300 partner integrations. % id:exp-01.b1
+\item Introduced gRPC between internal services, reducing p99 latency from 480 ms to 90 ms. % id:exp-01.b3
+\item Migrated 22 services from VMs to Kubernetes on Terraform-managed AWS, cutting hosting cost 35\%. % id:exp-01.b2
+\item Built Prometheus alerting and SLO dashboards that cut mean time to recovery from 3 hours to 25 minutes. % id:exp-01.b4
+\end{tightemize}
+\sectionsep
+\runsubsection{Copperline Payments}
+\descript{| Backend Developer}
+\location{Jun 2020 -- Feb 2023 | Warsaw, PL}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\item Built an idempotent payments API in Python and PostgreSQL processing 1.2M transactions a day. % id:exp-02.b1
+\item Replaced nightly batch jobs with Kafka event streams, delivering settlement data 6 hours sooner. % id:exp-02.b2
+\item Added Redis caching to the account lookup path, cutting database load 60\%. % id:exp-02.b3
+\item Containerised 9 services with Docker and wrote the local setup used by 25 engineers. % id:exp-02.b4
+\end{tightemize}
+\sectionsep
+\runsubsection{Fernwood Analytics}
+\descript{| Junior Software Developer}
+\location{Jul 2018 -- May 2020 | Warsaw, PL}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\item Wrote 14 REST endpoints in Python for a reporting product used by 120 clients. % id:exp-03.b1
+\item Tuned slow PostgreSQL queries, bringing the 10 heaviest reports under 2 seconds. % id:exp-03.b2
+\item Automated test database provisioning with Docker, saving each developer 30 minutes a day. % id:exp-03.b3
+\end{tightemize}
+\sectionsep
+
+\section{Projects}
+\runsubsection{queuectl}
+\descript{| github.com/tlindqvist-example/queuectl}
+\begin{tightemize}
+\item Open-source Go CLI for inspecting Kafka consumer lag, with 1,400 GitHub stars. % id:prj-01.b1
+\end{tightemize}
+\sectionsep
+
+\end{minipage}
+\end{document}

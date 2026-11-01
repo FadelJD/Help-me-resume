@@ -1,0 +1,97 @@
+%% cvforge-template v1
+%% sections: experience, projects, skills, education
+%% supports: person.phone, person.links, experience.location, projects.url
+%% max-bullets-per-role: 5
+%% engine: xelatex
+%
+% Deedy Resume, OpenFonts version (Apache-2.0, Debarghya Das), converted to the cvforge contract.
+% The class, its fonts (Lato, Raleway, loaded from fonts/ by relative Path) and its two-column
+% minipage layout are the original's. The original sample .tex could not be fetched in this
+% environment (see LICENSE-NOTE.md); this body uses the class's own macros in the published
+% layout: a narrow left column (education, skills) and a wide right column (experience,
+% projects).
+\documentclass[]{deedy-resume-openfont}
+
+\begin{document}
+
+\namesection{Sofia}{Brennan-Ito}{
+\href{https://linkedin.com/in/sofiabrennan-example}{linkedin.com/in/sofiabrennan-example} | \href{https://sofiabrennan.example.org}{sofiabrennan.example.org} | \href{mailto:sofia.brennan@example.org}{sofia.brennan@example.org} | +353 85 000 0000
+}
+
+%----------------------------------------------------------------------------------------
+%	COLUMN ONE
+%----------------------------------------------------------------------------------------
+\begin{minipage}[t]{0.33\textwidth}
+
+\section{Education}
+\subsection{Harbourview University}
+\descript{B.A. Communications}
+\location{Sep 2013 -- Jun 2016}
+\sectionsep
+
+\section{Skills}
+Paid search \\
+Brand strategy \\
+Content marketing \\
+Paid social \\
+Team leadership \\
+Social media \\
+SEO \\
+Marketing analytics \\
+Budget management \\
+Email marketing \\
+CRM \\
+Conversion rate optimisation \\
+Public relations \\
+\sectionsep
+
+\end{minipage}
+\hfill
+%----------------------------------------------------------------------------------------
+%	COLUMN TWO
+%----------------------------------------------------------------------------------------
+\begin{minipage}[t]{0.66\textwidth}
+
+\section{Experience}
+\runsubsection{Larkspur Home Goods}
+\descript{| Marketing Manager}
+\location{Apr 2022 -- Present | Dublin, IE}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\item Led a brand refresh across packaging, website and social channels, lifting aided brand awareness from 18\% to 31\%. % id:exp-01.b1
+\item Ran paid search and paid social on a 1.2M EUR annual budget at a 4.1x return on ad spend. % id:exp-01.b2
+\item Cut cost per acquisition 28\% through landing page tests and conversion rate work. % id:exp-01.b3
+\item Managed a team of 5 across content, design and paid media. % id:exp-01.b4
+\end{tightemize}
+\sectionsep
+\runsubsection{Ferncastle Travel}
+\descript{| Content Marketing Lead}
+\location{May 2019 -- Mar 2022 | Galway, IE}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\item Built an editorial calendar of 300 articles a year that grew organic traffic from 40k to 210k monthly visits. % id:exp-02.b1
+\item Grew the email list from 15k to 90k subscribers with segmented CRM journeys. % id:exp-02.b2
+\item Placed 25 stories in travel press through a small PR programme. % id:exp-02.b3
+\end{tightemize}
+\sectionsep
+\runsubsection{Pebblecrest Fitness}
+\descript{| Marketing Coordinator}
+\location{Feb 2017 -- Apr 2019 | Galway, IE}
+\vspace{\topsep} % Hacky fix for awkward extra vertical space (as in the original sample)
+\begin{tightemize}
+\item Ran social media channels for 12 studios, tripling followers in 18 months. % id:exp-03.b1
+\item Launched local paid social campaigns that brought in 1,100 trial sign-ups. % id:exp-03.b3
+\item Set up the first marketing analytics reports, tracking leads from 6 channels. % id:exp-03.b2
+\end{tightemize}
+\sectionsep
+
+\section{Projects}
+\runsubsection{Small Business Marketing Clinic}
+\descript{| clinic.example.org}
+\begin{tightemize}
+\item Volunteer workshops teaching SEO and email marketing to 60 local business owners. % id:prj-01.b1
+\end{tightemize}
+\sectionsep
+
+\end{minipage}
+\end{document}

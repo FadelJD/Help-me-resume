@@ -1,0 +1,191 @@
+%% cvforge-template v1
+%% sections: education, experience, projects, skills
+%% supports: person.phone, person.links, experience.location, projects.url, skills.groups
+%% max-bullets-per-role: 6
+%
+% Jake's Resume (MIT, Jake Gutierrez), converted to the cvforge contract. The preamble is the
+% original, unchanged; only the sample content in the body became placeholders.
+%-------------------------
+% Resume in Latex
+% Author : Jake Gutierrez
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\input{glyphtounicode}
+
+
+%----------FONT OPTIONS----------
+% sans-serif
+% \usepackage[sfdefault]{FiraSans}
+% \usepackage[sfdefault]{roboto}
+% \usepackage[sfdefault]{noto-sans}
+% \usepackage[default]{sourcesanspro}
+
+% serif
+% \usepackage{CormorantGaramond}
+% \usepackage{charter}
+
+
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.0in}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+% Ensure that generate pdf is machine readable/ATS parsable
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubSubheading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+%----------HEADING----------
+\begin{center}
+    \textbf{\Huge \scshape Jane Doe} \\ \vspace{1pt}
+    \small +66 80 000 0000 $|$ \href{mailto:jane@example.com}{\underline{jane@example.com}} $|$
+    \href{https://github.com/janedoe}{\underline{github.com/janedoe}} $|$
+    \href{https://linkedin.com/in/janedoe}{\underline{linkedin.com/in/janedoe}}
+\end{center}
+
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {KMITL, Bangkok}{}
+      {B.Eng. Computer Innovation Engineering}{Aug 2020 -- May 2024}
+  \resumeSubHeadingListEnd
+
+
+%-----------EXPERIENCE-----------
+\section{Experience}
+  \resumeSubHeadingListStart
+
+    \resumeSubheading
+      {Technical Writer}{Jun 2025 -- Present}
+      {Acme Software}{Bangkok, TH}
+      \resumeItemListStart
+        \resumeItem{Built a Python pipeline migrating 400 knowledge-base articles to DocFX.} % id:exp-01.b2
+        \resumeItem{Cut docs build time 40\% by caching DocFX output in GitHub Actions.} % id:exp-01.b4
+        \resumeItem{Wrote C\# code samples for every public API \& kept them compiling in CI.} % id:exp-01.b3
+        \resumeItem{Owned end-to-end documentation for a .NET PDF library used by 2,000 teams.} % id:exp-01.b1
+        \resumeItem{Typeset the printed API reference in LaTeX from the same Markdown sources.} % id:exp-01.b6
+        \resumeItem{Interviewed support engineers to rewrite the 10 most-visited troubleshooting pages.} % id:exp-01.b5
+      \resumeItemListEnd
+
+    \resumeSubheading
+      {Junior Full-Stack Developer}{Jan 2024 -- May 2025}
+      {Lanna Digital Co., Ltd.}{Chiang Mai, TH}
+      \resumeItemListStart
+        \resumeItem{Shipped a REST API in Node.js and PostgreSQL serving 1M requests a day.} % id:exp-02.b1
+        \resumeItem{Built a React and TypeScript dashboard used by 30 field staff for daily reporting.} % id:exp-02.b2
+        \resumeItem{Containerised three services with Docker, cutting onboarding from two days to one hour.} % id:exp-02.b3
+        \resumeItem{Added GitHub Actions pipelines running tests on every pull request.} % id:exp-02.b4
+        \resumeItem{Wrote the internal API guide that new developers read in their first week.} % id:exp-02.b5
+      \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+
+
+%-----------PROJECTS-----------
+\section{Projects}
+    \resumeSubHeadingListStart
+      \resumeProjectHeading
+          {\textbf{Portfolio site} $|$ \emph{janedoe.example.dev}}{}
+          \resumeItemListStart
+            \resumeItem{Static site in TypeScript, deployed on Cloudflare Pages with a 100\% Lighthouse score.} % id:prj-01.b1
+          \resumeItemListEnd
+      \resumeProjectHeading
+          {\textbf{thai\_date\_utils} $|$ \emph{github.com/janedoe/thai\_date\_utils}}{}
+          \resumeItemListStart
+            \resumeItem{Python library converting Buddhist-era dates, 98\% test coverage, published on PyPI.} % id:prj-02.b1
+          \resumeItemListEnd
+    \resumeSubHeadingListEnd
+
+
+%-----------PROGRAMMING SKILLS-----------
+\section{Technical Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+     \textbf{Frontend}{: TypeScript, React} \\
+     \textbf{Backend}{: REST APIs, Node.js, PostgreSQL, Python, .NET / C\#} \\
+     \textbf{Tooling}{: GitHub Actions, Technical documentation, Docker, LaTeX}
+    }}
+ \end{itemize}
+
+
+%-------------------------------------------
+\end{document}

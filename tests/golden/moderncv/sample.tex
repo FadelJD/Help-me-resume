@@ -1,0 +1,105 @@
+%% cvforge-template v1
+%% sections: education, experience, skills
+%% supports: person.phone, person.links, experience.location, skills.groups
+%% max-bullets-per-role: 5
+%% engine: lualatex
+%
+% moderncv template.tex (LPPL 1.3c), converted to the cvforge contract. Class options, style
+% (contemporary), colour, geometry and fonts are the original's. The sample has no projects
+% section, so projects are left out; sample-only sections (thesis, languages, skill matrix,
+% publications) are removed. The moderncv class comes from TeX Live.
+%% start of file `template.tex'.
+%% Copyright 2006-2015 Xavier Danaux (xdanaux@gmail.com), 2020-2026 moderncv maintainers (github.com/moderncv).
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License version 1.3c,
+% available at http://www.latex-project.org/lppl/.
+
+
+\documentclass[11pt,a4paper,sans]{moderncv}        % possible options include font size ('10pt', '11pt' (default) and '12pt'), paper size ('a4paper' (default), 'letterpaper', 'a5paper', 'legalpaper', 'executivepaper' and 'landscape'), font family ('sans' and 'roman'), draft state ('draft', 'final' (default)) and skill level symbol ('circle', 'square' (default))
+
+\moderncvcolor{cerulean}                           % color options 'black', 'blue' (default), 'burgundy', 'green', 'grey', 'orange', 'purple' and 'red'; for contemporary style use 'cerulean'
+% moderncv themes
+\moderncvstyle[]{contemporary}                     % style options are 'casual' (default), 'classic', 'banking', 'oldstyle', 'fancy' and 'contemporary'
+                                                   % the 'contemporary' style optionally takes the `qr` (default) or `noqr` options
+%\renewcommand{\familydefault}{\sfdefault}         % to set the default font; use '\sfdefault' for the default sans serif font, '\rmdefault' for the default roman one, or any tex font name
+%\nopagenumbers{}                                  % uncomment to suppress automatic page numbering for CVs longer than one page
+
+% adjust the page margins
+\usepackage[hmargin=0.5in,vmargin=10pt]{geometry}                  % the 'contemporary' style looks better with reduced margins; uncomment the line below for increased margin
+%\usepackage[scale=0.75]{geometry}
+%\setlength{\hintscolumnwidth}{3cm}                % if you want to change the width of the column with the dates
+%\setlength{\makecvheadnamewidth}{10cm}            % for the 'classic' style, if you want to force the width allocated to your name and avoid line breaks. be careful though, the length is normally calculated to avoid any overlap with your personal info; use this at your own typographical risks...
+%\setlength{\listitemsymbolspace}{10pt}            % set custom spacing between list symbol and text item (influences \cvlistitem and \cvlistdoubleitem)
+
+% the 'contemporary' style allows to append additional elements to the head background; uncomment and customize if needed
+%\def\@moderncvheadBackground{
+%}
+
+% font loading
+% for luatex and xetex, do not use inputenc and fontenc
+% see https://tex.stackexchange.com/a/496643
+\ifxetexorluatex
+  \usepackage{fontspec}
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Ligatures=TeX}
+  \setmainfont{Latin Modern Roman}
+  \setsansfont{Latin Modern Sans}
+  \setmonofont{Latin Modern Mono}
+  \setmathfont{Latin Modern Math}
+
+  % you may also consider Fira Sans Light for a extra modern look
+  %\setsansfont[ItalicFont={Fira Sans Light Italic},%
+  %           BoldFont={Fira Sans},%
+  %           BoldItalicFont={Fira Sans Italic}]%
+  %           {Fira Sans Light}%
+\else
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+\fi
+
+% document language
+\usepackage[english]{babel}  % FIXME: using spanish breaks moderncv
+
+% personal data
+\name{Jane Doe}{}
+\title{Full-Stack Engineer}
+\address{Chiang Mai, TH}{}{}
+\phone[mobile]{+66 80 000 0000}
+\email{jane@example.com}
+\extrainfo{\href{https://github.com/janedoe}{github.com/janedoe}, \href{https://linkedin.com/in/janedoe}{linkedin.com/in/janedoe}}
+%% cvforge: \born, extra phones, \social ids, \photo and \quote are sample-only and removed.
+
+\begin{document}
+\makecvtitle
+
+\section{Education}
+\cventry{Aug 2020--May 2024}{B.Eng. Computer Innovation Engineering}{KMITL, Bangkok}{}{}{}
+
+\section{Experience}
+\cventry{Jun 2025--Present}{Technical Writer}{Acme Software}{Bangkok, TH}{}{%
+\begin{itemize}%
+\item Built a Python pipeline migrating 400 knowledge-base articles to DocFX. % id:exp-01.b2
+\item Cut docs build time 40\% by caching DocFX output in GitHub Actions. % id:exp-01.b4
+\item Wrote C\# code samples for every public API \& kept them compiling in CI. % id:exp-01.b3
+\item Owned end-to-end documentation for a .NET PDF library used by 2,000 teams. % id:exp-01.b1
+\item Typeset the printed API reference in LaTeX from the same Markdown sources. % id:exp-01.b6
+\end{itemize}%
+}
+\cventry{Jan 2024--May 2025}{Junior Full-Stack Developer}{Lanna Digital Co., Ltd.}{Chiang Mai, TH}{}{%
+\begin{itemize}%
+\item Shipped a REST API in Node.js and PostgreSQL serving 1M requests a day. % id:exp-02.b1
+\item Built a React and TypeScript dashboard used by 30 field staff for daily reporting. % id:exp-02.b2
+\item Containerised three services with Docker, cutting onboarding from two days to one hour. % id:exp-02.b3
+\item Added GitHub Actions pipelines running tests on every pull request. % id:exp-02.b4
+\item Wrote the internal API guide that new developers read in their first week. % id:exp-02.b5
+\end{itemize}%
+}
+
+\section{Computer skills}
+\cvitem{Frontend}{TypeScript, React}
+\cvitem{Backend}{REST APIs, Node.js, PostgreSQL, Python, .NET / C\#}
+\cvitem{Tooling}{GitHub Actions, Technical documentation, Docker, LaTeX}
+
+\end{document}

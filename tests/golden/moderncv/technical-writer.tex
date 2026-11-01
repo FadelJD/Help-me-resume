@@ -1,0 +1,108 @@
+%% cvforge-template v1
+%% sections: education, experience, skills
+%% supports: person.phone, person.links, experience.location, skills.groups
+%% max-bullets-per-role: 5
+%% engine: lualatex
+%
+% moderncv template.tex (LPPL 1.3c), converted to the cvforge contract. Class options, style
+% (contemporary), colour, geometry and fonts are the original's. The sample has no projects
+% section, so projects are left out; sample-only sections (thesis, languages, skill matrix,
+% publications) are removed. The moderncv class comes from TeX Live.
+%% start of file `template.tex'.
+%% Copyright 2006-2015 Xavier Danaux (xdanaux@gmail.com), 2020-2026 moderncv maintainers (github.com/moderncv).
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License version 1.3c,
+% available at http://www.latex-project.org/lppl/.
+
+
+\documentclass[11pt,a4paper,sans]{moderncv}        % possible options include font size ('10pt', '11pt' (default) and '12pt'), paper size ('a4paper' (default), 'letterpaper', 'a5paper', 'legalpaper', 'executivepaper' and 'landscape'), font family ('sans' and 'roman'), draft state ('draft', 'final' (default)) and skill level symbol ('circle', 'square' (default))
+
+\moderncvcolor{cerulean}                           % color options 'black', 'blue' (default), 'burgundy', 'green', 'grey', 'orange', 'purple' and 'red'; for contemporary style use 'cerulean'
+% moderncv themes
+\moderncvstyle[]{contemporary}                     % style options are 'casual' (default), 'classic', 'banking', 'oldstyle', 'fancy' and 'contemporary'
+                                                   % the 'contemporary' style optionally takes the `qr` (default) or `noqr` options
+%\renewcommand{\familydefault}{\sfdefault}         % to set the default font; use '\sfdefault' for the default sans serif font, '\rmdefault' for the default roman one, or any tex font name
+%\nopagenumbers{}                                  % uncomment to suppress automatic page numbering for CVs longer than one page
+
+% adjust the page margins
+\usepackage[hmargin=0.5in,vmargin=10pt]{geometry}                  % the 'contemporary' style looks better with reduced margins; uncomment the line below for increased margin
+%\usepackage[scale=0.75]{geometry}
+%\setlength{\hintscolumnwidth}{3cm}                % if you want to change the width of the column with the dates
+%\setlength{\makecvheadnamewidth}{10cm}            % for the 'classic' style, if you want to force the width allocated to your name and avoid line breaks. be careful though, the length is normally calculated to avoid any overlap with your personal info; use this at your own typographical risks...
+%\setlength{\listitemsymbolspace}{10pt}            % set custom spacing between list symbol and text item (influences \cvlistitem and \cvlistdoubleitem)
+
+% the 'contemporary' style allows to append additional elements to the head background; uncomment and customize if needed
+%\def\@moderncvheadBackground{
+%}
+
+% font loading
+% for luatex and xetex, do not use inputenc and fontenc
+% see https://tex.stackexchange.com/a/496643
+\ifxetexorluatex
+  \usepackage{fontspec}
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Ligatures=TeX}
+  \setmainfont{Latin Modern Roman}
+  \setsansfont{Latin Modern Sans}
+  \setmonofont{Latin Modern Mono}
+  \setmathfont{Latin Modern Math}
+
+  % you may also consider Fira Sans Light for a extra modern look
+  %\setsansfont[ItalicFont={Fira Sans Light Italic},%
+  %           BoldFont={Fira Sans},%
+  %           BoldItalicFont={Fira Sans Italic}]%
+  %           {Fira Sans Light}%
+\else
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+\fi
+
+% document language
+\usepackage[english]{babel}  % FIXME: using spanish breaks moderncv
+
+% personal data
+\name{Elena Vasquez-Hart}{}
+\title{Technical Writer}
+\address{Valencia, ES}{}{}
+\phone[mobile]{+34 600 000 000}
+\email{elena.vh@example.org}
+\extrainfo{\href{https://github.com/evh-docs-example}{github.com/evh-docs-example}, \href{https://linkedin.com/in/evh-example}{linkedin.com/in/evh-example}}
+%% cvforge: \born, extra phones, \social ids, \photo and \quote are sample-only and removed.
+
+\begin{document}
+\makecvtitle
+
+\section{Education}
+\cventry{Sep 2013--Jun 2017}{B.A. English and Linguistics}{Eastmoor University}{}{}{}
+
+\section{Experience}
+\cventry{Sep 2022--Present}{Senior Technical Writer}{Quillstone Cloud}{Valencia, ES}{}{%
+\begin{itemize}%
+\item Wrote a 6-part getting-started tutorial series that lifted trial-to-paid conversion 12\%. % id:exp-01.b2
+\item Rebuilt the API reference for 180 endpoints from OpenAPI specs, regenerated on every release. % id:exp-01.b1
+\item Added runnable Python and JavaScript code samples to every endpoint page, tested in CI. % id:exp-01.b3
+\item Created the docs style guide adopted by 40 engineers who contribute pages. % id:exp-01.b4
+\end{itemize}%
+}
+\cventry{Jan 2020--Aug 2022}{Technical Writer}{Marrowbank Software}{Madrid, ES}{}{%
+\begin{itemize}%
+\item Designed a first-week onboarding path for new developers, cutting support tickets from new accounts 30\%. % id:exp-02.b2
+\item Moved 650 wiki pages to a Markdown docs-as-code site in Git, with review on every pull request. % id:exp-02.b1
+\item Set up page analytics to find the 20 least helpful pages, then rewrote each one. % id:exp-02.b4
+\item Rewrote error messages and interface text across 3 products with the design team. % id:exp-02.b3
+\end{itemize}%
+}
+\cventry{Jun 2017--Dec 2019}{Documentation Specialist}{Tallowbrook Instruments}{Madrid, ES}{}{%
+\begin{itemize}%
+\item Wrote installation and user manuals for 8 lab instruments shipped to 15 countries. % id:exp-03.b1
+\item Documented a serial command API with 90 commands and a worked example for each. % id:exp-03.b2
+\item Cut translation costs 25\% with a reusable Markdown glossary of 400 terms. % id:exp-03.b3
+\end{itemize}%
+}
+
+\section{Computer skills}
+\cvitem{}{Technical writing, API reference documentation, Tutorials, Developer onboarding, Docs-as-code, Style guides, OpenAPI, Markdown, Git, Python, JavaScript, UX writing, Content analytics}
+
+\end{document}

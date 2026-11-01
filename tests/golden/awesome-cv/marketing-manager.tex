@@ -1,0 +1,159 @@
+%% cvforge-template v1
+%% sections: experience, education, skills
+%% supports: person.phone, person.links, experience.location, skills.groups
+%% max-bullets-per-role: 5
+%% engine: lualatex
+%
+% Awesome-CV resume.tex (LPPL 1.3c, Byungjin Park), converted to the cvforge contract. Class,
+% fonts (Source Sans 3, Roboto, Font Awesome 6), colours and layout are the original's.
+% Sections without profile data (summary, honors, certificates) are removed; skills use the
+% class's own cvskills environment. Needs tests/fixtures/templates/provision.sh for its fonts.
+%!TEX TS-program = lualatex
+%!TEX encoding = UTF-8 Unicode
+% Awesome CV LaTeX Template for CV/Resume
+%
+% This template has been downloaded from:
+% https://github.com/posquit0/Awesome-CV
+%
+% Author:
+% Claud D. Park <posquit0.bj@gmail.com>
+% http://www.posquit0.com
+%
+% Template license:
+% CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
+%
+
+
+%-------------------------------------------------------------------------------
+% CONFIGURATIONS
+% Build from the repository root with: latexmk examples/resume.tex
+%-------------------------------------------------------------------------------
+% A4 paper size by default, use 'letterpaper' for US letter
+\documentclass[11pt, a4paper]{awesome-cv}
+
+% Configure page margins with geometry
+\geometry{left=1.4cm, top=.8cm, right=1.4cm, bottom=1.8cm, footskip=.5cm}
+
+% Color for highlights
+% Awesome Colors: awesome-emerald, awesome-skyblue, awesome-red, awesome-pink, awesome-orange
+%                 awesome-nephritis, awesome-concrete, awesome-darknight
+\colorlet{awesome}{awesome-red}
+% Uncomment if you would like to specify your own color
+% \definecolor{awesome}{HTML}{3E6D9C}
+
+% Colors for text
+% Uncomment if you would like to specify your own color
+% \definecolor{darktext}{HTML}{414141}
+% \definecolor{text}{HTML}{333333}
+% \definecolor{graytext}{HTML}{5D5D5D}
+% \definecolor{lighttext}{HTML}{999999}
+% \definecolor{sectiondivider}{HTML}{5D5D5D}
+
+% Set false if you don't want to highlight section with awesome color
+\setbool{acvSectionColorHighlight}{true}
+
+% If you would like to change the social information separator from a pipe (|) to something else
+\renewcommand{\acvHeaderSocialSep}{\quad\textbar\quad}
+
+
+%-------------------------------------------------------------------------------
+%	PERSONAL INFORMATION
+%	Comment any of the lines below if they are not required
+%-------------------------------------------------------------------------------
+% Available options: circle|rectangle,edge/noedge,left/right
+%-------------------------------------------------------------------------------
+%	PERSONAL INFORMATION (cvforge: filled from the profile)
+%-------------------------------------------------------------------------------
+\name{Sofia Brennan-Ito}{}
+\position{Marketing Manager}
+\address{Dublin, IE}
+\mobile{+353 85 000 0000}
+\email{sofia.brennan@example.org}
+\linkedin{sofiabrennan-example}
+\homepage{sofiabrennan.example.org}
+%% cvforge: the sample \quote is removed; the profile has no quote.
+
+\begin{document}
+
+\makecvheader[C]
+
+\makecvfooter
+  {\today}
+  {Sofia Brennan-Ito~~~·~~~Résumé}
+  {\thepage}
+
+%-------------------------------------------------------------------------------
+%	EXPERIENCE (as in examples/resume/experience.tex)
+%-------------------------------------------------------------------------------
+\cvsection{Work Experience}
+
+\begin{cventries}
+
+  \cventry
+    {Marketing Manager} % Job title
+    {Larkspur Home Goods} % Organization
+    {Dublin, IE} % Location
+    {Apr 2022 - Present} % Date(s)
+    {
+      \begin{cvitems} % Description(s) of tasks/responsibilities
+        \item {Led a brand refresh across packaging, website and social channels, lifting aided brand awareness from 18\% to 31\%.} % id:exp-01.b1
+        \item {Ran paid search and paid social on a 1.2M EUR annual budget at a 4.1x return on ad spend.} % id:exp-01.b2
+        \item {Cut cost per acquisition 28\% through landing page tests and conversion rate work.} % id:exp-01.b3
+        \item {Managed a team of 5 across content, design and paid media.} % id:exp-01.b4
+      \end{cvitems}
+    }
+
+  \cventry
+    {Content Marketing Lead} % Job title
+    {Ferncastle Travel} % Organization
+    {Galway, IE} % Location
+    {May 2019 - Mar 2022} % Date(s)
+    {
+      \begin{cvitems} % Description(s) of tasks/responsibilities
+        \item {Built an editorial calendar of 300 articles a year that grew organic traffic from 40k to 210k monthly visits.} % id:exp-02.b1
+        \item {Grew the email list from 15k to 90k subscribers with segmented CRM journeys.} % id:exp-02.b2
+        \item {Placed 25 stories in travel press through a small PR programme.} % id:exp-02.b3
+      \end{cvitems}
+    }
+
+  \cventry
+    {Marketing Coordinator} % Job title
+    {Pebblecrest Fitness} % Organization
+    {Galway, IE} % Location
+    {Feb 2017 - Apr 2019} % Date(s)
+    {
+      \begin{cvitems} % Description(s) of tasks/responsibilities
+        \item {Ran social media channels for 12 studios, tripling followers in 18 months.} % id:exp-03.b1
+        \item {Launched local paid social campaigns that brought in 1,100 trial sign-ups.} % id:exp-03.b3
+        \item {Set up the first marketing analytics reports, tracking leads from 6 channels.} % id:exp-03.b2
+      \end{cvitems}
+    }
+
+\end{cventries}
+
+%-------------------------------------------------------------------------------
+%	EDUCATION (as in examples/resume/education.tex)
+%-------------------------------------------------------------------------------
+\cvsection{Education}
+
+\begin{cventries}
+
+  \cventry
+    {B.A. Communications} % Degree
+    {Harbourview University} % Institution
+    {} % Location
+    {Sep 2013 - Jun 2016} % Date(s)
+    {}
+
+\end{cventries}
+
+%-------------------------------------------------------------------------------
+%	SKILLS (the class's cvskills environment)
+%-------------------------------------------------------------------------------
+\cvsection{Skills}
+
+\begin{cvskills}
+  \cvskill{Skills}{Paid search, Brand strategy, Content marketing, Paid social, Team leadership, Social media, SEO, Marketing analytics, Budget management, Email marketing, CRM, Conversion rate optimisation, Public relations}
+\end{cvskills}
+
+\end{document}

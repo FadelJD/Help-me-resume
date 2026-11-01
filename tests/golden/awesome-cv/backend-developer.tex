@@ -1,0 +1,160 @@
+%% cvforge-template v1
+%% sections: experience, education, skills
+%% supports: person.phone, person.links, experience.location, skills.groups
+%% max-bullets-per-role: 5
+%% engine: lualatex
+%
+% Awesome-CV resume.tex (LPPL 1.3c, Byungjin Park), converted to the cvforge contract. Class,
+% fonts (Source Sans 3, Roboto, Font Awesome 6), colours and layout are the original's.
+% Sections without profile data (summary, honors, certificates) are removed; skills use the
+% class's own cvskills environment. Needs tests/fixtures/templates/provision.sh for its fonts.
+%!TEX TS-program = lualatex
+%!TEX encoding = UTF-8 Unicode
+% Awesome CV LaTeX Template for CV/Resume
+%
+% This template has been downloaded from:
+% https://github.com/posquit0/Awesome-CV
+%
+% Author:
+% Claud D. Park <posquit0.bj@gmail.com>
+% http://www.posquit0.com
+%
+% Template license:
+% CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
+%
+
+
+%-------------------------------------------------------------------------------
+% CONFIGURATIONS
+% Build from the repository root with: latexmk examples/resume.tex
+%-------------------------------------------------------------------------------
+% A4 paper size by default, use 'letterpaper' for US letter
+\documentclass[11pt, a4paper]{awesome-cv}
+
+% Configure page margins with geometry
+\geometry{left=1.4cm, top=.8cm, right=1.4cm, bottom=1.8cm, footskip=.5cm}
+
+% Color for highlights
+% Awesome Colors: awesome-emerald, awesome-skyblue, awesome-red, awesome-pink, awesome-orange
+%                 awesome-nephritis, awesome-concrete, awesome-darknight
+\colorlet{awesome}{awesome-red}
+% Uncomment if you would like to specify your own color
+% \definecolor{awesome}{HTML}{3E6D9C}
+
+% Colors for text
+% Uncomment if you would like to specify your own color
+% \definecolor{darktext}{HTML}{414141}
+% \definecolor{text}{HTML}{333333}
+% \definecolor{graytext}{HTML}{5D5D5D}
+% \definecolor{lighttext}{HTML}{999999}
+% \definecolor{sectiondivider}{HTML}{5D5D5D}
+
+% Set false if you don't want to highlight section with awesome color
+\setbool{acvSectionColorHighlight}{true}
+
+% If you would like to change the social information separator from a pipe (|) to something else
+\renewcommand{\acvHeaderSocialSep}{\quad\textbar\quad}
+
+
+%-------------------------------------------------------------------------------
+%	PERSONAL INFORMATION
+%	Comment any of the lines below if they are not required
+%-------------------------------------------------------------------------------
+% Available options: circle|rectangle,edge/noedge,left/right
+%-------------------------------------------------------------------------------
+%	PERSONAL INFORMATION (cvforge: filled from the profile)
+%-------------------------------------------------------------------------------
+\name{Tomasz Lindqvist}{}
+\position{Backend Developer}
+\address{Gdansk, PL}
+\mobile{+48 500 000 000}
+\email{tomasz.lindqvist@example.com}
+\github{tlindqvist-example}
+\linkedin{tlindqvist-example}
+%% cvforge: the sample \quote is removed; the profile has no quote.
+
+\begin{document}
+
+\makecvheader[C]
+
+\makecvfooter
+  {\today}
+  {Tomasz Lindqvist~~~·~~~Résumé}
+  {\thepage}
+
+%-------------------------------------------------------------------------------
+%	EXPERIENCE (as in examples/resume/experience.tex)
+%-------------------------------------------------------------------------------
+\cvsection{Work Experience}
+
+\begin{cventries}
+
+  \cventry
+    {Senior Backend Engineer} % Job title
+    {Brightharbor Logistics} % Organization
+    {Gdansk, PL} % Location
+    {Mar 2023 - Present} % Date(s)
+    {
+      \begin{cvitems} % Description(s) of tasks/responsibilities
+        \item {Designed a public REST API in Go with OpenAPI 3 specs, serving 40M requests a month to 300 partner integrations.} % id:exp-01.b1
+        \item {Introduced gRPC between internal services, reducing p99 latency from 480 ms to 90 ms.} % id:exp-01.b3
+        \item {Migrated 22 services from VMs to Kubernetes on Terraform-managed AWS, cutting hosting cost 35\%.} % id:exp-01.b2
+        \item {Built Prometheus alerting and SLO dashboards that cut mean time to recovery from 3 hours to 25 minutes.} % id:exp-01.b4
+      \end{cvitems}
+    }
+
+  \cventry
+    {Backend Developer} % Job title
+    {Copperline Payments} % Organization
+    {Warsaw, PL} % Location
+    {Jun 2020 - Feb 2023} % Date(s)
+    {
+      \begin{cvitems} % Description(s) of tasks/responsibilities
+        \item {Built an idempotent payments API in Python and PostgreSQL processing 1.2M transactions a day.} % id:exp-02.b1
+        \item {Replaced nightly batch jobs with Kafka event streams, delivering settlement data 6 hours sooner.} % id:exp-02.b2
+        \item {Added Redis caching to the account lookup path, cutting database load 60\%.} % id:exp-02.b3
+        \item {Containerised 9 services with Docker and wrote the local setup used by 25 engineers.} % id:exp-02.b4
+      \end{cvitems}
+    }
+
+  \cventry
+    {Junior Software Developer} % Job title
+    {Fernwood Analytics} % Organization
+    {Warsaw, PL} % Location
+    {Jul 2018 - May 2020} % Date(s)
+    {
+      \begin{cvitems} % Description(s) of tasks/responsibilities
+        \item {Wrote 14 REST endpoints in Python for a reporting product used by 120 clients.} % id:exp-03.b1
+        \item {Tuned slow PostgreSQL queries, bringing the 10 heaviest reports under 2 seconds.} % id:exp-03.b2
+        \item {Automated test database provisioning with Docker, saving each developer 30 minutes a day.} % id:exp-03.b3
+      \end{cvitems}
+    }
+
+\end{cventries}
+
+%-------------------------------------------------------------------------------
+%	EDUCATION (as in examples/resume/education.tex)
+%-------------------------------------------------------------------------------
+\cvsection{Education}
+
+\begin{cventries}
+
+  \cventry
+    {B.Sc. Computer Science} % Degree
+    {Lakeside Technical University} % Institution
+    {} % Location
+    {Oct 2014 - Jun 2018} % Date(s)
+    {}
+
+\end{cventries}
+
+%-------------------------------------------------------------------------------
+%	SKILLS (the class's cvskills environment)
+%-------------------------------------------------------------------------------
+\cvsection{Skills}
+
+\begin{cvskills}
+  \cvskill{Skills}{Go, Python, REST APIs, PostgreSQL, Apache Kafka, OpenAPI, Kubernetes, gRPC, Terraform, AWS, Redis, Docker, Prometheus}
+\end{cvskills}
+
+\end{document}
