@@ -355,7 +355,7 @@ def render_selection(prep: Prepared, output: Path | None, job_ref: str | None) -
     assert header is not None
     shown_sections = set(header.sections)
     emitted = {
-        sb.qid: escape(sb.text)
+        sb.qid: escape(sb.text, breakable=True)
         for si in prep.selection.items()
         if si.section in shown_sections
         for sb in si.bullets
