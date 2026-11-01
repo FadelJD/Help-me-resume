@@ -88,7 +88,8 @@ def override_locale(locale: str) -> None:
         raise CVForgeError(
             [
                 Issue(
-                    file="--locale",
+                    file="cvforge",
+                    item="--locale",
                     message=f"unknown locale `{locale}`.",
                     fix=f"use one of: {', '.join(LOCALES)}.",
                 )
@@ -155,7 +156,10 @@ def read_job(job: str | None) -> str | None:
         raise CVForgeError(
             [
                 Issue(
-                    file=job, message="job ad not found.", fix="pass a text file or an http(s) URL."
+                    file=job,
+                    item="--job",
+                    message="job ad not found.",
+                    fix="pass a text file or an http(s) URL.",
                 )
             ]
         )
@@ -264,6 +268,7 @@ def resolve_template(template: Path | None, cfg: Config) -> Path:
         [
             Issue(
                 file="cvforge.toml",
+                item="template",
                 message="no template given.",
                 fix="pass --template my.tex, or set template = in cvforge.toml.",
             )
@@ -700,7 +705,8 @@ def _arg_error(exc: ValidationError, file: str) -> CVForgeError:
         [
             Issue(
                 file=file,
-                message=f"--{'-'.join(map(str, e['loc']))}: {e['msg']}.",
+                item=f"--{'-'.join(map(str, e['loc']))}",
+                message=f"{str(e['msg']).removeprefix('Value error, ')}.",
                 fix="dates are YYYY-MM (end may be present); weight is 1-5; ids use letters, "
                 "digits and hyphens.",
             )
@@ -717,7 +723,14 @@ def run_check(
 ) -> CheckReport:
     if not tex.exists():
         raise CVForgeError(
-            [Issue(file=str(tex), message="file not found.", fix="run `cvforge build` first.")]
+            [
+                Issue(
+                    file=str(tex),
+                    item="TEX",
+                    message="file not found.",
+                    fix="run `cvforge build` first; check reads the .tex it wrote.",
+                )
+            ]
         )
     cfg = _config()
     return check(
@@ -743,6 +756,7 @@ def rewriter_from_config(cfg: Config) -> Rewriter:
             [
                 Issue(
                     file="cvforge.toml",
+                    item="llm.model",
                     message="--rewrite is unavailable: no LLM is configured.",
                     fix='set [llm] model = "<provider>/<model>" in cvforge.toml (e.g. '
                     "\"ollama/llama3\") and pip install 'cvforge[llm]'; everything else works "

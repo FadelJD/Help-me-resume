@@ -1,0 +1,20 @@
+person:
+  name: Test Person
+  email: test@example.com
+skills:
+  py: Python
+  docs: Technical documentation
+experience:
+  - id: exp-01
+    title: Writer
+    org: Example Org
+    start: 2024-01
+    end: now
+    bullets:
+      - id: b1
+        text: Documented the example API for internal teams.
+        skills: [docs]
+        weight: 3
+      - id: b2
+        text: Automated the example build with a Python script.
+        skills: [py]

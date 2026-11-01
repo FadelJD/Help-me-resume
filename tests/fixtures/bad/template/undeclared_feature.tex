@@ -1,0 +1,12 @@
+%% cvforge-template v1
+%% sections: experience, skills
+\documentclass{article}
+\begin{document}
+\BLOCK{for job in experience}
+\VAR{job.title}
+\BLOCK{for b in job.bullets}
+\VAR{b.text} % id:\VAR{b.id}
+\BLOCK{endfor}
+\BLOCK{endfor}
+\BLOCK{for l in person.links}\VAR{l.text}\BLOCK{endfor}
+\end{document}

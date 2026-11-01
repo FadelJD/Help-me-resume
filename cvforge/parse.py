@@ -205,6 +205,7 @@ def load_profile(path: Path) -> ParsedProfile:
             [
                 Issue(
                     file=str(path),
+                    item="--profile",
                     message="profile file not found.",
                     fix="run `cvforge init`, or pass --profile with the right path.",
                 )
@@ -228,6 +229,7 @@ def load_hat(path: Path) -> Hat:
             [
                 Issue(
                     file=str(path),
+                    item="--hat",
                     message="hat file not found.",
                     fix="create it (see examples/hats/developer.toml) or check the --hat name.",
                 )
@@ -247,13 +249,23 @@ def load_hat(path: Path) -> Hat:
         for err in exc.errors():
             loc = tuple(err["loc"])
             key = str(loc[-1]) if loc else ""
-            line = _toml_line(text, key) if key else None
+            msg = str(err["msg"]).removeprefix("Value error, ")
+            named = re.search(r"'([\w-]+)'", msg)  # a validator naming the offending entry
+            line = (_toml_line(text, named.group(1)) if named else None) or (
+                _toml_line(text, key) if key else None
+            )
             if err["type"] == "extra_forbidden":
                 fix = f"remove `{key}`; allowed keys: {', '.join(Hat.model_fields)}."
             else:
                 fix = "correct the value; see examples/hats/developer.toml."
             issues.append(
-                Issue(file=str(path), line=line, message=f"`{key}`: {err['msg']}.", fix=fix)
+                Issue(
+                    file=str(path),
+                    line=line,
+                    item=data.get("name") if isinstance(data.get("name"), str) else None,
+                    message=f"`{key}`: {msg}.",
+                    fix=fix,
+                )
             )
         raise CVForgeError(issues) from exc
 

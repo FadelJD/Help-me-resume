@@ -1,0 +1,4 @@
+name = "dev"
+
+[skill_weights]
+pyton = 2.0

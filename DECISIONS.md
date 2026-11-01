@@ -119,3 +119,9 @@ Choices the spec leaves open. One line each, newest last.
 - Step 3 (convert the user's own template) waits for the template file.
 - Final name: still `cvforge` / Help-me-resume (renaming deferred by the user).
 - Semantic score with the real model: see the semantic line above.
+
+## Work order 2 items 4 and 6: goldens and error audit
+
+- Goldens render each corpus template for the sample (with the full-stack-engineer hat) and each fictional person (with their own hat), with `SOURCE_DATE_EPOCH` fixed to 2026-11-01. A corpus-marked test also compiles all 25.
+- Command-line usage errors are printed in the same shape as file errors: the "where" is the command (`cvforge add bullet`), the item is the offending argument (`[--weight]`), then the fix. The console script now points at `cvforge.cli:run`, which calls Typer with `standalone_mode=False`; Typer's vendored click exceptions are imported from `typer._click.exceptions` because Typer does not re-export them (pinned by tests/test_errors.py).
+- Errors with no line now name the flag or config key that supplied the value (`[--profile]`, `[--template]`, `[--hat]`, `[--job]`, `[TEX]`, `[template]`, `[llm.model]`, `[--locale]`, `[--start]`), and hat validator errors name the offending line. Pydantic's "Value error," prefix is dropped.

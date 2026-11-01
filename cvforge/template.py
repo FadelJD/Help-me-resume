@@ -627,6 +627,7 @@ def validate_template(
             [
                 Issue(
                     file=file,
+                    item="--template",
                     message="template not found.",
                     fix="pass --template, or set template = in cvforge.toml.",
                 )

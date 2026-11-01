@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -11,6 +12,13 @@ from typing import Annotated, NoReturn
 import typer
 from rich.console import Console
 from rich.markup import escape
+from typer._click.exceptions import (  # Typer vendors click; these classes are not re-exported
+    BadParameter,
+    ClickException,
+    MissingParameter,
+    NoArgsIsHelpError,
+    NoSuchOption,
+)
 
 from cvforge import pipeline, views
 from cvforge.check import miss_issues
@@ -64,8 +72,52 @@ def validate(profile: ProfileOpt = None, as_json: JsonOpt = False) -> None:
         raise typer.Exit(1)
 
 
-def main() -> None:  # pragma: no cover
-    sys.exit(app())
+def usage_issue(exc: ClickException) -> Issue:
+    """A command-line usage error in the same shape as every other error: where, what, fix."""
+    ctx = getattr(exc, "ctx", None)
+    command = ctx.command_path if ctx is not None else "cvforge"
+    param = getattr(exc, "param", None)
+    where: str | None = None
+    if param is not None and getattr(param, "opts", None):
+        where = str(param.opts[0])
+        if where.isidentifier():  # positional arguments are shown upper-case in --help
+            where = where.upper()
+    elif isinstance(exc, NoSuchOption):
+        where = exc.option_name
+    else:
+        extras = re.findall(r"\(([^)]*)\)", exc.format_message())
+        where = extras[-1].split()[0] if extras else "arguments"
+    usage = ctx.get_usage().replace("Usage: ", "") if ctx is not None else command
+    usage = re.sub(r"\{(\w+)\}", lambda m: m.group(1).upper(), " ".join(usage.split()))
+    if isinstance(exc, MissingParameter):
+        fix = f"add {where}: {usage}"
+    elif isinstance(exc, NoSuchOption):
+        fix = f"remove {where} or use an option listed by `{command} --help`."
+    elif isinstance(exc, BadParameter):
+        fix = f"give {where} a valid value; `{command} --help` lists them."
+    else:
+        fix = f"remove {where}; usage: {usage}"
+    return Issue(file=command, item=where, message=exc.format_message(), fix=fix)
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Entry point. Usage errors are reported like every other error, then exit code 2."""
+    try:
+        code = app(argv, standalone_mode=False, prog_name="cvforge")
+    except NoArgsIsHelpError as exc:
+        out.print(exc.ctx.get_help() if exc.ctx else "", highlight=False, markup=False)
+        return 2
+    except ClickException as exc:
+        _print_issues([usage_issue(exc)])
+        return 2
+    except typer.Abort:
+        console.print("aborted")
+        return 1
+    return int(code or 0)
+
+
+def run() -> None:  # pragma: no cover - console script
+    sys.exit(main())
 
 
 TemplateOpt = Annotated[

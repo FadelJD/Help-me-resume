@@ -1,0 +1,19 @@
+# One bad command per argument error. Run from the repository root; {tmp} is a scratch copy of
+# examples/profile.cv.txt so nothing in the repo is modified.
+add bullet exp-01 "Did a thing." --weight 7 -p {tmp}
+build --nope
+add skill
+check
+validate extra
+build --max-bullets 0
+build --locale fr -p examples/profile.cv.txt -t templates/minimal.tex
+validate -p tests/fixtures/bad/does-not-exist.cv.txt
+check out/does-not-exist.tex
+build -p examples/profile.cv.txt
+build -p examples/profile.cv.txt -t tests/fixtures/bad/does-not-exist.tex
+build -p examples/profile.cv.txt -t templates/minimal.tex --hat no-such-hat
+build -p examples/profile.cv.txt -t templates/minimal.tex --job tests/fixtures/bad/no-job.txt
+tailor -p examples/profile.cv.txt -t templates/minimal.tex --job examples/job.txt --rewrite
+add role "Backend Developer" --org Acme --start 2024-13 -p {tmp}
+add bullet exp-99 "Did a thing." -p {tmp}
+add skill py "Python again" -p {tmp}
