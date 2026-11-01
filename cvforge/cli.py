@@ -13,6 +13,7 @@ from rich.console import Console
 from rich.markup import escape
 
 from cvforge import pipeline, views
+from cvforge.check import miss_issues
 from cvforge.errors import CVForgeError, Issue
 
 app = typer.Typer(no_args_is_help=True, add_completion=False, help=__doc__)
@@ -148,6 +149,37 @@ def explain(
         out.print_json(json.dumps(result.to_dict()))
         return
     views.print_explain(out, result)
+
+
+@app.command("check")
+def check_cmd(
+    tex: Annotated[Path, typer.Argument(help="A .tex written by build (its report.json too).")],
+    job: JobOpt = None,
+    strict: Annotated[
+        bool, typer.Option("--strict", help="Also fail on scores below cvforge.toml thresholds.")
+    ] = False,
+    lint_template: Annotated[
+        bool, typer.Option("--lint-template", help="Show parser-safety warnings for the layout.")
+    ] = False,
+    semantic: Annotated[
+        bool, typer.Option("--semantic/--no-semantic", help="Embedding score if installed.")
+    ] = True,
+    as_json: JsonOpt = False,
+) -> None:
+    """Compile, extract with real parsers, and fail on any fact that did not come back."""
+    try:
+        result = pipeline.run_check(
+            tex, job, strict=strict, lint_template=lint_template, semantic=semantic
+        )
+    except CVForgeError as exc:
+        _fail(exc, as_json)
+    if as_json:
+        out.print_json(json.dumps(result.to_dict()))
+    else:
+        _print_issues(miss_issues(result) + result.warnings + result.lint)
+        views.print_check(out, result)
+    if not result.ok:
+        raise typer.Exit(1)
 
 
 template_app = typer.Typer(no_args_is_help=True, help="Work with LaTeX templates.")

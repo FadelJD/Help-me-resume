@@ -58,3 +58,15 @@ Choices the spec leaves open. One line each, newest last.
 - Emitted skills are exactly those evidenced by a selected bullet, so the evidence score is 100% by construction. A hat weight of 0 hides a skill.
 - Tokenizer keeps tech terms (`c#`, `.net`, `node.js`), drops stopwords and job-ad boilerplate, and strips a plural `s` from alphabetic words.
 - `explain` applies the template's bullet limit when a template is given or configured; otherwise it shows the full ranking.
+
+## Step 6: compile, parsers, check
+
+- Third parser is `pypdf`, not a resume-specific parser. Resume Matcher now converts PDFs with markitdown (pdfminer underneath, the same engine as pdfplumber), so it would not add an independent reading. The adapter interface keeps a resume parser one file away.
+- `pypdf` runs in layout mode. Its default mode puts a space inside most kerning pairs in TeX output ("T echnical W riter") in every font tested, so a failure there says nothing about the template. Pipelines built on pypdf's default mode (e.g. LangChain's PyPDFLoader) will see those spaces; that is a known limit, not something a template can fix.
+- Round-trip matching is whole-word: a fact glued to an icon glyph or a neighbouring word counts as lost, because a parser reading that text gets the wrong value. `(cid:N)` and private-use glyphs count as junk.
+- Extracted text is normalized before matching (NFKC, dashes, curly quotes, line-end hyphens read both ways).
+- The round-trip also checks the name, email and phone when the template shows them. Which fields the template shows is recorded in report.json at build time.
+- `check` requires the report.json that `build` writes beside the .tex; it holds the emitted text (including approved rewrites) and evidence.
+- The icon fixture uses Marvosym, which ships with texlive-fonts-recommended. Font Awesome needs the 1.7 GB texlive-fonts-extra and garbles the same way.
+- `semantic` score moved to its own `cvforge[semantic]` extra because sentence-transformers pulls PyTorch. When absent, check says so and continues. It is untested in this container: the network policy blocks huggingface.co and download.pytorch.org.
+- Density flags: bullets per role or pages above the template's declared limits, and more than 750 words per page.

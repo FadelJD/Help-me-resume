@@ -16,6 +16,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from cvforge import __version__
+from cvforge.check import CheckReport, check
 from cvforge.compile import compile_pdf
 from cvforge.config import DEFAULT_CONFIG_TEXT, LOCALES, Config, Locale, load_config
 from cvforge.errors import CVForgeError, Issue, errors_only
@@ -416,6 +417,7 @@ def make_report(
         "hat": sel.hat,
         "job": job_ref or "",
         "locale": locale.name,
+        "template_fields": prep.template_report.fields,
         "template_header": {
             "sections": list(header.sections),
             "supports": list(header.supports),
@@ -427,6 +429,9 @@ def make_report(
             "items": items,
             "bullets": sorted(found),
             "skills": [s.name for s in sel.skills] if "skills" in shown else [],
+            "skill_evidence": {s.name: [q for q in s.evidence if q in found] for s in sel.skills}
+            if "skills" in shown
+            else {},
         },
         "ranking": ranking(sel),
         "dropped": [{"id": d.id, "kind": d.kind, "reason": d.reason} for d in sel.dropped],
@@ -689,4 +694,25 @@ def _arg_error(exc: ValidationError, file: str) -> CVForgeError:
             )
             for e in exc.errors()
         ]
+    )
+
+
+# ---------------------------------------------------------------- check
+
+
+def run_check(
+    tex: Path, job: str | None, *, strict: bool, lint_template: bool, semantic: bool
+) -> CheckReport:
+    if not tex.exists():
+        raise CVForgeError(
+            [Issue(file=str(tex), message="file not found.", fix="run `cvforge build` first.")]
+        )
+    cfg = _config()
+    return check(
+        tex,
+        read_job(job),
+        cfg.thresholds,
+        strict=strict,
+        lint_template=lint_template,
+        semantic=semantic,
     )

@@ -112,6 +112,7 @@ class TemplateReport:
     will_fill: list[str] = field(default_factory=list)
     empty: list[str] = field(default_factory=list)
     left_out: list[str] = field(default_factory=list)
+    fields: list[str] = field(default_factory=list)  # placeholder paths the template uses
 
     @property
     def ok(self) -> bool:
@@ -427,6 +428,7 @@ def validate_template(
     report.issues.extend(syntax)
     if syntax:
         return text, report
+    report.fields = sorted({u.path for u in uses if u.path in ALLOWED})
     text_lines = text.splitlines()
     used_roots: set[str] = set()
     used_features: set[str] = set()

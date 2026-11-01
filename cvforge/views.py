@@ -9,6 +9,7 @@ from rich.markup import escape
 from rich.table import Table
 
 if TYPE_CHECKING:
+    from cvforge.check import CheckReport
     from cvforge.pipeline import ExplainResult
     from cvforge.template import TemplateReport
 
@@ -77,3 +78,40 @@ def print_template_report(console: Console, report: TemplateReport) -> None:
     status = "valid" if report.ok else "invalid"
     lint = f", {len(report.lint)} parser-safety warning(s)" if report.lint else ""
     console.print(f"{report.file}: {status}{lint}", highlight=False)
+
+
+def print_check(console: Console, result: CheckReport) -> None:
+    for p in result.parsers:
+        if p.skipped:
+            status = f"skipped ({escape(p.skipped)})"
+        elif p.ok:
+            status = f"ok, {p.checked} facts returned"
+        else:
+            status = f"FAILED, {len(p.misses)} of {p.checked} facts lost"
+        console.print(f"{p.name}: {status}", highlight=False)
+    s = result.scores
+    if s.get("keyword") is not None:
+        console.print(f"keyword coverage: {s['keyword']:.2f}", highlight=False)
+        if s.get("missing_terms"):
+            console.print(
+                "job terms not in the CV: " + escape(", ".join(s["missing_terms"])),
+                highlight=False,
+            )
+    if s.get("semantic") is not None:
+        console.print(f"semantic similarity: {s['semantic']:.2f}", highlight=False)
+    elif s.get("semantic_note"):
+        console.print(f"semantic: {escape(s['semantic_note'])}", highlight=False)
+    if s.get("evidence") is not None:
+        console.print(f"evidence: {s['evidence']:.0%} of skills shown are backed by a bullet")
+    d = result.density
+    console.print(
+        f"density: {d['pages']} page(s), {d['words']} words, "
+        f"bullets per role {d['bullets_per_role']}",
+        highlight=False,
+    )
+    for flag in d["flags"]:
+        console.print(f"  note: {escape(flag)}", highlight=False)
+    for failure in result.strict_failures:
+        console.print(f"strict: {escape(failure)}", style="red", highlight=False)
+    verdict = "passed" if result.ok else "failed"
+    console.print(f"check {verdict}: {result.badge}", highlight=False)

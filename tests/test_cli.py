@@ -63,3 +63,16 @@ def test_build_and_explain(tmp_path: Path) -> None:
     data = json.loads(r.stdout)
     assert data["items"][0]["bullets"][0]["score"] >= data["items"][0]["bullets"][-1]["score"]
     assert data["dropped"]
+
+
+@pytest.mark.tex
+def test_check_cli_exit_codes() -> None:
+    for template, code in ((TEMPLATES / "minimal.tex", 0), (FIXTURES / "template_icons.tex", 1)):
+        out = f"out/{template.stem}.tex"
+        r = runner.invoke(
+            app, ["build", "-p", str(EXAMPLES / "profile.cv.txt"), "-t", str(template), "-o", out]
+        )
+        assert r.exit_code == 0, r.stderr
+        r = runner.invoke(app, ["check", out, "--no-semantic", "--json"])
+        assert r.exit_code == code, r.stdout
+        assert json.loads(r.stdout)["badge"].startswith("parsed: ")

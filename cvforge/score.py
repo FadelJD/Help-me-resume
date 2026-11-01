@@ -32,7 +32,7 @@ def tokenize(text: str) -> list[str]:
     out = []
     for raw in _TOKEN.findall(text.lower()):
         token = raw.rstrip(".")
-        if len(token) < 2 or token in STOPWORDS or token.isdigit():
+        if len(token) < 2 or token in STOPWORDS or not any(c.isalpha() for c in token):
             continue
         out.append(_stem(token))
     return out
