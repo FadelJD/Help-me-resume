@@ -11,10 +11,13 @@ from cvforge.check import (
     contains_word,
     expected_facts,
     extracted_variants,
+    found_instead,
     garbled_count,
+    miss_issues,
     normalize,
+    resolve_parsers,
 )
-from cvforge.config import Thresholds
+from cvforge.config import ParserSetting, Thresholds
 from cvforge.errors import CVForgeError
 
 from .conftest import EXAMPLES, FIXTURES, TEMPLATES
@@ -123,8 +126,8 @@ def test_roundtrip_fails_on_icon_template_naming_the_string(workdir: Path) -> No
     tex = _build(FIXTURES / "template_icons.tex", workdir / "out" / "icons.tex")
     result = check(tex, None, Thresholds(), semantic=False)
     assert not result.ok
-    misses = {(p.name, m.item, m.expected) for p in result.parsers for m in p.misses}
-    assert ("pypdf", "person", "jane@example.com") in misses
+    misses = {(p.name, m.fact.item, m.fact.expected) for p in result.parsers for m in p.misses}
+    assert ("pypdf-layout", "person", "jane@example.com") in misses
     assert any(name == "pdfplumber" and item == "exp-01" for name, item, _ in misses)
 
 
@@ -147,6 +150,8 @@ def test_strict_uses_thresholds(workdir: Path) -> None:
 
 class _Missing:
     name = "imaginary"
+    default_gate = True
+    about = "test double"
 
     def unavailable(self) -> str | None:
         return "not installed"
@@ -160,6 +165,100 @@ def test_unavailable_parser_is_skipped_not_failed(workdir: Path) -> None:
     from cvforge.parsers.pdftotext import PdfToText
 
     tex = _build(TEMPLATES / "minimal.tex", workdir / "out" / "p.tex")
-    result = check(tex, None, Thresholds(), semantic=False, parsers=[PdfToText(), _Missing()])
+    result = check(
+        tex,
+        None,
+        Thresholds(),
+        semantic=False,
+        parsers=[PdfToText(), _Missing()],  # type: ignore[list-item]
+    )
     assert result.ok
     assert any("imaginary" in w.message for w in result.warnings)
+
+
+def test_found_instead_shows_garbled_span() -> None:
+    text = "Experience T echnical W riter | Acme Software"
+    assert found_instead(text, "Technical Writer") == "T echnical W riter"
+    assert found_instead("Bjane@example.com H+66", "jane@example.com") == "Bjane@example.com"
+    assert found_instead("nothing like it", "Kubernetes Operator") is None
+
+
+def test_resolve_parsers_defaults_and_overrides() -> None:
+    gates = {p.name: g for p, g in resolve_parsers({})}
+    assert gates == {
+        "pdftotext": True,
+        "pdftotext-layout": False,
+        "pdfplumber": True,
+        "pypdf-layout": True,
+        "pypdf": False,
+    }
+    over = {
+        "pypdf": ParserSetting(gate=True),
+        "pdftotext-layout": ParserSetting(enabled=False),
+    }
+    gates = {p.name: g for p, g in resolve_parsers(over)}
+    assert gates["pypdf"] is True and "pdftotext-layout" not in gates
+
+
+def test_unknown_parser_in_config() -> None:
+    with pytest.raises(CVForgeError) as exc:
+        resolve_parsers({"pdfminer": ParserSetting()})
+    assert "pdftotext" in exc.value.issues[0].fix
+
+
+@pytest.mark.tex
+def test_pypdf_default_is_advisory_and_shows_what_it_read(workdir: Path) -> None:
+    tex = _build(TEMPLATES / "minimal.tex", workdir / "out" / "adv.tex")
+    result = check(tex, None, Thresholds(), semantic=False)
+    plain = next(p for p in result.parsers if p.name == "pypdf")
+    assert plain.gate is False
+    assert result.roundtrip_ok  # advisory misses never fail check
+    found = {m.found for m in plain.misses}
+    assert any(f and "T echnical W riter" in f for f in found)
+    issues = [i for i in miss_issues(result) if "advisory" in i.message]
+    assert issues and all(i.severity == "warning" for i in issues)
+
+
+@pytest.mark.tex
+def test_gating_config_can_make_pypdf_fail_check(workdir: Path) -> None:
+    tex = _build(TEMPLATES / "minimal.tex", workdir / "out" / "g.tex")
+    result = check(
+        tex, None, Thresholds(), semantic=False, settings={"pypdf": ParserSetting(gate=True)}
+    )
+    assert not result.roundtrip_ok
+
+
+class _FakeEncoder:
+    def encode(self, sentences: list[str], normalize_embeddings: bool = True) -> list[list[float]]:
+        return [[1.0, 0.0] if "Node.js" in s else [0.6, 0.8] for s in sentences]
+
+
+@pytest.mark.tex
+def test_semantic_score_path_with_fake_encoder(workdir: Path) -> None:
+    tex = _build(TEMPLATES / "minimal.tex", workdir / "out" / "sem.tex")
+    job = (FIXTURES / "job_backend.txt").read_text()
+    result = check(tex, job, Thresholds(), encoder=_FakeEncoder())
+    assert result.scores["semantic"] == 1.0  # both texts mention Node.js
+    assert "semantic: 1.00" in result.badge
+
+
+@pytest.mark.tex
+def test_semantic_unavailable_says_why_and_how(
+    workdir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import builtins
+
+    real_import = builtins.__import__
+
+    def no_st(name: str, *args: object, **kwargs: object) -> object:
+        if name.startswith("sentence_transformers"):
+            raise ImportError(name)
+        return real_import(name, *args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(builtins, "__import__", no_st)
+    tex = _build(TEMPLATES / "minimal.tex", workdir / "out" / "nosem.tex")
+    result = check(tex, "Node.js developer", Thresholds())
+    assert result.scores["semantic"] is None
+    assert "not installed" in result.scores["semantic_unavailable"]
+    assert "cvforge[semantic]" in result.scores["semantic_fix"]
+    assert "SentenceTransformer(" in result.scores["semantic_fix"]

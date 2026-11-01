@@ -6,6 +6,8 @@ import math
 import re
 from collections import Counter
 from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any, Protocol
 
 _STOPWORDS_TEXT = """
 a about above after all also an and any are as at be been being but by can could did do does
@@ -95,14 +97,58 @@ def keyword_coverage(
     return round(hit / total, 4), missing[:top_missing]
 
 
-def semantic_similarity(
-    a: str, b: str, model: str = "sentence-transformers/all-MiniLM-L6-v2"
-) -> float | None:
-    """Cosine similarity with a local embedding model; None when sentence-transformers is absent."""
+SEMANTIC_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+DOWNLOAD_COMMAND = (
+    'python -c "from sentence_transformers import SentenceTransformer; '
+    f"SentenceTransformer('{SEMANTIC_MODEL}')\""
+)
+
+
+class Encoder(Protocol):
+    def encode(self, sentences: list[str], normalize_embeddings: bool = ...) -> Any: ...
+
+
+@dataclass(frozen=True)
+class Semantic:
+    score: float | None
+    reason: str | None = None  # why the score is unavailable
+    fix: str | None = None  # how to make it available
+
+
+def load_encoder(model: str = SEMANTIC_MODEL) -> tuple[Encoder | None, Semantic | None]:
+    """The local model, or why it cannot be used. Never downloads: check stays offline."""
     try:
         from sentence_transformers import SentenceTransformer
     except ImportError:
-        return None
-    encoder = SentenceTransformer(model, device="cpu")
+        return None, Semantic(
+            None,
+            "sentence-transformers is not installed.",
+            f"pip install 'cvforge[semantic]', then download the model once: {DOWNLOAD_COMMAND}",
+        )
+    try:
+        encoder: Encoder = SentenceTransformer(model, device="cpu", local_files_only=True)
+    except Exception as exc:  # the library raises several types for a missing cache
+        return None, Semantic(
+            None,
+            f"model {model} is not in the local cache ({type(exc).__name__}).",
+            f"download it once with network access: {DOWNLOAD_COMMAND}. check never downloads.",
+        )
+    return encoder, None
+
+
+def cosine(a: Sequence[float], b: Sequence[float]) -> float:
+    dot = sum(float(x) * float(y) for x, y in zip(a, b, strict=True))
+    na = math.sqrt(sum(float(x) ** 2 for x in a))
+    nb = math.sqrt(sum(float(y) ** 2 for y in b))
+    return dot / (na * nb) if na and nb else 0.0
+
+
+def semantic_similarity(a: str, b: str, encoder: Encoder | None = None) -> Semantic:
+    """Cosine similarity of two texts with a local embedding model (no API call)."""
+    if encoder is None:
+        encoder, problem = load_encoder()
+        if encoder is None:
+            assert problem is not None
+            return problem
     va, vb = encoder.encode([a, b], normalize_embeddings=True)
-    return round(float((va * vb).sum()), 4)
+    return Semantic(round(cosine(va, vb), 4))

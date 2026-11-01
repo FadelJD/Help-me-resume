@@ -8,6 +8,8 @@ from pathlib import Path
 
 class PdfPlumber:
     name = "pdfplumber"
+    default_gate = True
+    about = "pdfminer.six; prints unmapped glyphs as (cid:N)"
 
     def unavailable(self) -> str | None:
         if importlib.util.find_spec("pdfplumber") is None:

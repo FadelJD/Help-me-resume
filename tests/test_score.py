@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from cvforge.score import BM25, keyword_coverage, relevance, semantic_similarity, tokenize
+from cvforge.score import BM25, cosine, keyword_coverage, relevance, semantic_similarity, tokenize
 
 
 def test_tokenize_keeps_tech_terms() -> None:
@@ -37,6 +37,21 @@ def test_keyword_coverage() -> None:
     assert keyword_coverage("", "anything") == (0.0, [])
 
 
-def test_semantic_is_optional() -> None:
-    value = semantic_similarity("a", "b")
-    assert value is None or -1.0 <= value <= 1.0
+class _Fake:
+    def encode(self, sentences: list[str], normalize_embeddings: bool = True) -> list[list[float]]:
+        return [[3.0, 4.0], [4.0, 3.0]]
+
+
+def test_semantic_with_fake_encoder() -> None:
+    assert semantic_similarity("a", "b", _Fake()).score == 0.96
+
+
+def test_cosine() -> None:
+    assert cosine([1.0, 0.0], [0.0, 1.0]) == 0.0
+    assert cosine([0.0, 0.0], [1.0, 1.0]) == 0.0
+
+
+def test_semantic_without_library_explains() -> None:
+    result = semantic_similarity("a", "b")
+    if result.score is None:  # the normal case in CI: no sentence-transformers or no cached model
+        assert result.reason and result.fix and "SentenceTransformer(" in result.fix

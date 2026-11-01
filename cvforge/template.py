@@ -22,6 +22,8 @@ from cvforge.escape import escape, escape_url
 from cvforge.schema import Education, Experience, Hat, Profile, Project, SelectedItem, Selection
 
 HEADER_MAGIC = "%% cvforge-template v1"
+HEADER_KEYS = ("sections", "supports", "max-bullets-per-role", "max-pages", "engine")
+ENGINE_NAMES = ("pdflatex", "xelatex", "lualatex")
 SECTIONS = ("experience", "projects", "skills", "education")
 
 # Optional fields a template must declare under `%% supports:` before using them.
@@ -95,6 +97,7 @@ class Header:
     supports: tuple[str, ...]
     max_bullets: int | None
     max_pages: int | None
+    engine: str = "pdflatex"
 
 
 @dataclass(frozen=True)
@@ -177,13 +180,13 @@ def parse_header(text: str, file: str) -> tuple[Header | None, list[Issue]]:
             continue
         key, sep, value = body.partition(":")
         key = key.strip()
-        if not sep or key not in ("sections", "supports", "max-bullets-per-role", "max-pages"):
+        if not sep or key not in HEADER_KEYS:
             issues.append(
                 Issue(
                     file=file,
                     line=idx + 1,
                     message=f"unknown header line `{line}`.",
-                    fix="use sections:, supports:, max-bullets-per-role: or max-pages:.",
+                    fix=f"use one of: {', '.join(k + ':' for k in HEADER_KEYS)}.",
                 )
             )
             continue
@@ -232,11 +235,13 @@ def parse_header(text: str, file: str) -> tuple[Header | None, list[Issue]]:
                 fix="add e.g. `%% sections: experience, projects, skills, education`.",
             )
         )
+    engine_list = _list("engine", ENGINE_NAMES) if "engine" in values else ("pdflatex",)
     header = Header(
         sections=sections,
         supports=_list("supports", FEATURE_NAMES),
         max_bullets=_int("max-bullets-per-role"),
         max_pages=_int("max-pages"),
+        engine=engine_list[0] if engine_list else "pdflatex",
     )
     return header, issues
 

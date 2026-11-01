@@ -14,7 +14,10 @@ def latexmk_available() -> bool:
     return shutil.which("latexmk") is not None
 
 
-def compile_pdf(tex: Path, timeout: int = 180) -> Path:
+ENGINES = {"pdflatex": "-pdf", "xelatex": "-xelatex", "lualatex": "-lualatex"}
+
+
+def compile_pdf(tex: Path, timeout: int = 180, engine: str = "pdflatex") -> Path:
     if not latexmk_available():
         raise CVForgeError(
             [
@@ -29,7 +32,7 @@ def compile_pdf(tex: Path, timeout: int = 180) -> Path:
     tex = tex.resolve()
     cmd = [
         "latexmk",
-        "-pdf",
+        ENGINES[engine],
         "-interaction=nonstopmode",
         "-halt-on-error",
         "-file-line-error",

@@ -46,6 +46,14 @@ class LLMConfig(BaseModel):
     api_key_env: str = ""
 
 
+class ParserSetting(BaseModel):
+    """Per-parser override. A gating parser's misses fail check; an advisory one's warn."""
+
+    model_config = ConfigDict(extra="forbid")
+    gate: bool | None = None  # None keeps the adapter's default
+    enabled: bool = True
+
+
 class Config(BaseModel):
     model_config = ConfigDict(extra="forbid")
     profile: str = "profile.cv.txt"
@@ -56,6 +64,7 @@ class Config(BaseModel):
     out_dir: str = "out"
     thresholds: Thresholds = Thresholds()
     llm: LLMConfig = LLMConfig()
+    parsers: dict[str, ParserSetting] = {}
 
 
 DEFAULT_CONFIG_TEXT = """\
@@ -71,6 +80,11 @@ out_dir = "out"
 keyword = 0.5
 semantic = 0.5
 evidence = 1.0
+
+# Parser gating. Gating parsers fail `check` on a lost field; advisory ones only warn.
+# Defaults: pdftotext, pdfplumber, pypdf-layout gate; pdftotext-layout and pypdf advise.
+# [parsers.pypdf]
+# gate = true
 
 [llm]                        # optional, only for `tailor --rewrite` (pip install cvforge[llm])
 model = ""                   # LiteLLM model string, e.g. "ollama/llama3"; empty = rewrite off

@@ -1,7 +1,9 @@
 """pypdf: pure-Python extractor with its own text-ordering logic, independent of poppler.
 
-Layout mode is used. pypdf's default mode inserts a space at most kerning pairs in TeX output
-("T echnical W riter"), whatever the font, so a miss there carries no signal about the template.
+Two adapters. `pypdf-layout` gates. `pypdf` (default mode, the one LangChain's PyPDFLoader and
+many quick screening scripts call) is advisory: in TeX output it inserts a space inside most
+kerning pairs ("T echnical W riter") in every font tried, so its misses are reported as warnings
+that show what a pipeline built on it would read.
 """
 
 from __future__ import annotations
@@ -11,7 +13,15 @@ from pathlib import Path
 
 
 class PyPdf:
-    name = "pypdf"
+    def __init__(self, layout: bool) -> None:
+        self.layout = layout
+        self.name = "pypdf-layout" if layout else "pypdf"
+        self.default_gate = layout
+        self.about = (
+            "pypdf, layout mode"
+            if layout
+            else "pypdf, default mode (LangChain PyPDFLoader); splits kerning pairs"
+        )
 
     def unavailable(self) -> str | None:
         if importlib.util.find_spec("pypdf") is None:
@@ -22,4 +32,8 @@ class PyPdf:
         from pypdf import PdfReader
 
         reader = PdfReader(str(pdf))
-        return "\n".join(page.extract_text(extraction_mode="layout") or "" for page in reader.pages)
+        if self.layout:
+            return "\n".join(
+                page.extract_text(extraction_mode="layout") or "" for page in reader.pages
+            )
+        return "\n".join(page.extract_text() or "" for page in reader.pages)

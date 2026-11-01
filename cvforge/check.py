@@ -14,14 +14,15 @@ import shutil
 import subprocess
 import unicodedata
 from dataclasses import dataclass, field
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
 from cvforge.compile import compile_pdf
-from cvforge.config import Thresholds
+from cvforge.config import ParserSetting, Thresholds
 from cvforge.errors import CVForgeError, Issue
-from cvforge.parsers import Parser, all_parsers
-from cvforge.score import keyword_coverage, semantic_similarity
+from cvforge.parsers import PARSER_NAMES, Parser, all_parsers
+from cvforge.score import Encoder, keyword_coverage, semantic_similarity
 from cvforge.template import lint
 
 _CHARMAP = str.maketrans(
@@ -89,17 +90,28 @@ class Fact:
     expected: str
 
 
+@dataclass(frozen=True)
+class Miss:
+    fact: Fact
+    found: str | None  # the closest span the parser returned instead, if any
+
+
 @dataclass
 class ParserResult:
     name: str
+    gate: bool = True
     skipped: str | None = None
-    misses: list[Fact] = field(default_factory=list)
+    misses: list[Miss] = field(default_factory=list)
     garbled: int = 0
     checked: int = 0
 
     @property
     def ok(self) -> bool:
         return self.skipped is None and not self.misses
+
+    @property
+    def ran(self) -> bool:
+        return self.skipped is None
 
 
 @dataclass
@@ -114,9 +126,16 @@ class CheckReport:
     lint: list[Issue] = field(default_factory=list)
 
     @property
+    def gating(self) -> list[ParserResult]:
+        return [p for p in self.parsers if p.gate and p.ran]
+
+    @property
+    def advisory(self) -> list[ParserResult]:
+        return [p for p in self.parsers if not p.gate and p.ran]
+
+    @property
     def roundtrip_ok(self) -> bool:
-        ran = [p for p in self.parsers if p.skipped is None]
-        return bool(ran) and all(p.ok for p in ran)
+        return bool(self.gating) and all(p.ok for p in self.gating)
 
     @property
     def ok(self) -> bool:
@@ -124,8 +143,9 @@ class CheckReport:
 
     @property
     def badge(self) -> str:
-        ran = [p for p in self.parsers if p.skipped is None]
-        parts = [f"parsed: {sum(p.ok for p in ran)}/{len(ran)}"]
+        parts = [f"parsed: {sum(p.ok for p in self.gating)}/{len(self.gating)}"]
+        if self.advisory:
+            parts.append(f"advisory: {sum(p.ok for p in self.advisory)}/{len(self.advisory)}")
         if self.scores.get("keyword") is not None:
             parts.append(f"keyword: {self.scores['keyword']:.2f}")
         if self.scores.get("semantic") is not None:
@@ -144,12 +164,19 @@ class CheckReport:
             "parsers": [
                 {
                     "name": p.name,
+                    "gate": p.gate,
                     "ok": p.ok,
                     "skipped": p.skipped,
                     "checked": p.checked,
                     "garbled_glyphs": p.garbled,
                     "misses": [
-                        {"item": m.item, "field": m.field, "expected": m.expected} for m in p.misses
+                        {
+                            "item": m.fact.item,
+                            "field": m.fact.field,
+                            "expected": m.fact.expected,
+                            "found": m.found,
+                        }
+                        for m in p.misses
                     ],
                 }
                 for p in self.parsers
@@ -205,18 +232,70 @@ def expected_facts(report: dict[str, Any]) -> list[Fact]:
     return facts
 
 
-def roundtrip(parser: Parser, pdf: Path, facts: list[Fact]) -> tuple[ParserResult, str]:
+def found_instead(text: str, expected: str) -> str | None:
+    """What the parser returned where the fact should be: the closest span, or None."""
+    want = squash(normalize(expected))
+    if not want:
+        return None
+    gap = r"[\s\ufffd]{0,3}"
+    pattern = gap.join(re.escape(ch) for ch in want.replace(" ", ""))
+    m = re.search(pattern, text, flags=re.IGNORECASE)
+    if m:
+        start, end = m.start(), m.end()
+        while start > 0 and not text[start - 1].isspace():  # include glued junk
+            start -= 1
+        while end < len(text) and not text[end].isspace():
+            end += 1
+        return text[start:end]
+    words = text.split()
+    n = len(want.split())
+    best, best_ratio = None, 0.0
+    for size in {max(1, n - 1), n, n + 1}:
+        for i in range(0, max(1, len(words) - size + 1)):
+            span = " ".join(words[i : i + size])
+            ratio = SequenceMatcher(None, want.lower(), span.lower()).ratio()
+            if ratio > best_ratio:
+                best, best_ratio = span, ratio
+    return best if best_ratio >= 0.6 else None
+
+
+def roundtrip(parser: Parser, pdf: Path, facts: list[Fact], gate: bool) -> tuple[ParserResult, str]:
     reason = parser.unavailable()
     if reason:
-        return ParserResult(parser.name, skipped=reason), ""
+        return ParserResult(parser.name, gate=gate, skipped=reason), ""
     raw = parser.extract(pdf)
     variants = extracted_variants(raw)
-    result = ParserResult(parser.name, garbled=garbled_count(raw), checked=len(facts))
+    result = ParserResult(parser.name, gate=gate, garbled=garbled_count(raw), checked=len(facts))
     for fact in facts:
         want = squash(normalize(fact.expected))
         if not any(contains_word(v, want) for v in variants):
-            result.misses.append(fact)
+            result.misses.append(Miss(fact, found_instead(variants[1], fact.expected)))
     return result, raw
+
+
+def resolve_parsers(
+    settings: dict[str, ParserSetting], parsers: list[Parser] | None = None
+) -> list[tuple[Parser, bool]]:
+    """Adapters to run with their gate flag, applying cvforge.toml [parsers.*] overrides."""
+    unknown = sorted(set(settings) - set(PARSER_NAMES))
+    if unknown:
+        raise CVForgeError(
+            [
+                Issue(
+                    file="cvforge.toml",
+                    message=f"[parsers] names unknown parser(s): {', '.join(unknown)}.",
+                    fix=f"use one of: {', '.join(PARSER_NAMES)}.",
+                )
+            ]
+        )
+    chosen = []
+    for parser in parsers or all_parsers():
+        setting = settings.get(parser.name, ParserSetting())
+        if not setting.enabled:
+            continue
+        gate = parser.default_gate if setting.gate is None else setting.gate
+        chosen.append((parser, gate))
+    return chosen
 
 
 def page_count(pdf: Path) -> int | None:
@@ -270,16 +349,19 @@ def check(
     lint_template: bool = False,
     semantic: bool = True,
     parsers: list[Parser] | None = None,
+    settings: dict[str, ParserSetting] | None = None,
+    encoder: Encoder | None = None,
 ) -> CheckReport:
     report_path, report = load_report(tex)
-    pdf = compile_pdf(tex)
+    chosen = resolve_parsers(settings or {}, parsers)
+    pdf = compile_pdf(tex, engine=report.get("template_header", {}).get("engine") or "pdflatex")
     facts = expected_facts(report)
     results: list[ParserResult] = []
     primary_text = ""
-    for parser in parsers or all_parsers():
-        parsed, raw = roundtrip(parser, pdf, facts)
+    for parser, gate in chosen:
+        parsed, raw = roundtrip(parser, pdf, facts, gate)
         results.append(parsed)
-        if raw and not primary_text:
+        if raw and gate and not primary_text:
             primary_text = raw
     warnings: list[Issue] = []
     for r in results:
@@ -305,9 +387,11 @@ def check(
     if job and primary_text:
         scores["keyword"], scores["missing_terms"] = keyword_coverage(job, primary_text)
         if semantic:
-            scores["semantic"] = semantic_similarity(job, primary_text)
-            if scores["semantic"] is None:
-                scores["semantic_note"] = "install cvforge[semantic] for the embedding score"
+            result_sem = semantic_similarity(job, primary_text, encoder)
+            scores["semantic"] = result_sem.score
+            if result_sem.score is None:
+                scores["semantic_unavailable"] = result_sem.reason
+                scores["semantic_fix"] = result_sem.fix
     scores["evidence"] = evidence_score(report)
     dens = density(report, primary_text, page_count(pdf))
     strict_failures: list[str] = []
@@ -335,16 +419,22 @@ def check(
 
 
 def miss_issues(result: CheckReport) -> list[Issue]:
+    """Gating misses are errors; advisory misses are warnings showing what came back."""
     issues = []
     for p in result.parsers:
         for m in p.misses:
+            got = f"; it returned {m.found!r}" if m.found else "; nothing close came back"
             issues.append(
                 Issue(
                     file=str(result.pdf),
-                    item=m.item,
-                    message=f"{p.name} did not return the {m.field} {m.expected!r} as whole words.",
+                    item=m.fact.item,
+                    severity="error" if p.gate else "warning",
+                    message=f"{p.name}{'' if p.gate else ' (advisory)'} did not return the "
+                    f"{m.fact.field} {m.fact.expected!r} as whole words{got}.",
                     fix="look for icons, columns or symbols next to it in the template; "
-                    "`cvforge template validate` lists parser-unsafe constructs.",
+                    "`cvforge template validate` lists parser-unsafe constructs."
+                    if p.gate
+                    else "advisory only: pipelines using this parser would read the text above.",
                 )
             )
     return issues

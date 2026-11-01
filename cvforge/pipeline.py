@@ -425,6 +425,7 @@ def make_report(
             "supports": list(header.supports),
             "max_bullets_per_role": header.max_bullets,
             "max_pages": header.max_pages,
+            "engine": header.engine,
         },
         "emitted": {
             "person": {"name": p.name, "email": p.email or "", "phone": p.phone or ""},
@@ -463,8 +464,13 @@ def build(
     prep = prepare(profile=profile, template=template, hat=hat, job=job, max_bullets=max_bullets)
     result = render_selection(prep, output, job)
     if compile_pdf_too:
-        result.pdf = compile_pdf(result.tex)
+        result.pdf = compile_pdf(result.tex, engine=_engine(prep))
     return result
+
+
+def _engine(prep: Prepared) -> str:
+    header = prep.template_report.header
+    return header.engine if header else "pdflatex"
 
 
 # ---------------------------------------------------------------- explain
@@ -717,6 +723,7 @@ def run_check(
         strict=strict,
         lint_template=lint_template,
         semantic=semantic,
+        settings=cfg.parsers,
     )
 
 
@@ -779,5 +786,5 @@ def tailor(
             json.dumps(result.report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
     if compile_pdf_too:
-        result.pdf = compile_pdf(result.tex)
+        result.pdf = compile_pdf(result.tex, engine=_engine(prep))
     return result, proposals

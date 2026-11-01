@@ -83,13 +83,15 @@ def print_template_report(console: Console, report: TemplateReport) -> None:
 
 def print_check(console: Console, result: CheckReport) -> None:
     for p in result.parsers:
+        role = "gate" if p.gate else "advisory"
         if p.skipped:
             status = f"skipped ({escape(p.skipped)})"
         elif p.ok:
             status = f"ok, {p.checked} facts returned"
         else:
-            status = f"FAILED, {len(p.misses)} of {p.checked} facts lost"
-        console.print(f"{p.name}: {status}", highlight=False)
+            verdict = "FAILED" if p.gate else "warning"
+            status = f"{verdict}, {len(p.misses)} of {p.checked} facts lost"
+        console.print(f"{p.name} [{role}]: {status}", highlight=False, markup=False)
     s = result.scores
     if s.get("keyword") is not None:
         console.print(f"keyword coverage: {s['keyword']:.2f}", highlight=False)
@@ -100,8 +102,13 @@ def print_check(console: Console, result: CheckReport) -> None:
             )
     if s.get("semantic") is not None:
         console.print(f"semantic similarity: {s['semantic']:.2f}", highlight=False)
-    elif s.get("semantic_note"):
-        console.print(f"semantic: {escape(s['semantic_note'])}", highlight=False)
+    elif s.get("semantic_unavailable"):
+        console.print(
+            f"semantic: unavailable: {escape(s['semantic_unavailable'])} "
+            f"To enable: {escape(s['semantic_fix'])}",
+            highlight=False,
+            soft_wrap=True,
+        )
     if s.get("evidence") is not None:
         console.print(f"evidence: {s['evidence']:.0%} of skills shown are backed by a bullet")
     d = result.density
