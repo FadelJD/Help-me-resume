@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+build/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+.coverage
+out/
+# LaTeX build products
+*.aux
+*.log
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+# the user's real data never goes in git by accident
+/profile.cv.txt
+/cvforge.toml
