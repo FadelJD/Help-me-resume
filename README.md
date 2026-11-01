@@ -1,90 +1,67 @@
-# Help-me-resume (working name: CV Forge)
+# CV Forge
 
-A command-line tool that turns one plain-text profile into a `.tex` CV built on **your own LaTeX
-template**, then proves the PDF survives automated screening by reading it back with real parsers.
+Build your CV from one plain-text profile on a LaTeX template you choose, then prove that screening software can read it back.
 
-- **Deterministic.** Parsing, selection, ranking and rendering run offline with no model.
-- **Traceable.** Every bullet in the `.tex` carries `% id:exp-01.b2`, pointing at the profile line it came from.
-- **Verified.** `cvforge check` compiles the PDF, extracts it with three independent parsers, and fails
-  if any title, employer, date, bullet or skill does not come back intact.
-- **Honest.** The optional LLM step may reword; a rewrite that adds a number, tool, employer or date is
-  rejected automatically.
+![init, build and check in a terminal](docs/assets/quickstart.gif)
 
-## 60-second quickstart
+## Why this exists
 
-You need Python 3.11+ and TeX Live with `latexmk`, plus poppler for `check`.
+Most CVs are read by software before a person sees them: an applicant tracking system, which this page calls screening software from here on. LaTeX CVs look sharp but often come out garbled when that software pulls the text out of the PDF, losing dates, names and whole bullet points. CV Forge builds your CV from a single profile and then checks, with the same open-source readers screening software uses, that every fact reads back correctly.
 
-```bash
-sudo apt-get install -y latexmk texlive-latex-extra texlive-fonts-recommended lmodern poppler-utils
-```
+It is an open source CV builder for people who want an ATS-friendly resume they can keep as CV as code, and a JSON Resume alternative that targets LaTeX.
+
+## Quick start
+
+On Ubuntu or Debian, in a terminal:
 
 ```bash
-pip install "cvforge[check] @ git+https://github.com/FadelJD/Help-me-resume@main"
+sudo apt-get update && sudo apt-get install -y latexmk texlive-latex-extra texlive-fonts-recommended lmodern poppler-utils pipx
+pipx install "cvforge[check] @ git+https://github.com/FadelJD/Help-me-resume"
+mkdir my-cv && cd my-cv
+cvforge init --example
+cvforge build --compile -o out/cv.tex
+cvforge check out/cv.tex
 ```
 
-Build and check the fictional example from a clone of this repository:
+You now have a PDF and a report: `out/cv.pdf` and `out/cv.report.json`. The example is a fictional person, Jane Doe. To start your own, run `cvforge init` in an empty folder and answer the questions.
 
-```bash
-cvforge build -p examples/profile.cv.txt -t templates/minimal.tex --hat examples/hats/developer.toml --job examples/job.txt -o out/jane.tex
-```
+If your terminal says `cvforge: command not found`, run `pipx ensurepath` and open a new terminal. On macOS, install [MacTeX](https://tug.org/mactex/) and poppler first; on Windows, use WSL with the Ubuntu steps above. These two routes are not tested yet.
 
-```bash
-cvforge check out/jane.tex --job examples/job.txt
-```
+## Does your template survive screening software?
 
-The last line reads like `check passed: parsed: 3/3 · keyword: 0.49 · evidence: 100%`.
+We converted five popular public LaTeX CV templates and built the same CV with each. Then we read every PDF back with three readers, the software that reads your PDF inside screening tools. ✓ means every name, title, employer, date, bullet and skill came back intact.
 
-Then start your own profile in an empty folder:
+| Template | pdftotext | pdfplumber | pypdf | What went wrong |
+| --- | --- | --- | --- | --- |
+| CV Forge `minimal` (built in) | ✓ | ✓ | ✓ | Nothing. |
+| [Awesome-CV](https://github.com/posquit0/Awesome-CV) | ✓ | ✓ | ✓ | Passes. Two readers drop some spaces between words (`AcmeSoftware`). |
+| [moderncv](https://github.com/moderncv/moderncv) | ✓ | ✓ | ✗ | pypdf glues the year column and icon names onto dates and the phone number. |
+| [Deedy Resume](https://github.com/deedydas/Deedy-Resume) | ✓ | ✗ | ✗ | Two columns: a wrapped degree picks up words from the other column. |
+| [AltaCV](https://github.com/liantze/AltaCV) | ✓ | ✗ | ✗ | Two columns merge, and an icon glyph is glued to the phone number. |
+| [Jake's Resume](https://github.com/jakegut/resume) | ✗ | ✗ | ✗ | Underscores vanish (`thai_date_utils` reads as `thai date utils`): the default font encoding draws `_` as a line. One line fixes it: `\usepackage[T1]{fontenc}`. |
 
-```bash
-cvforge init
-```
+![Awesome-CV built by CV Forge, with its check summary](docs/assets/cv-check.png)
 
-## Commands
+pypdf here runs in layout mode. Its default mode, used by many quick screening scripts, splits words at letter pairs in every LaTeX font we tried (`T echnical W riter`), so CV Forge reports it as a warning rather than a failure. The full table, with every reader and every lost string, is in [docs/parser-table.md](docs/parser-table.md). A test rebuilds it, so it cannot go stale. This is a resume parser test you can run on your own template.
 
-Every command works offline, prints a one-line result, exits non-zero on failure, and takes `--json`.
+## One profile, many CVs
 
-| Command | What it does |
+Everything about you lives once in `profile.cv.txt`. A *hat* says which skills matter for a kind of role. A job ad then decides which bullets lead. Same person, same hat, two job ads, two different orders. This is the fictional backend developer from [examples/people](examples/people), most recent role:
+
+| Ad: API platform | Ad: infrastructure |
 | --- | --- |
-| `cvforge init` | Interview that writes `profile.cv.txt`, `cvforge.toml` and starter hats. |
-| `cvforge add skill\|role\|bullet\|project\|education ...` | Append to the profile without opening it; comments are kept. |
-| `cvforge validate` | Check the profile: unknown keys, dates, ids, skill references. |
-| `cvforge template validate my.tex` | Check a template's contract and lint it for parser-unsafe layout. |
-| `cvforge build --template my.tex --hat developer [--job job.txt] [--compile]` | Render the `.tex` and `report.json`. |
-| `cvforge explain --hat developer --job job.txt` | Show the ranking and what was dropped, without writing. |
-| `cvforge tailor --job job.txt [--rewrite]` | Build against a job ad; optionally offer LLM rewording you approve. |
-| `cvforge check out/cv.tex [--job job.txt] [--strict]` | Compile, parse back, score. |
+| 1. Designed a public REST API in Go with OpenAPI 3 specs… | 1. Migrated 22 services from VMs to Kubernetes on Terraform-managed AWS… |
+| 2. Introduced gRPC between internal services, reducing p99 latency… | 2. Designed a public REST API in Go with OpenAPI 3 specs… |
+| 3. Migrated 22 services from VMs to Kubernetes… | 3. Introduced gRPC between internal services… |
+| 4. Built Prometheus alerting and SLO dashboards… | 4. Built Prometheus alerting and SLO dashboards… |
 
-Shared flags: `--hat`, `--job` (file or URL), `--max-bullets` (can only lower the template's limit),
-`--locale au|uk|us|th`. Defaults live in `cvforge.toml`.
+See why with `cvforge explain`. It prints each bullet's score: its own weight, times the hat's weight for its skills, times how well it matches the ad. Nothing is written until you run `build`. The full outputs are saved in [examples/people/backend-developer/explain](examples/people/backend-developer/explain). One CV, many jobs, and the facts never change between them.
 
-## The profile
+## Bring your own LaTeX
 
-One YAML-subset file holds every fact once. Bullets reference skill ids, which is what lets `check`
-prove each listed skill is backed by experience. See [`examples/profile.cv.txt`](examples/profile.cv.txt).
+Your template keeps its fonts, packages and layout. You mark the spots CV Forge fills.
 
-```yaml
-skills:
-  py: Python
-experience:
-  - id: exp-01
-    title: Technical Writer
-    org: Acme Software
-    start: 2025-06
-    end: present
-    bullets:
-      - id: b2
-        text: Built a Python pipeline migrating 400 knowledge-base articles to DocFX.
-        skills: [py]
-        weight: 4
-```
-
-**Hats** (`hats/<name>.toml`) weight skills and set section order for a role family. They hold no
-facts. This repo ships `developer`, `full-stack-engineer` and `technical-writer` examples.
-
-## Bring your own template
-
-1. Add the header block as the first lines:
+1. Put these lines at the very top of your `.tex` file, keeping only the sections it has:
 
    ```latex
    %% cvforge-template v1
@@ -93,30 +70,67 @@ facts. This repo ships `developer`, `full-stack-engineer` and `technical-writer`
    %% max-bullets-per-role: 5
    ```
 
-2. Replace hard-coded text with `\VAR{person.name}` and loops with `\BLOCK{for job in experience}` ...
-   `\BLOCK{endfor}`. End every bullet line with `% id:\VAR{b.id}`.
-3. Run `cvforge template validate my.tex` until it reports `valid`, then `cvforge build`.
+2. Replace your own details with placeholders. `\VAR{person.name}` prints your name. A loop repeats a block for every role:
 
-All values arrive LaTeX-escaped; do not escape again. [`templates/minimal.tex`](templates/minimal.tex)
-is a complete working example, and [`docs/SPEC.md`](docs/SPEC.md) lists every available field.
+   ```latex
+   \BLOCK{for job in experience}
+   \textbf{\VAR{job.title}} \hfill \VAR{job.start} -- \VAR{job.end}\\
+   \begin{itemize}
+   \BLOCK{for b in job.bullets}
+     \item \VAR{b.text} % id:\VAR{b.id}
+   \BLOCK{endfor}
+   \end{itemize}
+   \BLOCK{endfor}
+   ```
 
-**Parser-safety lint.** Two-column layouts, icon fonts, photos, text in headers or footers, and
-`fontspec` ligatures each garble extraction. The validator warns about each; you decide.
+   Every bullet line ends with `% id:\VAR{b.id}`, so each line in your CV points back to the profile line it came from.
 
-## What `check` tests
+3. Run `cvforge template validate my.tex`. It lists the fields it will fill, the text it will leave exactly as you wrote it, and any layout known to confuse screening software. Then build with `cvforge build --template my.tex --compile`.
 
-| Layer | Test |
-| --- | --- |
-| Parse | pdftotext, pdfplumber and pypdf must each return every emitted name, title, employer, date, the first eight words of every bullet, and every skill, as whole words. |
-| Match | Keyword coverage of the job ad, plus the heaviest job terms missing from the CV. Optional local embedding similarity with `cvforge[semantic]`. |
-| Read | Evidence: the share of listed skills backed by a shown bullet. Should be 100%. |
+Anything outside `\VAR{}` and `\BLOCK{}` is printed as written. [templates/minimal.tex](templates/minimal.tex) is a complete example, and the five converted templates in [tests/fixtures/templates](tests/fixtures/templates) show the same steps on real designs.
 
-Scores are reported, not enforced, unless you pass `--strict` (thresholds in `cvforge.toml`).
-`check` never claims a score against a named commercial ATS; nobody outside the vendor can reproduce one.
+## How the check works
 
-## Use it in CI
+`cvforge check` compiles your PDF and tests it in three layers.
 
-Call the reusable workflow from your CV repository:
+**Reads.** Screening software first turns your PDF into plain text. CV Forge does the same with pdftotext, pdfplumber and pypdf, and looks for every fact it put in: your name and contact details, each title, employer and date, the first eight words of each bullet, and every skill. A fact that comes back broken, merged with the other column, or stuck to an icon fails the check and is named, with what came back instead.
+
+**Matches.** Many systems still compare the words in your CV with the words in the job ad. Give `check` the ad with `--job` and it reports how much of the ad's vocabulary your CV covers, and the important terms it is missing. An optional local language model adds a similarity score; it never sends your CV anywhere.
+
+**Judges.** Newer screening software reads the whole CV and asks whether each claimed skill is shown in your experience. CV Forge only lists a skill when a bullet it printed shows it, and reports the share as *evidence*. It should be 100%.
+
+Scores are reported, not enforced, unless you pass `--strict`. The check never claims a score for a named commercial product, because nobody outside the vendor can reproduce one.
+
+## Honest by design
+
+CV Forge may reword and reorder your bullets, but it never adds a number, tool, employer or date that is not already in your profile, and every printed line points back to its source. That matters because screening software now compares CVs with LinkedIn and GitHub, and an invented claim is easier to spot than ever.
+
+The optional rewording step uses a language model you choose, shows you every change, and automatically rejects any rewrite that adds a fact.
+
+## For students
+
+1. Run `cvforge init` and answer the questions: contact details, then each job, project or degree, one line at a time.
+2. Build with `cvforge build --compile -o out/cv.tex` and open `out/cv.pdf`.
+3. Run `cvforge check out/cv.tex` before you send it.
+4. Add new experience later with `cvforge add bullet`, without opening the file.
+
+## For developers
+
+1. Keep `profile.cv.txt`, your template and `hats/` in a Git repository: your CV as code.
+2. Every bullet carries an id, so a diff shows exactly which fact changed.
+3. Add `--json` to any command for scripts and agents.
+4. Add the GitHub Action below so every push rebuilds the PDF and fails if a fact stops reading back.
+
+## For career-changers
+
+1. Keep every role and bullet in one profile, including the ones you will not always show.
+2. Make one hat per direction, for example `hats/developer.toml` and `hats/technical-writer.toml`.
+3. Build per application: `cvforge build --hat technical-writer --job ad.txt --compile`.
+4. Run `cvforge explain` with the same options to see which bullets led and which were dropped.
+
+## Add it to your CV repo
+
+Add this file to your CV repository as `.github/workflows/cv.yml`:
 
 ```yaml
 on: [push]
@@ -129,37 +143,22 @@ jobs:
       strict: false
 ```
 
-It builds, compiles, runs `check`, uploads the PDF and `report.json`, and writes a summary line such
-as `parsed: 3/3 · keyword: 0.71 · evidence: 100%`.
+Each push builds your CV, compiles it, runs the check and attaches the PDF and report to the run. The summary line, for example `parsed: 3/3 · keyword: 0.71 · evidence: 100%`, reads like this. *parsed* is how many readers returned every fact. *keyword* is how much of the job ad's vocabulary you cover. *evidence* is the share of listed skills shown in your experience.
 
-## Optional LLM rewording
+## Roadmap
 
-```bash
-pip install "cvforge[llm]"
-```
+A Typst renderer, DOCX and plain-text export, an MCP server so AI agents can run the build-and-check loop, cover letters with the same no-invented-facts rule, and a gallery of templates that pass the check. Not planned: a web app, accounts, job scraping or auto-apply.
 
-Set `[llm] model = "ollama/llama3"` (or any LiteLLM model string) in `cvforge.toml`, then run
-`cvforge tailor --job job.txt --rewrite`. You see a before-and-after table and accept all, pick, or
-reject. Without a model configured, `--rewrite` says so and everything else works.
+## Contributing
 
-## Known limits
-
-- pypdf runs in layout mode. Its default mode splits most kerning pairs in TeX output ("T echnical"),
-  in every font tried, so tools built on that mode will see those spaces whatever the template.
-- The semantic score is optional and was not exercised in development, because the build environment
-  could not download the embedding model.
-
-## Development
+Read [CLAUDE.md](CLAUDE.md) for the design rules and [docs/SPEC.md](docs/SPEC.md) for the full specification. Choices the spec leaves open are logged one line each in [DECISIONS.md](DECISIONS.md). Before a pull request, run:
 
 ```bash
-pip install -e ".[dev,check]"
+pip install -e ".[dev,check]" && ruff check . && mypy cvforge && pytest -q
 ```
 
-```bash
-ruff check . && ruff format --check . && mypy cvforge && pytest -q
-```
+To add a template to the table, follow [tests/fixtures/templates](tests/fixtures/templates) and run `python -m tests.corpus --write`. Error messages must name the file, the line or item, and the fix; [docs/errors.md](docs/errors.md) lists them all.
 
-Design rules live in [`CLAUDE.md`](CLAUDE.md), the full spec in [`docs/SPEC.md`](docs/SPEC.md), and
-every choice the spec left open in [`DECISIONS.md`](DECISIONS.md).
+## Licence
 
-MIT licensed.
+MIT. The converted templates in `tests/fixtures/templates` keep their own licences, noted in each folder.
