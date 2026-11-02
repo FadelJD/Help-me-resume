@@ -145,3 +145,12 @@ Choices the spec leaves open. One line each, newest last.
 - Added `pdfminer` (pdfminer.six `high_level.extract_text`, the call Resume Matcher, markitdown and pyresparser make) and `pdfium` (pypdfium2) as advisory readers, as the user decided. PDFium's CRLF line ends and its U+FFFE line-end hyphen marker are normalised in the adapter.
 - Corpus result: pdfminer and pdfium read AltaCV and Deedy without loss, where pdfplumber's default `extract_text()` interleaves and glues; both still lose Jake's underscores (OT1). Advisory for now; promoting pdfminer to gating is a candidate decision for the user.
 - `v0.1.0` exists as a local tag on 20d62da; this session's git access does not push tags.
+
+## Work order 3: import and checking existing PDFs
+
+- `cvforge import FILE...` drafts a profile from PDFs (`pdftotext -layout` keeps a row's left and right parts on one line; link targets come from the PDF's annotations) or LaTeX (Jake's Resume family macros and the header). Deterministic heuristics, no model. Several files merge: union of facts, earlier files take precedence, text compared after NFKC, straight quotes, plain dashes, case and spacing; disagreements and second wordings (word similarity >= 0.5) go to CONFIRM.md and the profile keeps the first file's value marked `# TODO confirm`.
+- Imported bullets get `skills:` only where a declared skill name appears verbatim (case-sensitive, whole term); `weight: 3` is written as a default and labelled as not from the files.
+- Profile schema gained what real CVs need without guessing: year-only dates (`2021`), `education.location`, `projects.stack` (the tools line under a project) and `skill_groups` (the CV's own grouping; a hat's groups override it). Template features `education.location` and `projects.stack` expose the new fields.
+- `skills = "all"` in cvforge.toml lists every declared skill in the profile's order and groups; the default `evidenced` keeps showing only skills a shown bullet demonstrates. The evidence score is reported either way.
+- Roles are ordered by start date, then end date, most recent first (was end date first): equally common, and it keeps CVs that list an overlapping later-ending role below a later-starting one in their own order.
+- `cvforge check FILE.pdf --profile P` checks a PDF that cvforge did not build against a profile's facts (no compile); used for baselines of existing CVs.

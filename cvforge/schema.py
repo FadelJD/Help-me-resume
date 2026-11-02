@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 ID_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9-]*$"
 YEAR_MONTH = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+YEAR = re.compile(r"^(19|20)\d{2}$")
 
 Id = Annotated[str, Field(pattern=ID_PATTERN)]
 
@@ -22,12 +23,16 @@ class Strict(BaseModel):
 
 
 def _check_date(value: object, allow_present: bool) -> str:
+    """YYYY-MM, or YYYY when the source gives only a year (YAML reads a bare year as int)."""
+    if isinstance(value, int) and not isinstance(value, bool):
+        value = str(value)
+    expected = f"date must be YYYY-MM or YYYY{' or present' if allow_present else ''}"
     if not isinstance(value, str):
-        raise ValueError(f"date must be YYYY-MM{' or present' if allow_present else ''}")
+        raise ValueError(expected)
     if allow_present and value == "present":
         return value
-    if not YEAR_MONTH.match(value):
-        raise ValueError(f"date must be YYYY-MM{' or present' if allow_present else ''}")
+    if not (YEAR_MONTH.match(value) or YEAR.match(value)):
+        raise ValueError(expected)
     return value
 
 
@@ -71,6 +76,7 @@ class Project(Strict):
     id: Id
     name: str = Field(min_length=1)
     url: str | None = None
+    stack: str | None = None  # the tools line under the name, as written
     start: str | None = None
     end: str | None = None
     tags: list[str] = []
@@ -91,6 +97,7 @@ class Education(Strict):
     id: Id
     degree: str = Field(min_length=1)
     org: str = Field(min_length=1)
+    location: str | None = None
     start: str | None = None
     end: str
     bullets: list[Bullet] = []
@@ -109,6 +116,8 @@ class Education(Strict):
 class Profile(Strict):
     person: Person
     skills: dict[Id, str] = {}
+    # How the CV groups its skills, as written: group name -> skill ids. A hat may override it.
+    skill_groups: dict[str, list[str]] = {}
     experience: list[Experience] = []
     projects: list[Project] = []
     education: list[Education] = []

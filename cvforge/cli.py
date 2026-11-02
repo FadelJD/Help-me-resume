@@ -288,7 +288,10 @@ def explain(
 
 @app.command("check")
 def check_cmd(
-    tex: Annotated[Path, typer.Argument(help="A .tex written by build (its report.json too).")],
+    tex: Annotated[
+        Path,
+        typer.Argument(help="A .tex written by build, or any .pdf CV (checked against --profile)."),
+    ],
     job: JobOpt = None,
     strict: Annotated[
         bool, typer.Option("--strict", help="Also fail on scores below cvforge.toml thresholds.")
@@ -299,12 +302,18 @@ def check_cmd(
     semantic: Annotated[
         bool, typer.Option("--semantic/--no-semantic", help="Embedding score if installed.")
     ] = True,
+    profile: ProfileOpt = None,
     as_json: JsonOpt = False,
 ) -> None:
     """Compile, extract with real parsers, and fail on any fact that did not come back."""
     try:
         result = pipeline.run_check(
-            tex, job, strict=strict, lint_template=lint_template, semantic=semantic
+            tex,
+            job,
+            strict=strict,
+            lint_template=lint_template,
+            semantic=semantic,
+            profile=profile,
         )
     except CVForgeError as exc:
         _fail(exc, as_json)
@@ -372,6 +381,28 @@ def init(
         _fail(exc, False)
     out.print(result.path.read_text(encoding="utf-8"), highlight=False, markup=False)
     out.print(result.message, highlight=False, soft_wrap=True)
+
+
+@app.command("import")
+def import_cmd(
+    files: Annotated[list[Path], typer.Argument(help="CVs to read: .pdf or .tex, best first.")],
+    output: Annotated[Path, typer.Option("-o", "--output", help="Profile to write.")] = Path(
+        "profile.cv.txt"
+    ),
+    confirm: Annotated[
+        Path | None, typer.Option("--confirm", help="Where to list facts to confirm.")
+    ] = None,
+    force: Annotated[bool, typer.Option("--force", help="Overwrite the output.")] = False,
+) -> None:
+    """Draft a profile from existing CVs (PDF or LaTeX), verbatim, every line with its source."""
+    try:
+        result = pipeline.import_profiles(files, output, confirm, force)
+    except CVForgeError as exc:
+        _fail(exc, False)
+    _print_issues(result.issues)
+    for title in result.titles:
+        out.print(f"title line in a file: {escape(title)} (goes in a hat's title_line)")
+    out.print(result.summary, highlight=False, soft_wrap=True)
 
 
 add_app = typer.Typer(no_args_is_help=True, help="Append to the profile without opening it.")

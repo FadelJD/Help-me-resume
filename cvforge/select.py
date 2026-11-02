@@ -44,7 +44,10 @@ def select(
     hat: Hat | None = None,
     job: str | None = None,
     max_bullets: int | None = None,
+    skills_mode: str = "evidenced",
 ) -> Selection:
+    """`skills_mode`: "evidenced" shows only skills a selected bullet shows; "all" shows every
+    listed skill in the profile's own order and groups (evidence is still scored)."""
     sections: list[str] = list(hat.sections) if hat else list(DEFAULT_SECTIONS)
     sel = Selection(sections=sections, hat=hat.name if hat else "", max_bullets=max_bullets)
     for section in DEFAULT_SECTIONS:
@@ -86,17 +89,20 @@ def select(
         top = max((sb.score for sb in keep), default=0.0)
         getattr(sel, section).append(SelectedItem(section, item, keep, top))
 
+    # Reverse-chronological by start date, then end date (most recent first).
     sel.experience.sort(
-        key=lambda si: (_date_key(si.item.end), _date_key(si.item.start)), reverse=True
+        key=lambda si: (_date_key(si.item.start), _date_key(si.item.end)), reverse=True
     )
     sel.projects.sort(key=lambda si: -si.score)
     sel.education.sort(key=lambda si: _date_key(si.item.end), reverse=True)
 
-    _select_skills(sel, profile, hat, job)
+    _select_skills(sel, profile, hat, job, skills_mode)
     return sel
 
 
-def _select_skills(sel: Selection, profile: Profile, hat: Hat | None, job: str | None) -> None:
+def _select_skills(
+    sel: Selection, profile: Profile, hat: Hat | None, job: str | None, mode: str = "evidenced"
+) -> None:
     evidence: dict[str, list[str]] = {}
     strength: dict[str, float] = {}
     for sb in sel.bullets():
@@ -107,24 +113,29 @@ def _select_skills(sel: Selection, profile: Profile, hat: Hat | None, job: str |
     chosen: list[SelectedSkill] = []
     for sid, name in profile.skills.items():
         weight = hat.skill_weights.get(sid, 1.0) if hat else 1.0
-        if sid not in evidence:
+        if sid not in evidence and mode != "all":
             sel.dropped.append(Dropped(sid, "skill", "not evidenced by any selected bullet"))
             continue
         if weight == 0:
             sel.dropped.append(Dropped(sid, "skill", f"hat `{sel.hat}` weights it 0"))
             continue
         mentioned = 1.0 if job_terms and set(tokenize(name)) & job_terms else 0.0
-        score = round(weight * strength[sid] * (1 + mentioned), 4)
-        chosen.append(SelectedSkill(sid, name, score, evidence[sid]))
-    chosen.sort(key=lambda s: -s.score)
+        score = round(weight * strength.get(sid, 0.0) * (1 + mentioned), 4)
+        chosen.append(SelectedSkill(sid, name, score, evidence.get(sid, [])))
+    if mode != "all":
+        chosen.sort(key=lambda s: -s.score)
     if "skills" not in sel.sections:
         return
     sel.skills = chosen
-    if hat and hat.skill_groups:
+    groups = hat.skill_groups if hat and hat.skill_groups else profile.skill_groups
+    if groups:
         by_id = {s.id: s for s in chosen}
         grouped: set[str] = set()
-        for group, members in hat.skill_groups.items():
-            in_group = [s for s in chosen if s.id in members and s.id in by_id]
+        for group, members in groups.items():
+            if mode == "all":  # the order the CV lists them in
+                in_group = [by_id[m] for m in members if m in by_id]
+            else:
+                in_group = [s for s in chosen if s.id in members and s.id in by_id]
             grouped.update(s.id for s in in_group)
             if in_group:
                 sel.skill_groups.append((group, in_group))
