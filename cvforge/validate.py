@@ -21,6 +21,11 @@ def _suggest(word: str, skills: dict[str, str]) -> str:
     return f" Did you mean `{close[0]}`?" if close else ""
 
 
+def _order(date: str) -> tuple[int, int]:
+    """Sort key for YYYY-MM or YYYY; a bare year compares by its year only (month 0)."""
+    return int(date[:4]), int(date[5:7]) if len(date) > 4 else 0
+
+
 def validate_profile(parsed: ParsedProfile) -> list[Issue]:
     p = parsed.profile
     src = parsed.source
@@ -57,7 +62,7 @@ def validate_profile(parsed: ParsedProfile) -> list[Issue]:
                     )
 
             start, end = getattr(item, "start", None), getattr(item, "end", None)
-            if start and end and end != "present" and end < start:
+            if start and end and end != "present" and _order(end) < _order(start):
                 issues.append(
                     Issue(
                         file=src.file,
@@ -97,6 +102,18 @@ def validate_profile(parsed: ParsedProfile) -> list[Issue]:
                             )
                         )
 
+    for group, members in p.skill_groups.items():
+        for sid in members:
+            if sid not in p.skills:
+                issues.append(
+                    Issue(
+                        file=src.file,
+                        line=src.line(("skill_groups", group)),
+                        item=group,
+                        message=f"skill_groups.{group} names `{sid}`, not a declared skill.",
+                        fix="use a skill id from skills:." + _suggest(sid, p.skills),
+                    )
+                )
     for sid, name in p.skills.items():
         if sid not in used_skills:
             issues.append(

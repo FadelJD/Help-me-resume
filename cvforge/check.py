@@ -25,11 +25,12 @@ from pathlib import Path
 from typing import Any
 
 from cvforge.compile import compile_pdf
-from cvforge.config import ParserSetting, Thresholds
+from cvforge.config import Locale, ParserSetting, Thresholds
 from cvforge.errors import CVForgeError, Issue
 from cvforge.parsers import PARSER_NAMES, Parser, all_parsers
+from cvforge.schema import Profile
 from cvforge.score import Encoder, keyword_coverage, semantic_similarity
-from cvforge.template import lint
+from cvforge.template import format_date, lint
 
 _CHARMAP = str.maketrans(
     {
@@ -489,6 +490,36 @@ def check(
         engine=report.get("template_header", {}).get("engine") or "pdflatex",
         search=[template.parent] if template.is_file() else [],
     )
+    return evaluate(
+        pdf,
+        report,
+        report_path,
+        job,
+        thresholds,
+        chosen,
+        strict=strict,
+        lint_text=tex.read_text(encoding="utf-8") if lint_template else None,
+        lint_file=str(tex),
+        semantic=semantic,
+        encoder=encoder,
+    )
+
+
+def evaluate(
+    pdf: Path,
+    report: dict[str, Any],
+    report_path: Path | None,
+    job: str | None,
+    thresholds: Thresholds,
+    chosen: list[tuple[Parser, bool]],
+    *,
+    strict: bool = False,
+    lint_text: str | None = None,
+    lint_file: str = "",
+    semantic: bool = True,
+    encoder: Encoder | None = None,
+) -> CheckReport:
+    """Read a PDF with every chosen reader and test the facts in `report` against each."""
     facts = expected_facts(report)
     results: list[ParserResult] = []
     primary_text = ""
@@ -558,20 +589,82 @@ def check(
                 strict_failures.append(f"{key} {value:.2f} is below the threshold {floor:.2f}")
         strict_failures.extend(dens["flags"])
     result = CheckReport(
-        tex=tex,
+        tex=Path(report.get("tex", pdf)),
         pdf=pdf,
         parsers=results,
         scores=scores,
         density=dens,
         warnings=warnings,
         strict_failures=strict_failures,
-        lint=lint(tex.read_text(encoding="utf-8"), str(tex)) if lint_template else [],
+        lint=lint(lint_text, lint_file) if lint_text is not None else [],
     )
     report["check"] = result.to_dict()
-    report_path.write_text(
-        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+    if report_path is not None:
+        report_path.write_text(
+            json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
     return result
+
+
+def report_from_profile(profile: Profile, locale: Locale) -> dict[str, Any]:
+    """The facts an existing PDF should contain, taken from a profile (for `check FILE.pdf`)."""
+    items = []
+    for section in ("experience", "projects", "education"):
+        for it in getattr(profile, section):
+            items.append(
+                {
+                    "id": it.id,
+                    "section": section,
+                    "title": getattr(it, "title", None) or getattr(it, "name", None) or it.degree,
+                    "org": getattr(it, "org", None) or "",
+                    "start": format_date(getattr(it, "start", None), locale),
+                    "end": format_date(getattr(it, "end", None), locale),
+                    "bullets": [{"id": f"{it.id}.{b.id}", "text": b.text} for b in it.bullets],
+                }
+            )
+    p = profile.person
+    evidence = {
+        name: [f"{i.id}.{b.id}" for i in profile.all_items() for b in i.bullets if sid in b.skills]
+        for sid, name in profile.skills.items()
+    }
+    return {
+        "template_fields": [
+            "person.name",
+            "person.email",
+            "person.phone",
+            *(
+                f"{s}.{f}"
+                for s in ("experience", "projects", "education")
+                for f in ("title", "name", "degree", "org", "start", "end")
+            ),
+            "skills",
+        ],
+        "template_header": {},
+        "emitted": {
+            "person": {"name": p.name, "email": p.email or "", "phone": p.phone or ""},
+            "items": items,
+            "bullets": [b["id"] for i in items for b in i["bullets"]],
+            "skills": list(profile.skills.values()),
+            "skill_evidence": evidence,
+        },
+    }
+
+
+def check_pdf(
+    pdf: Path,
+    profile: Profile,
+    locale: Locale,
+    job: str | None,
+    thresholds: Thresholds,
+    *,
+    strict: bool = False,
+    semantic: bool = True,
+    settings: dict[str, ParserSetting] | None = None,
+) -> CheckReport:
+    """Check an existing PDF CV (one cvforge did not build) against the facts in a profile."""
+    report = report_from_profile(profile, locale)
+    chosen = resolve_parsers(settings or {})
+    return evaluate(pdf, report, None, job, thresholds, chosen, strict=strict, semantic=semantic)
 
 
 def miss_issues(result: CheckReport) -> list[Issue]:

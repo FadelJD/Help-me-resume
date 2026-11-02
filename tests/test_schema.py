@@ -16,7 +16,7 @@ def test_bullet_weight_range(weight: int) -> None:
         Bullet(id="b1", text="x", weight=weight)
 
 
-@pytest.mark.parametrize("value", ["2025-13", "2025-6", "June 2025", "2025", 2025])
+@pytest.mark.parametrize("value", ["2025-13", "2025-6", "June 2025", "25", 1850, "2025-1"])
 def test_dates_reject_free_text(value: object) -> None:
     with pytest.raises(ValidationError):
         Experience(id="exp-01", title="t", org="o", start=value, end="present")
@@ -40,3 +40,9 @@ def test_id_pattern() -> None:
 def test_hat_rejects_negative_weight() -> None:
     with pytest.raises(ValidationError):
         Hat(name="dev", skill_weights={"py": -1})
+
+
+@pytest.mark.parametrize("value", ["2025", 2025])
+def test_year_only_dates_are_accepted(value: object) -> None:
+    # Some CVs give only a year; the profile keeps exactly that rather than guessing a month.
+    assert Experience(id="exp-01", title="t", org="o", start=value, end="present").start == "2025"

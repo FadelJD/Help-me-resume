@@ -38,6 +38,8 @@ FEATURES: dict[str, str] = {
     "education.bullets.skills": "bullet.skills",
     "projects.url": "projects.url",
     "projects.href": "projects.url",
+    "projects.stack": "projects.stack",
+    "education.location": "education.location",
     "skill_groups": "skills.groups",
     "skill_groups.name": "skills.groups",
     "skill_groups.skills": "skills.groups",
@@ -833,6 +835,8 @@ def format_date(value: str | None, locale: Locale) -> str:
         return ""
     if value == "present":
         return locale.present
+    if len(value) == 4:  # the source gave only a year
+        return value
     return datetime.strptime(value, "%Y-%m").strftime(locale.date_format)
 
 
@@ -895,6 +899,7 @@ def build_context(
                 "name": escape(pr.name),
                 "url": link["text"],
                 "href": link["href"],
+                "stack": escape(pr.stack or ""),
                 **dated(si),
                 "bullets": bullets(si),
             }
@@ -908,6 +913,7 @@ def build_context(
                 "id": ed.id,
                 "degree": escape(ed.degree),
                 "org": escape(ed.org),
+                "location": escape(ed.location or ""),
                 **dated(si),
                 "bullets": bullets(si),
             }

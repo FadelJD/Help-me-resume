@@ -17,11 +17,12 @@ from typing import Any
 from pydantic import ValidationError
 
 from cvforge import __version__
-from cvforge.check import CheckReport, check
+from cvforge.check import CheckReport, check, check_pdf
 from cvforge.compile import compile_pdf
 from cvforge.config import DEFAULT_CONFIG_TEXT, LOCALES, Config, Locale, load_config
 from cvforge.errors import CVForgeError, Issue, errors_only
 from cvforge.escape import escape
+from cvforge.importer import confirm_markdown, import_file, merge
 from cvforge.interview import Ask, Confirm, Say, hat_text, run_interview
 from cvforge.parse import (
     ParsedProfile,
@@ -29,6 +30,7 @@ from cvforge.parse import (
     append_item,
     append_skill,
     bullet_ids,
+    dump_draft,
     dump_profile,
     item_ids,
     load_hat,
@@ -319,7 +321,7 @@ def prepare(
             )
         candidates = [x for x in (declared, max_bullets) if x is not None]
         limit = min(candidates) if candidates else None
-    selection = select(parsed.profile, hat_model, job_text, limit)
+    selection = select(parsed.profile, hat_model, job_text, limit, skills_mode=cfg.skills)
     return Prepared(
         cfg,
         parsed,
@@ -766,8 +768,15 @@ def _arg_error(exc: ValidationError, file: str) -> CVForgeError:
 
 
 def run_check(
-    tex: Path, job: str | None, *, strict: bool, lint_template: bool, semantic: bool
+    tex: Path,
+    job: str | None,
+    *,
+    strict: bool,
+    lint_template: bool,
+    semantic: bool,
+    profile: Path | None = None,
 ) -> CheckReport:
+    """A .tex built by cvforge, or an existing .pdf checked against a profile's facts."""
     if not tex.exists():
         raise CVForgeError(
             [
@@ -780,6 +789,18 @@ def run_check(
             ]
         )
     cfg = _config()
+    if tex.suffix.lower() == ".pdf":
+        parsed = load_valid_profile(resolve_profile(profile, cfg))
+        return check_pdf(
+            tex,
+            parsed.profile,
+            LOCALES[cfg.locale],
+            read_job(job),
+            cfg.thresholds,
+            strict=strict,
+            semantic=semantic,
+            settings=cfg.parsers,
+        )
     return check(
         tex,
         read_job(job),
@@ -853,3 +874,65 @@ def tailor(
     if compile_pdf_too:
         result.pdf = _compile(prep, result.tex)
     return result, proposals
+
+
+# ---------------------------------------------------------------- import
+
+
+@dataclass
+class ImportResult:
+    output: Path
+    confirm: Path | None
+    confirms: int
+    issues: list[Issue]
+    titles: list[str]
+
+    @property
+    def summary(self) -> str:
+        state = "valid" if not errors_only(self.issues) else "needs the TODO lines filled"
+        extra = f", {self.confirms} fact(s) to confirm in {self.confirm}" if self.confirm else ""
+        return f"wrote {self.output} ({state}){extra}"
+
+
+def import_profiles(
+    files: list[Path], output: Path, confirm: Path | None, force: bool
+) -> ImportResult:
+    """Draft a profile from existing CVs; earlier files win, disagreements go to CONFIRM.md."""
+    for f in files:
+        if not f.exists():
+            raise CVForgeError(
+                [Issue(file=str(f), item="FILE", message="file not found.", fix="check the path.")]
+            )
+    if output.exists() and not force:
+        raise CVForgeError(
+            [
+                Issue(
+                    file=str(output),
+                    item="--force",
+                    message="already exists; import will not overwrite it.",
+                    fix="choose another -o path, or pass --force.",
+                )
+            ]
+        )
+    drafts = [import_file(f) for f in files]
+    merged = merge(drafts)
+    names = [f.name for f in files]
+    intro = (
+        f"Draft profile from `cvforge import` of {', '.join(names)}.\n"
+        "Text is verbatim from those files and every value names its source. Nothing was\n"
+        "invented: lines marked TODO need you, and TODO confirm lines are listed in CONFIRM.md."
+    )
+    text = dump_draft(merged.draft, intro)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(text, encoding="utf-8")
+    confirm_path = None
+    if len(files) > 1 or merged.confirms or merged.draft.notes:
+        confirm_path = confirm or output.with_name("CONFIRM.md")
+        confirm_path.write_text(confirm_markdown(merged, names), encoding="utf-8")
+    try:
+        issues = validate_profile(parse_text(text, str(output)))
+    except CVForgeError as exc:
+        issues = exc.issues
+    return ImportResult(
+        output, confirm_path, len(merged.confirms), issues, [t.value for t in merged.titles]
+    )
