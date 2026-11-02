@@ -10,6 +10,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Protocol
 
+from cvforge.parsers.pdfium import Pdfium
+from cvforge.parsers.pdfminer_hl import PdfMiner
 from cvforge.parsers.pdftotext import PdfToText
 from cvforge.parsers.plumber import PdfPlumber
 from cvforge.parsers.pypdf_reader import PyPdf
@@ -33,6 +35,8 @@ def all_parsers() -> list[Parser]:
         PdfPlumber(),
         PyPdf(layout=True),
         PyPdf(layout=False),
+        PdfMiner(),
+        Pdfium(),
     ]
 
 

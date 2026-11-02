@@ -42,7 +42,7 @@ We converted five popular public LaTeX CV templates and built the same CV with e
 
 ![Awesome-CV built by CV Forge, with its check summary](docs/assets/cv-check.png)
 
-pypdf here runs in layout mode. Its default mode, used by many quick screening scripts, splits words at letter pairs in every LaTeX font we tried (`T echnical W riter`), so CV Forge reports it as a warning rather than a failure. The full table, with every reader and every lost string, is in [docs/parser-table.md](docs/parser-table.md). A test rebuilds it, so it cannot go stale. This is a resume parser test you can run on your own template.
+pypdf here runs in layout mode. Its default mode, used by many quick screening scripts, splits words at letter pairs in every LaTeX font we tried (`T echnical W riter`), so CV Forge reports it as a warning rather than a failure. Two more readers run as advisers: pdfminer's high-level call, which Resume Matcher and similar tools use, and PDFium, the engine in Chrome. pdfminer reads both two-column templates cleanly where pdfplumber does not. The full table, with every reader and every lost string, is in [docs/parser-table.md](docs/parser-table.md). A test rebuilds it, so it cannot go stale. This is a resume parser test you can run on your own template.
 
 ## One profile, many CVs
 
