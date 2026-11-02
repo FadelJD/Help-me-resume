@@ -139,3 +139,9 @@ Choices the spec leaves open. One line each, newest last.
 - Fixed from its findings (295 of 5,000 failed before): latexmk output decoding; `[`/`]` escaped as `{[}`/`{]}` (a leading bracket became `\item`'s optional argument); stretchable break points in long bullet tokens (a bare `\allowbreak` has no glue, so lines still overflowed); the traceability split ignores an escaped `\%`; traceability now matches each bullet on its own `% id:` line, so repeated or overlapping bullet text no longer fails the build, and its errors name the output .tex.
 - Break points go only into bullet text: templates reuse email and link text inside URLs (`mailto:`, GitHub user names), where a break command would corrupt the link.
 - Known limit, kept as strict xfail: pdfLaTeX with T1 and lmodern cannot typeset some letters (Ħ, ŉ, Greek) and extracts others wrongly (Đ as Ð, comma-below letters with a detached comma). That is font coverage, not escaping; a XeLaTeX or LuaLaTeX template with a Unicode font handles them.
+
+## Work order 3, step 0: fourth and fifth readers
+
+- Added `pdfminer` (pdfminer.six `high_level.extract_text`, the call Resume Matcher, markitdown and pyresparser make) and `pdfium` (pypdfium2) as advisory readers, as the user decided. PDFium's CRLF line ends and its U+FFFE line-end hyphen marker are normalised in the adapter.
+- Corpus result: pdfminer and pdfium read AltaCV and Deedy without loss, where pdfplumber's default `extract_text()` interleaves and glues; both still lose Jake's underscores (OT1). Advisory for now; promoting pdfminer to gating is a candidate decision for the user.
+- `v0.1.0` exists as a local tag on 20d62da; this session's git access does not push tags.

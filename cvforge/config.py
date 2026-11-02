@@ -82,7 +82,8 @@ semantic = 0.5
 evidence = 1.0
 
 # Parser gating. Gating parsers fail `check` on a lost field; advisory ones only warn.
-# Defaults: pdftotext, pdfplumber, pypdf-layout gate; pdftotext-layout and pypdf advise.
+# Defaults: pdftotext, pdfplumber, pypdf-layout gate; pdftotext-layout, pypdf, pdfminer and
+# pdfium advise.
 # [parsers.pypdf]
 # gate = true
 

@@ -195,6 +195,8 @@ def test_resolve_parsers_defaults_and_overrides() -> None:
         "pdfplumber": True,
         "pypdf-layout": True,
         "pypdf": False,
+        "pdfminer": False,
+        "pdfium": False,
     }
     over = {
         "pypdf": ParserSetting(gate=True),
@@ -206,7 +208,7 @@ def test_resolve_parsers_defaults_and_overrides() -> None:
 
 def test_unknown_parser_in_config() -> None:
     with pytest.raises(CVForgeError) as exc:
-        resolve_parsers({"pdfminer": ParserSetting()})
+        resolve_parsers({"pdfbox": ParserSetting()})
     assert "pdftotext" in exc.value.issues[0].fix
 
 
