@@ -21,3 +21,8 @@ out/
 /profile.cv.txt
 /cvforge.toml
 check.json
+
+# The user's real CV material never enters git. Listed explicitly as well as by folder.
+private/
+private/profile.cv.txt
+private/out/
