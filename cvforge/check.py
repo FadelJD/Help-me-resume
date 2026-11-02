@@ -487,7 +487,7 @@ def check(
     template = Path(report.get("template", ""))
     pdf = compile_pdf(
         tex,
-        engine=report.get("template_header", {}).get("engine") or "pdflatex",
+        engine=report.get("template_header", {}).get("engine") or "auto",
         search=[template.parent] if template.is_file() else [],
     )
     return evaluate(

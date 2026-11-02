@@ -16,6 +16,7 @@ from typing import Any
 import jinja2
 from jinja2 import nodes
 
+from cvforge.compile import detect_engine
 from cvforge.config import Locale
 from cvforge.errors import CVForgeError, Issue
 from cvforge.escape import escape, escape_url
@@ -99,7 +100,7 @@ class Header:
     supports: tuple[str, ...]
     max_bullets: int | None
     max_pages: int | None
-    engine: str = "pdflatex"
+    engine: str = "auto"  # detected from the preamble at compile time unless declared
 
 
 @dataclass(frozen=True)
@@ -240,13 +241,13 @@ def parse_header(text: str, file: str) -> tuple[Header | None, list[Issue]]:
                 fix="add e.g. `%% sections: experience, projects, skills, education`.",
             )
         )
-    engine_list = _list("engine", ENGINE_NAMES) if "engine" in values else ("pdflatex",)
+    engine_list = _list("engine", ENGINE_NAMES) if "engine" in values else ("auto",)
     header = Header(
         sections=sections,
         supports=_list("supports", FEATURE_NAMES),
         max_bullets=_int("max-bullets-per-role"),
         max_pages=_int("max-pages"),
-        engine=engine_list[0] if engine_list else "pdflatex",
+        engine=engine_list[0] if engine_list else "auto",
     )
     return header, issues
 
@@ -555,7 +556,9 @@ def lint(text: str, file: str, engine: str | None = None) -> list[Issue]:
 
     if engine is None:
         header, _ = parse_header(text, file)
-        engine = header.engine if header else "pdflatex"
+        engine = header.engine if header else "auto"
+    if engine == "auto":
+        engine = detect_engine(text).engines[0]
 
     if _DATE_PLACEHOLDER.search(code):
         for idx, line in enumerate(lines):

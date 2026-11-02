@@ -154,3 +154,10 @@ Choices the spec leaves open. One line each, newest last.
 - `skills = "all"` in cvforge.toml lists every declared skill in the profile's order and groups; the default `evidenced` keeps showing only skills a shown bullet demonstrates. The evidence score is reported either way.
 - Roles are ordered by start date, then end date, most recent first (was end date first): equally common, and it keeps CVs that list an overlapping later-ending role below a later-starting one in their own order.
 - `cvforge check FILE.pdf --profile P` checks a PDF that cvforge did not build against a profile's facts (no compile); used for baselines of existing CVs.
+- Bullets only a later file has, and entries only a later file has, are kept (union of facts) but each gets a CONFIRM.md entry asking whether it is a separate fact. Two wordings are detected by word-order similarity >= 0.5 or, for reworded bullets with abbreviations, by sharing at least half the content words of the shorter one; the same question raised by several files becomes one entry.
+
+## Work order 3 step 7: engine detection
+
+- `build --compile` and `check` detect the engine when the template declares none: LuaLaTeX if the preamble or a local class requires it; XeLaTeX then LuaLaTeX if fontspec-family packages load unconditionally; pdfLaTeX first with LuaLaTeX and XeLaTeX as fallbacks if the preamble supports several engines; pdfLaTeX otherwise. Local .cls/.sty files next to the template are read too. A declared `%% engine:` is used as is. The build line names the engine and why; a failure stays one line naming the .tex line, plus the engines tried.
+- Corpus result with every `%% engine:` line removed: Jake's and AltaCV pdfLaTeX; Awesome-CV LuaLaTeX (its class requires it); Deedy XeLaTeX (fontspec in its class); moderncv falls back from pdfLaTeX to LuaLaTeX, since fontawesome7 has no Type 1 fonts here.
+- Fixed a conversion bug found by building without a hat: the Awesome-CV fixture emitted `\position{}` with an empty title, which the class cannot typeset; the line is now conditional (rendered output with a title is unchanged).
