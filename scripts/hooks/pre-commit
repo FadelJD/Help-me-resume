@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Blocks a commit if a staged file is under private/ or contains a string from
+# private/blocklist.txt. Install with: cp scripts/hooks/pre-commit .git/hooks/pre-commit
+set -euo pipefail
+root=$(git rev-parse --show-toplevel)
+if git diff --cached --name-only | grep -q '^private/'; then
+  echo "pre-commit: a file under private/ is staged; unstage it." >&2
+  exit 1
+fi
+blocklist="$root/private/blocklist.txt"
+[ -f "$blocklist" ] || exit 0
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -n "$staged" ] || exit 0
+status=0
+while IFS= read -r needle; do
+  case "$needle" in ''|'#'*) continue ;; esac
+  while IFS= read -r file; do
+    if git show ":$file" 2>/dev/null | grep -qiF -- "$needle"; then
+      echo "pre-commit: $file contains a blocklisted string; commit refused." >&2
+      status=1
+    fi
+  done <<< "$staged"
+done < "$blocklist"
+exit $status
