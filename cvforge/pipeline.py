@@ -18,7 +18,7 @@ from pydantic import ValidationError
 
 from cvforge import __version__
 from cvforge.check import CheckReport, check, check_pdf
-from cvforge.compile import compile_pdf
+from cvforge.compile import compile_tex
 from cvforge.config import DEFAULT_CONFIG_TEXT, LOCALES, Config, Locale, load_config
 from cvforge.errors import CVForgeError, Issue, errors_only
 from cvforge.escape import escape
@@ -239,12 +239,14 @@ class BuildResult:
     selection: Selection
     warnings: list[Issue] = field(default_factory=list)
     pdf: Path | None = None
+    engine: str = ""
+    engine_note: str = ""
 
     @property
     def summary(self) -> str:
         n_b = len(self.report["emitted"]["bullets"])
         n_d = sum(1 for d in self.selection.dropped if d.kind == "bullet")
-        pdf = f", pdf {self.pdf}" if self.pdf else ""
+        pdf = f", pdf {self.pdf} with {self.engine} ({self.engine_note})" if self.pdf else ""
         return f"wrote {self.tex} ({n_b} bullets, {n_d} dropped){pdf}"
 
 
@@ -476,17 +478,18 @@ def build(
     prep = prepare(profile=profile, template=template, hat=hat, job=job, max_bullets=max_bullets)
     result = render_selection(prep, output, job)
     if compile_pdf_too:
-        result.pdf = _compile(prep, result.tex)
+        _compile(prep, result)
     return result
 
 
 def _engine(prep: Prepared) -> str:
     header = prep.template_report.header
-    return header.engine if header else "pdflatex"
+    return header.engine if header else "auto"
 
 
-def _compile(prep: Prepared, tex: Path) -> Path:
-    return compile_pdf(tex, engine=_engine(prep), search=[prep.template_path.parent])
+def _compile(prep: Prepared, result: BuildResult) -> None:
+    done = compile_tex(result.tex, engine=_engine(prep), search=[prep.template_path.parent])
+    result.pdf, result.engine, result.engine_note = done.pdf, done.engine, done.note
 
 
 # ---------------------------------------------------------------- explain
@@ -872,7 +875,7 @@ def tailor(
             json.dumps(result.report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
     if compile_pdf_too:
-        result.pdf = _compile(prep, result.tex)
+        _compile(prep, result)
     return result, proposals
 
 

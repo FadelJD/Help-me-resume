@@ -65,7 +65,9 @@
 %	PERSONAL INFORMATION (cvforge: filled from the profile)
 %-------------------------------------------------------------------------------
 \name{\VAR{person.name}}{}
+\BLOCK{if person.title_line}
 \position{\VAR{person.title_line}}
+\BLOCK{endif}
 \BLOCK{if person.location}
 \address{\VAR{person.location}}
 \BLOCK{endif}

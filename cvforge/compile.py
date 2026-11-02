@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 from collections.abc import Sequence
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from cvforge.errors import CVForgeError, Issue
@@ -33,9 +34,106 @@ def search_env(search: Sequence[Path]) -> dict[str, str]:
     return env
 
 
+_NEEDS_LUA = re.compile(
+    r"LuaLaTeX is required|\\RequireLuaTeX|\\directlua|\\luaexec|"
+    r"\\(?:usepackage|RequirePackage)(?:\[[^\]]*\])?\{[^}]*\b(?:luacode|luatexbase)\b"
+)
+_NEEDS_UNICODE = re.compile(
+    r"\\(?:usepackage|RequirePackage)(?:\[[^\]]*\])?\{[^}]*\b"
+    r"(?:fontspec|unicode-math|polyglossia|xeCJK|xltxtra)\b"
+)
+_ANY_ENGINE = re.compile(
+    r"\\if(?:xetexorluatex|tutex|luatex|xetex|PDFTeX)\b|\\ifpdftex\b|\\IfTUTeX"
+)
+
+
+@dataclass(frozen=True)
+class EngineChoice:
+    engines: tuple[str, ...]  # tried in this order
+    reason: str
+
+
+def _code(text: str) -> str:
+    return "\n".join(re.split(r"(?<!\\)%", line, maxsplit=1)[0] for line in text.splitlines())
+
+
+def detect_engine(text: str, search: Sequence[Path] = ()) -> EngineChoice:
+    """The engine a template needs, read from its preamble and its local class/package files.
+
+    `%% engine:` in the cvforge header wins. Otherwise: LuaLaTeX when the class or preamble
+    requires it; XeLaTeX then LuaLaTeX when fontspec-family packages are loaded unconditionally;
+    pdfLaTeX first, falling back to the Unicode engines, when the preamble supports several
+    (`\\ifxetexorluatex` and friends); pdfLaTeX otherwise.
+    """
+    m = re.search(r"^%% engine:\s*(pdflatex|xelatex|lualatex)\s*$", text, flags=re.MULTILINE)
+    if m:
+        return EngineChoice((m.group(1),), "declared in the template header")
+    preamble = _code(text).split("\\begin{document}")[0]
+    local = []
+    names = re.findall(
+        r"\\(?:documentclass|usepackage|RequirePackage)(?:\[[^\]]*\])?\{([^}]*)\}", preamble
+    )
+    for folder in search:
+        for name in (n.strip() for group in names for n in group.split(",")):
+            for path in [*folder.rglob(f"{name}.cls"), *folder.rglob(f"{name}.sty")][:1]:
+                local.append(_code(path.read_text(encoding="utf-8", errors="replace")))
+    blob = "\n".join([preamble, *local])
+    if _NEEDS_LUA.search(blob):
+        return EngineChoice(("lualatex",), "the class or preamble requires LuaLaTeX")
+    conditional = _ANY_ENGINE.search(blob) is not None
+    if _NEEDS_UNICODE.search(blob) and not conditional:
+        return EngineChoice(
+            ("xelatex", "lualatex"), "fontspec-family packages need XeLaTeX or LuaLaTeX"
+        )
+    if conditional:
+        return EngineChoice(
+            ("pdflatex", "lualatex", "xelatex"), "the preamble supports several engines"
+        )
+    return EngineChoice(("pdflatex",), "no Unicode-engine packages in the preamble")
+
+
+@dataclass(frozen=True)
+class Compiled:
+    pdf: Path
+    engine: str
+    note: str  # how the engine was chosen, and any fallback
+
+
+def compile_tex(
+    tex: Path, timeout: int = 180, engine: str = "auto", search: Sequence[Path] = ()
+) -> Compiled:
+    """Compile with the declared or detected engine, trying the next candidate on failure."""
+    if engine != "auto":
+        return Compiled(
+            _run(tex, timeout, engine, search), engine, "declared in the template header"
+        )
+    choice = detect_engine(tex.read_text(encoding="utf-8", errors="replace"), search)
+    first_error: CVForgeError | None = None
+    for candidate in choice.engines:
+        try:
+            pdf = _run(tex, timeout, candidate, search)
+        except CVForgeError as exc:
+            first_error = first_error or exc
+            continue
+        note = choice.reason
+        if candidate != choice.engines[0]:
+            note += f"; {choice.engines[0]} failed, so {candidate} was used"
+        return Compiled(pdf, candidate, note)
+    assert first_error is not None
+    tried = ", ".join(choice.engines)
+    issue = first_error.issues[0]
+    raise CVForgeError(
+        [replace(issue, message=f"{issue.message} (engines tried: {tried})")]
+    ) from first_error
+
+
 def compile_pdf(
-    tex: Path, timeout: int = 180, engine: str = "pdflatex", search: Sequence[Path] = ()
+    tex: Path, timeout: int = 180, engine: str = "auto", search: Sequence[Path] = ()
 ) -> Path:
+    return compile_tex(tex, timeout, engine, search).pdf
+
+
+def _run(tex: Path, timeout: int, engine: str, search: Sequence[Path]) -> Path:
     if not latexmk_available():
         raise CVForgeError(
             [

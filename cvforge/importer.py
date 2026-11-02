@@ -23,6 +23,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 
 from cvforge.errors import CVForgeError, Issue
+from cvforge.score import tokenize
 
 # ---------------------------------------------------------------- data
 
@@ -160,6 +161,13 @@ def key(text: str) -> str:
 
 def similar(a: str, b: str) -> float:
     return SequenceMatcher(None, norm(a).split(), norm(b).split(), autojunk=False).ratio()
+
+
+def same_claim(a: str, b: str) -> bool:
+    """Two wordings of one bullet: similar word order, or most content words of the shorter."""
+    ta, tb = set(tokenize(a)), set(tokenize(b))
+    overlap = len(ta & tb) / max(1, min(len(ta), len(tb)))
+    return similar(a, b) >= 0.5 or overlap >= 0.5
 
 
 def skill_id(name: str, taken: set[str]) -> str:
@@ -586,6 +594,14 @@ def merge(drafts: list[Draft]) -> Merged:
     titles = [d.title_line for d in drafts if d.title_line is not None]
 
     def disagree(what: str, kept: Src, other: Src) -> None:
+        for c in confirms:  # the same question from another file: add to it
+            if c.what == what and c.kept == kept.value:
+                for k, (value, sources) in enumerate(c.options):
+                    if norm(value) == norm(other.value):
+                        c.options[k] = (value, f"{sources}, {other.source}")
+                        return
+                c.options.append((other.value, other.source))
+                return
         number = len(confirms) + 1
         confirms.append(
             Confirm(
@@ -637,7 +653,18 @@ def _merge_item(
     field_merge: Callable[[str, Src | None, Src | None], Src | None],
 ) -> None:
     match = next((x for x in base.items if _item_key(x) == _item_key(item)), None)
-    if match is None:
+    if match is None:  # an entry only later files have: keep it (union of facts) but ask
+        if item.title is not None:
+            number = len(confirms) + 1
+            confirms.append(
+                Confirm(
+                    number,
+                    f"a {item.section} entry appears only in {item.title.source}",
+                    [(item.title.value, item.title.source)],
+                    item.title.value,
+                )
+            )
+            item.title.confirm.append(number)
         base.items.append(item)
         return
     label = (match.title.value if match.title else match.section)[:60]
@@ -654,12 +681,23 @@ def _merge_item(
         if same:
             same.text.sources.extend(s for s in bullet.text.sources if s not in same.text.sources)
             continue
-        close = max(
-            match.bullets, key=lambda b: similar(b.text.value, bullet.text.value), default=None
+        close = next(
+            (b for b in match.bullets if same_claim(b.text.value, bullet.text.value)), None
         )
-        if close is not None and similar(close.text.value, bullet.text.value) >= 0.5:
+        if close is not None:
             disagree(f"a bullet of '{label}' has two wordings", close.text, bullet.text)
-        else:
+        else:  # only in a later file: keep it (union of facts) but ask
+            number = len(confirms) + 1
+            confirms.append(
+                Confirm(
+                    number,
+                    f"a bullet of '{label}' appears only in {bullet.text.source}: a separate fact, "
+                    "or another wording of one above?",
+                    [(bullet.text.value, bullet.text.source)],
+                    bullet.text.value,
+                )
+            )
+            bullet.text.confirm.append(number)
             match.bullets.append(bullet)
 
 
