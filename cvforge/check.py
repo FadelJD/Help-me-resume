@@ -27,7 +27,7 @@ from typing import Any
 from cvforge.compile import compile_pdf
 from cvforge.config import Locale, ParserSetting, Thresholds
 from cvforge.errors import CVForgeError, Issue
-from cvforge.parsers import PARSER_NAMES, Parser, all_parsers
+from cvforge.parsers import PARSER_NAMES, Parser, all_parsers, default_gates
 from cvforge.schema import Profile
 from cvforge.score import Encoder, keyword_coverage, semantic_similarity
 from cvforge.template import format_date, lint
@@ -229,8 +229,13 @@ class CheckReport:
         return [p for p in self.parsers if not p.gate and p.ran]
 
     @property
+    def gating_missing(self) -> list[ParserResult]:
+        """Gating readers that are not installed: the check cannot pass without them."""
+        return [p for p in self.parsers if p.gate and not p.ran]
+
+    @property
     def roundtrip_ok(self) -> bool:
-        return bool(self.gating) and all(p.ok for p in self.gating)
+        return bool(self.gating) and all(p.ok for p in self.gating) and not self.gating_missing
 
     @property
     def ok(self) -> bool:
@@ -238,7 +243,8 @@ class CheckReport:
 
     @property
     def badge(self) -> str:
-        parts = [f"parsed: {sum(p.ok for p in self.gating)}/{len(self.gating)}"]
+        total = len(self.gating) + len(self.gating_missing)
+        parts = [f"parsed: {sum(p.ok for p in self.gating)}/{total}"]
         if self.advisory:
             parts.append(f"advisory: {sum(p.ok for p in self.advisory)}/{len(self.advisory)}")
         if self.scores.get("keyword") is not None:
@@ -256,6 +262,8 @@ class CheckReport:
             "tex": str(self.tex),
             "pdf": str(self.pdf) if self.pdf else None,
             "badge": self.badge,
+            "gates": [p.name for p in self.parsers if p.gate],
+            "gates_missing": [p.name for p in self.gating_missing],
             "parsers": [
                 {
                     "name": p.name,
@@ -418,12 +426,17 @@ def resolve_parsers(
                 )
             ]
         )
+    gates = default_gates()
     chosen = []
     for parser in parsers or all_parsers():
         setting = settings.get(parser.name, ParserSetting())
         if not setting.enabled:
             continue
-        gate = parser.default_gate if setting.gate is None else setting.gate
+        if parser.name in PARSER_NAMES:
+            default = parser.name in gates
+        else:  # a parser supplied by a caller (tests, plugins) says what it is
+            default = bool(getattr(parser, "default_gate", True))
+        gate = default if setting.gate is None else setting.gate
         chosen.append((parser, gate))
     return chosen
 
@@ -553,12 +566,15 @@ def evaluate(
                 )
             )
         if r.skipped:
+            role = "gating" if r.gate else "advisory"
             warnings.append(
                 Issue(
                     file=str(pdf),
-                    severity="warning",
-                    message=f"parser {r.name} skipped: {r.skipped}",
-                    fix=r.skipped,
+                    item=r.name,
+                    severity="error" if r.gate else "warning",
+                    message=f"{role} reader {r.name} is {r.skipped}",
+                    fix="install it, or run `cvforge doctor` for every missing tool"
+                    + ("; the check cannot pass without its gating readers." if r.gate else "."),
                 )
             )
         elif r.garbled:

@@ -7,15 +7,16 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+from cvforge.platforms import install_command
+
 
 class PdfMiner:
     name = "pdfminer"
-    default_gate = False
     about = "pdfminer.six high-level extract_text (Resume Matcher, markitdown, pyresparser)"
 
     def unavailable(self) -> str | None:
         if importlib.util.find_spec("pdfminer") is None:
-            return "pdfminer.six is not installed; pip install 'cvforge[check]'."
+            return f"not installed (pdfminer); install: {install_command('pdfminer')}"
         return None
 
     def extract(self, pdf: Path) -> str:

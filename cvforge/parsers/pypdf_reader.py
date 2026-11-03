@@ -11,12 +11,13 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+from cvforge.platforms import install_command
+
 
 class PyPdf:
     def __init__(self, layout: bool) -> None:
         self.layout = layout
         self.name = "pypdf-layout" if layout else "pypdf"
-        self.default_gate = layout
         self.about = (
             "pypdf, layout mode"
             if layout
@@ -25,7 +26,7 @@ class PyPdf:
 
     def unavailable(self) -> str | None:
         if importlib.util.find_spec("pypdf") is None:
-            return "pypdf is not installed; pip install 'cvforge[check]'."
+            return f"not installed (pypdf); install: {install_command('pypdf')}"
         return None
 
     def extract(self, pdf: Path) -> str:

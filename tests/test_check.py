@@ -113,6 +113,7 @@ def test_check_needs_report(workdir: Path) -> None:
 
 
 @pytest.mark.tex
+@pytest.mark.poppler
 def test_roundtrip_passes_on_minimal(workdir: Path) -> None:
     tex = _build(TEMPLATES / "minimal.tex", workdir / "out" / "min.tex")
     job = (FIXTURES / "job_backend.txt").read_text()
@@ -158,17 +159,36 @@ class _Missing:
     about = "test double"
 
     def unavailable(self) -> str | None:
-        return "not installed"
+        return "not installed (imaginary); install: nothing to install"
 
     def extract(self, pdf: Path) -> str:  # pragma: no cover
         raise AssertionError
 
 
+class _MissingAdvisory(_Missing):
+    name = "imaginary-advisory"
+    default_gate = False
+
+
 @pytest.mark.tex
-def test_unavailable_parser_is_skipped_not_failed(workdir: Path) -> None:
+@pytest.mark.poppler
+def test_missing_advisory_reader_warns_but_check_passes(workdir: Path) -> None:
     from cvforge.parsers.pdftotext import PdfToText
 
     tex = _build(TEMPLATES / "minimal.tex", workdir / "out" / "p.tex")
+    parsers = [PdfToText(), _MissingAdvisory()]
+    result = check(tex, None, Thresholds(), semantic=False, parsers=parsers)  # type: ignore[arg-type]
+    assert result.ok
+    warning = next(w for w in result.warnings if w.item == "imaginary-advisory")
+    assert warning.severity == "warning" and "not installed" in warning.message
+
+
+@pytest.mark.tex
+@pytest.mark.poppler
+def test_missing_gating_reader_fails_check_and_says_how_to_install(workdir: Path) -> None:
+    from cvforge.parsers.pdftotext import PdfToText
+
+    tex = _build(TEMPLATES / "minimal.tex", workdir / "out" / "g2.tex")
     result = check(
         tex,
         None,
@@ -176,8 +196,12 @@ def test_unavailable_parser_is_skipped_not_failed(workdir: Path) -> None:
         semantic=False,
         parsers=[PdfToText(), _Missing()],  # type: ignore[list-item]
     )
-    assert result.ok
-    assert any("imaginary" in w.message for w in result.warnings)
+    assert not result.ok and [p.name for p in result.gating_missing] == ["imaginary"]
+    error = next(w for w in result.warnings if w.item == "imaginary")
+    assert error.severity == "error" and "gating reader imaginary" in error.message
+    assert "cvforge doctor" in error.fix
+    assert result.to_dict()["gates_missing"] == ["imaginary"]
+    assert result.badge.startswith("parsed: 1/2")
 
 
 def test_found_instead_shows_garbled_span() -> None:
@@ -187,7 +211,27 @@ def test_found_instead_shows_garbled_span() -> None:
     assert found_instead("nothing like it", "Kubernetes Operator") is None
 
 
-def test_resolve_parsers_defaults_and_overrides() -> None:
+@pytest.mark.parametrize(
+    ("os_name", "gating"),
+    [
+        ("linux", {"pdftotext", "pdfplumber", "pypdf-layout"}),
+        ("macos", {"pdftotext", "pdfplumber", "pypdf-layout"}),
+        ("windows", {"pdfplumber", "pypdf-layout", "pdfium"}),
+    ],
+)
+def test_gate_set_per_os(os_name: str, gating: set[str], monkeypatch: pytest.MonkeyPatch) -> None:
+    import cvforge.parsers as parsers_module
+
+    monkeypatch.setattr(parsers_module, "current_os", lambda: os_name)
+    chosen = {p.name: g for p, g in resolve_parsers({})}
+    assert {n for n, g in chosen.items() if g} == gating
+    assert chosen["pdfminer"] is False  # advisory everywhere
+
+
+def test_resolve_parsers_defaults_and_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
+    import cvforge.parsers as parsers_module
+
+    monkeypatch.setattr(parsers_module, "current_os", lambda: "linux")
     gates = {p.name: g for p, g in resolve_parsers({})}
     assert gates == {
         "pdftotext": True,
@@ -358,3 +402,22 @@ def test_dates_separated_counts_roles() -> None:
     ]
     raw = "Jun 2025 - Present\nJan 2024\nx\ny\nWriter\nDeveloper Jan 2024"
     assert dates_separated(raw, items) == (1, 2)
+
+
+@pytest.mark.tex
+def test_windows_gate_set_without_poppler(workdir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Simulates Windows on Linux: PDFium gates instead of pdftotext, which is absent and
+    # reported as not installed (advisory), so the check still passes. Not a Windows test.
+    import cvforge.parsers as parsers_module
+    from cvforge.parsers.pdftotext import PdfToText
+
+    tex = _build(TEMPLATES / "minimal.tex", workdir / "out" / "win.tex")
+    monkeypatch.setattr(parsers_module, "current_os", lambda: "windows")
+    monkeypatch.setattr(
+        PdfToText, "unavailable", lambda self: "not installed (pdftotext, from poppler)"
+    )
+    result = check(tex, None, Thresholds(), semantic=False)
+    assert result.ok, [(p.name, p.misses) for p in result.gating]
+    assert result.to_dict()["gates"] == ["pdfplumber", "pypdf-layout", "pdfium"]
+    skipped = {w.item: w.severity for w in result.warnings if "not installed" in w.message}
+    assert skipped == {"pdftotext": "warning", "pdftotext-layout": "warning"}

@@ -89,6 +89,8 @@ def print_template_report(console: Console, report: TemplateReport) -> None:
 
 
 def print_check(console: Console, result: CheckReport) -> None:
+    gates = ", ".join(p.name for p in result.parsers if p.gate) or "none"
+    console.print(f"gating readers on this system: {gates}", highlight=False)
     for p in result.parsers:
         role = "gate" if p.gate else "advisory"
         if p.skipped:

@@ -6,13 +6,13 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from cvforge.platforms import install_command
+
 
 class PdfToText:
     def __init__(self, layout: bool = False) -> None:
         self.layout = layout
         self.name = "pdftotext-layout" if layout else "pdftotext"
-        # -layout keeps the page's visual columns, so side-by-side columns share lines.
-        self.default_gate = not layout
         self.about = (
             "poppler, -layout: keeps visual columns on one line"
             if layout
@@ -21,7 +21,9 @@ class PdfToText:
 
     def unavailable(self) -> str | None:
         if shutil.which("pdftotext") is None:
-            return "pdftotext is not on PATH; install poppler-utils."
+            return (
+                f"not installed (pdftotext, from poppler); install: {install_command('pdftotext')}"
+            )
         return None
 
     def extract(self, pdf: Path) -> str:

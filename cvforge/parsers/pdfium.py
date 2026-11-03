@@ -6,15 +6,16 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+from cvforge.platforms import install_command
+
 
 class Pdfium:
     name = "pdfium"
-    default_gate = False
     about = "PDFium via pypdfium2 (Chrome's engine); independent of the others"
 
     def unavailable(self) -> str | None:
         if importlib.util.find_spec("pypdfium2") is None:
-            return "pypdfium2 is not installed; pip install 'cvforge[check]'."
+            return f"not installed (pypdfium2); install: {install_command('pypdfium2')}"
         return None
 
     def extract(self, pdf: Path) -> str:
