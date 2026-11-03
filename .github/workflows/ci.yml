@@ -73,14 +73,22 @@ jobs:
             lm
             enumitem
 
+      # The image's Git for Windows ships Xpdf's pdftotext in C:\Program Files\Git\ucrt64\bin
+      # (seen in run 41618764377: "pdftotext version 4.06 [www.xpdfreader.com]"). Hide exactly
+      # that file; any other pdftotext or pdfinfo on PATH still fails this step.
       - name: Poppler must be absent, so the Windows gate set is what runs
         run: |
-          $found = @(Get-Command pdftotext, pdfinfo -All -ErrorAction SilentlyContinue)
-          foreach ($c in $found) {
+          $git = Join-Path $env:ProgramFiles "Git"
+          foreach ($c in @(Get-Command pdftotext, pdfinfo -All -ErrorAction SilentlyContinue)) {
             Write-Host "$($c.Name) at $($c.Source)"
             & $c.Source -v 2>&1 | Select-Object -First 1 | ForEach-Object { Write-Host "  $_" }
+            if ($c.Source.StartsWith("$git\")) {
+              Rename-Item $c.Source "$($c.Name).hidden-by-ci"
+              Write-Host "  hidden: renamed to $($c.Name).hidden-by-ci"
+            }
           }
-          if ($found) { throw "poppler tools are on PATH (listed above)" }
+          $left = @(Get-Command pdftotext, pdfinfo -All -ErrorAction SilentlyContinue)
+          if ($left) { throw "poppler tools still on PATH: $($left.Source -join ', ')" }
 
       - name: Install package
         run: pip install -e ".[dev,check]"

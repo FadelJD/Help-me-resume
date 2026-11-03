@@ -20,6 +20,15 @@ Windows Server image with developer tools preinstalled. It is not a Windows PC.
 - **`cvforge doctor`** prints the winget command for each missing tool, with scoop and choco as
   alternatives.
 
+## Git for Windows ships a pdftotext that is not poppler's
+
+GitHub's windows-latest image has `C:\Program Files\Git\ucrt64\bin\pdftotext.exe`, reporting
+`pdftotext version 4.06 [www.xpdfreader.com]`. That is Xpdf, not poppler, with no `pdfinfo` beside
+it. If that folder is on your PATH, cvforge runs it as the advisory pdftotext reader. Its output can
+differ from poppler's, and it never gates on Windows. `cvforge doctor` shows "found" for it. It is
+unverified whether a default Git for Windows install puts that folder on PATH. CI hides this one
+file so the job runs without any pdftotext.
+
 ## Verified
 
 | What | Where | Result |
