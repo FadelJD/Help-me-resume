@@ -45,7 +45,7 @@ cvforge doctor
 
 In a WSL Ubuntu terminal, follow the Ubuntu or Debian block above, which ends with `cvforge doctor`.
 
-If a terminal says `cvforge: command not found`, run `pipx ensurepath` and open a new terminal. On macOS, install [MacTeX](https://tug.org/mactex/), poppler and pipx with Homebrew, then follow the Ubuntu block from `pipx install`. CI does not test macOS. Windows support is new: CI runs the Windows block on a hosted windows-latest runner, and nobody has run it on a Windows PC yet.
+If a terminal says `cvforge: command not found`, run `pipx ensurepath` and open a new terminal. On macOS, install [MacTeX](https://tug.org/mactex/), poppler and pipx with Homebrew, then follow the Ubuntu block from `pipx install`. CI does not test macOS. On Windows, CI runs the block above on a hosted windows-latest runner, with TeX Live and without poppler or latexmk. There, the example CV builds and passes `check`, while 14 of the unit tests still fail. Nobody has run it on a Windows PC yet. [docs/windows.md](docs/windows.md) lists what is verified and what is not.
 
 ## Quick start
 

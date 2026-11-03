@@ -37,7 +37,25 @@ file so the job runs without any pdftotext.
 | Windows gate set (pdfplumber, pypdf-layout, pdfium) chosen when the OS reports Windows | Linux, OS faked in tests | pass |
 | PDFium on the public template corpus | Linux | see docs/parser-table.md |
 | CRLF profile, hat and template | Linux | output identical to LF |
-| Test suite, doctor and README install on `windows-latest` | GitHub Actions | not yet: the first run stopped before the tests, because the runner image has a pdftotext on PATH |
+| README Windows block, then `init --example`, `build --compile`, `check` | GitHub Actions `windows-latest` (TeX Live, no poppler, no latexmk) | pass: `check passed: parsed: 3/3 · advisory: 1/2 · evidence: 100%`, 36 s |
+| `cvforge doctor`, ruff, mypy on Windows | GitHub Actions `windows-latest` | pass |
+| Test suite (`pytest -m "not corpus"`) on Windows | GitHub Actions `windows-latest` | **fail**: 14 failed, 311 passed, 23 skipped, 2 errors; see below |
+
+## Known failures on windows-latest (CI run 41619086781, not fixed yet)
+
+| Tests | Error (verbatim) | Apparent cause |
+| --- | --- | --- |
+| test_cli::test_build_and_explain | `assert 'out\\x.tex' == 'out/x.tex'` | JSON output uses Windows path separators; the test expects `/` |
+| test_hats::test_saved_explain_json_matches_pipeline (8 cases) | `{'job': 'examples\\people\\...txt'} != {'job': 'examples/people/...txt'}` | the same, in `explain --json` |
+| test_errors::test_errors_doc_is_current | `docs/errors.md is stale` (only `\` vs `/` differ) | the same, in error messages |
+| test_pipeline::test_config_supplies_defaults | `invalid TOML: Unescaped '\' in a string (at line 1, column 17)` | the test writes a Windows path into a TOML basic string |
+| test_check::test_roundtrip_fails_on_icon_template_naming_the_string, test_check::test_twocol_template_warns_in_lint, test_importer::test_import_reproduces_the_source_profile (2 errors) | `LaTeX error: Emergency stop. (engines tried: pdflatex)` | inferred, not confirmed: the lines load marvosym, paracol, fullpage/titlesec, which the CI's minimal TeX Live install lacks |
+| test_cli::test_check_cli_exit_codes | `KeyError: 'badge'` | not known; possibly the same missing-package compile failure |
+
+One warning: a test subprocess printed `·` and the reader got byte `0xb7` (`'utf-8' codec can't
+decode byte 0xb7`). Python on Windows writes piped output in the ANSI code page unless
+`PYTHONUTF8=1` is set, so piping `cvforge check --json` output to a file may not produce UTF-8 on
+Windows. Unverified beyond that one warning.
 
 ## Not verified (needs a real Windows machine)
 
