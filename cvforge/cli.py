@@ -22,6 +22,7 @@ from typer._click.exceptions import (  # Typer vendors click; these classes are 
 
 from cvforge import pipeline, views
 from cvforge.check import miss_issues
+from cvforge.doctor import diagnose, missing_required
 from cvforge.errors import CVForgeError, Issue
 from cvforge.rewrite import Proposal
 
@@ -54,6 +55,36 @@ def _fail(exc: CVForgeError, as_json: bool) -> NoReturn:
         n = len(exc.issues)
         console.print(f"[red]failed: {n} problem{'s' if n != 1 else ''}[/red]")
     raise typer.Exit(1)
+
+
+@app.command()
+def doctor(as_json: JsonOpt = False) -> None:
+    """Check this system: Python, a TeX engine, latexmk, every reader, the semantic model."""
+    items = diagnose()
+    missing = [i.name for i in items if i.required and not i.ok]
+    if as_json:
+        out.print_json(json.dumps({"ok": not missing, "items": [i.to_dict() for i in items]}))
+    else:
+        for item in items:
+            out.print(item.line, highlight=False, markup=False, soft_wrap=True)
+        if missing:
+            out.print(f"doctor: missing required: {', '.join(missing)}", highlight=False)
+        else:
+            out.print("doctor: everything required is installed", highlight=False)
+    if missing:
+        raise typer.Exit(1)
+
+
+def _doctor_hint() -> None:
+    """Point at `cvforge doctor` when a required tool is absent (cheap: PATH and imports)."""
+    missing = missing_required()
+    if missing:
+        console.print(
+            f"note: required tools missing on this system ({', '.join(missing)}): "
+            "run cvforge doctor",
+            highlight=False,
+            soft_wrap=True,
+        )
 
 
 @app.command()
@@ -165,6 +196,8 @@ def build(
             compile_pdf_too=compile_pdf,
         )
     except CVForgeError as exc:
+        if not as_json:
+            _doctor_hint()
         _fail(exc, as_json)
     if as_json:
         out.print_json(
@@ -180,6 +213,7 @@ def build(
         return
     _print_issues(result.warnings)
     out.print(result.summary, highlight=False, soft_wrap=True)
+    _doctor_hint()
 
 
 @app.command()
@@ -381,6 +415,7 @@ def init(
         _fail(exc, False)
     out.print(result.path.read_text(encoding="utf-8"), highlight=False, markup=False)
     out.print(result.message, highlight=False, soft_wrap=True)
+    _doctor_hint()
 
 
 @app.command("import")
