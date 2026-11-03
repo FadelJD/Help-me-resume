@@ -15,6 +15,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from cvforge.errors import CVForgeError, Issue
+from cvforge.platforms import run_tool
 
 
 def latexmk_available() -> bool:
@@ -145,18 +146,9 @@ def _exec(
     cmd: list[str], cwd: Path, timeout: int, env: dict[str, str], tex: Path
 ) -> subprocess.CompletedProcess[str]:
     try:
-        return subprocess.run(
-            cmd,
-            cwd=cwd,
-            capture_output=True,
-            # TeX wraps its terminal and log output at a fixed byte width, which can split a
-            # multi-byte UTF-8 character; decode leniently so that never crashes a build.
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout,
-            check=False,
-            env=env,
-        )
+        # TeX wraps its terminal and log output at a fixed byte width, which can split a
+        # multi-byte UTF-8 character; run_tool decodes leniently so that never crashes a build.
+        return run_tool(cmd, cwd=cwd, timeout=timeout, env=env)
     except subprocess.TimeoutExpired as exc:
         raise CVForgeError(
             [

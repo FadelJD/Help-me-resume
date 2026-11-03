@@ -202,7 +202,8 @@ def run_pipeline(strings: list[str], workdir: Path) -> Outcome:
     text = subprocess.run(
         ["pdftotext", "-enc", "UTF-8", str(result.pdf), "-"],
         capture_output=True,
-        text=True,
+        encoding="utf-8",
+        errors="replace",
         check=True,
     ).stdout
     found = _segments(text)

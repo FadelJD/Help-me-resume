@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import shutil
-import subprocess
 from pathlib import Path
 
-from cvforge.platforms import install_command
+from cvforge.platforms import install_command, run_tool
 
 
 class PdfToText:
@@ -28,5 +27,4 @@ class PdfToText:
 
     def extract(self, pdf: Path) -> str:
         cmd = ["pdftotext", "-enc", "UTF-8", *(["-layout"] if self.layout else []), str(pdf), "-"]
-        proc = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=60)
-        return proc.stdout
+        return run_tool(cmd, cwd=pdf.parent, timeout=60, check=True).stdout

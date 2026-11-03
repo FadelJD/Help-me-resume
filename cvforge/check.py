@@ -17,7 +17,6 @@ from __future__ import annotations
 import json
 import re
 import shutil
-import subprocess
 import unicodedata
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
@@ -28,6 +27,7 @@ from cvforge.compile import compile_pdf
 from cvforge.config import Locale, ParserSetting, Thresholds
 from cvforge.errors import CVForgeError, Issue
 from cvforge.parsers import PARSER_NAMES, Parser, all_parsers, default_gates
+from cvforge.platforms import run_tool
 from cvforge.schema import Profile
 from cvforge.score import Encoder, keyword_coverage, semantic_similarity
 from cvforge.template import format_date, lint
@@ -442,13 +442,17 @@ def resolve_parsers(
 
 
 def page_count(pdf: Path) -> int | None:
-    if shutil.which("pdfinfo") is None:
+    """pdfinfo when poppler is installed; pypdf otherwise (Windows has no pdfinfo by default)."""
+    if shutil.which("pdfinfo") is not None:
+        out = run_tool(["pdfinfo", str(pdf)], cwd=pdf.parent, timeout=30).stdout
+        m = re.search(r"^Pages:\s+(\d+)", out, flags=re.MULTILINE)
+        if m:
+            return int(m.group(1))
+    try:
+        from pypdf import PdfReader
+    except ImportError:
         return None
-    out = subprocess.run(
-        ["pdfinfo", str(pdf)], capture_output=True, text=True, check=False, timeout=30
-    ).stdout
-    m = re.search(r"^Pages:\s+(\d+)", out, flags=re.MULTILINE)
-    return int(m.group(1)) if m else None
+    return len(PdfReader(str(pdf)).pages)
 
 
 def density(report: dict[str, Any], text: str, pages: int | None) -> dict[str, Any]:

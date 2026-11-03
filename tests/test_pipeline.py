@@ -121,6 +121,10 @@ def test_build_compiles_with_zero_edits(workdir: Path, no_network: None) -> None
     result = _build(workdir / "out" / "jane.tex", compile_pdf_too=True)
     assert result.pdf is not None and result.pdf.exists()
     text = subprocess.run(
-        ["pdftotext", str(result.pdf), "-"], capture_output=True, text=True, check=True
+        ["pdftotext", str(result.pdf), "-"],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=True,
     ).stdout
     assert "Jane Doe" in text and "Acme Software" in text

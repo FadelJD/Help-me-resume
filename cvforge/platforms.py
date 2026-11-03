@@ -9,10 +9,37 @@ from __future__ import annotations
 
 import platform
 import shutil
+import subprocess
 import sys
+from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import Literal
 
 OS = Literal["windows", "macos", "linux"]
+
+
+def run_tool(
+    cmd: Sequence[str],
+    *,
+    cwd: Path,
+    timeout: int = 60,
+    env: Mapping[str, str] | None = None,
+    check: bool = False,
+) -> subprocess.CompletedProcess[str]:
+    """Every external program cvforge runs goes through here: an argument list (never a shell),
+    an explicit working folder, and UTF-8 output decoded leniently (TeX and poppler can emit
+    invalid bytes, and Windows consoles would otherwise decode with a legacy code page)."""
+    return subprocess.run(
+        list(cmd),
+        cwd=cwd,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout,
+        check=check,
+        env=None if env is None else dict(env),
+        shell=False,
+    )
 
 
 def current_os() -> OS:

@@ -164,6 +164,7 @@ def environment() -> jinja2.Environment:
 
 
 def parse_header(text: str, file: str) -> tuple[Header | None, list[Issue]]:
+    text = text.replace("\r\n", "\n")  # templates saved on Windows
     lines = text.splitlines()
     start = next((i for i, line in enumerate(lines) if line.strip()), 0)
     if not lines or lines[start].strip() != HEADER_MAGIC:

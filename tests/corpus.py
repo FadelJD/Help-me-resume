@@ -45,11 +45,15 @@ def missing_requirements(entry: dict[str, Any]) -> list[str]:
         if kind == "cmd" and shutil.which(value) is None:
             missing.append(req)
         elif kind == "sty":
-            found = subprocess.run(["kpsewhich", value], capture_output=True, text=True).stdout
+            found = subprocess.run(
+                ["kpsewhich", value], capture_output=True, encoding="utf-8", errors="replace"
+            ).stdout
             if not found.strip():
                 missing.append(req)
         elif kind == "font" and shutil.which("fc-list"):
-            fonts = subprocess.run(["fc-list", ":", "family"], capture_output=True, text=True)
+            fonts = subprocess.run(
+                ["fc-list", ":", "family"], capture_output=True, encoding="utf-8", errors="replace"
+            )
             if value not in fonts.stdout:
                 missing.append(req)
     return missing

@@ -195,6 +195,7 @@ def load_raw_text(text: str, file: str) -> Any:
 
 
 def parse_text(text: str, file: str = "profile.cv.txt") -> ParsedProfile:
+    text = text.replace("\r\n", "\n")  # files saved on Windows
     data = load_raw_text(text, file)
     lines: dict[Loc, int] = {}
     _walk_lines(data, (), lines)

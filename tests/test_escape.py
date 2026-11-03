@@ -89,7 +89,11 @@ def test_fixture_cases_compile_and_extract(tmp_path: Path) -> None:
     compile_pdf(tex)
     assert shutil.which("pdftotext")
     text = subprocess.run(
-        ["pdftotext", str(tmp_path / "e.pdf"), "-"], capture_output=True, text=True, check=True
+        ["pdftotext", str(tmp_path / "e.pdf"), "-"],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=True,
     ).stdout
     flat = " ".join(text.split())
     for line in lines:
@@ -118,6 +122,10 @@ def test_regression_long_url_is_not_cut_at_the_margin(tmp_path: Path) -> None:
     )
     compile_pdf(tex)
     text = subprocess.run(
-        ["pdftotext", str(tmp_path / "u.pdf"), "-"], capture_output=True, text=True, check=True
+        ["pdftotext", str(tmp_path / "u.pdf"), "-"],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=True,
     ).stdout
     assert "".join(text.split()) == url

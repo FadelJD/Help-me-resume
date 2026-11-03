@@ -23,6 +23,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 
 from cvforge.errors import CVForgeError, Issue
+from cvforge.platforms import run_tool
 from cvforge.score import tokenize
 
 # ---------------------------------------------------------------- data
@@ -203,13 +204,11 @@ _HEADINGS = {
 
 def pdf_blocks(path: Path, label: str) -> tuple[list[Block], list[str]]:
     try:
-        out = subprocess.run(
+        out = run_tool(
             ["pdftotext", "-layout", "-enc", "UTF-8", str(path), "-"],
-            capture_output=True,
-            encoding="utf-8",
-            errors="replace",
-            check=True,
+            cwd=path.parent,
             timeout=60,
+            check=True,
         ).stdout
     except (OSError, subprocess.CalledProcessError) as exc:
         raise CVForgeError(
