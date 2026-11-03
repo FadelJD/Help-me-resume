@@ -74,7 +74,12 @@ jobs:
 
       - name: Poppler must be absent, so the Windows gate set is what runs
         run: |
-          if (Get-Command pdftotext -ErrorAction SilentlyContinue) { throw "pdftotext is on PATH" }
+          $found = @(Get-Command pdftotext, pdfinfo -All -ErrorAction SilentlyContinue)
+          foreach ($c in $found) {
+            Write-Host "$($c.Name) at $($c.Source)"
+            & $c.Source -v 2>&1 | Select-Object -First 1 | ForEach-Object { Write-Host "  $_" }
+          }
+          if ($found) { throw "poppler tools are on PATH (listed above)" }
 
       - name: Extract the install and Quick start commands from README.md
         env:
