@@ -19,11 +19,25 @@ SUBSECTIONS = {"linux": ("Ubuntu or Debian", "bash"), "windows": ("Windows", "po
 
 
 def _section(text: str, heading: str, level: str) -> str:
-    marker = f"\n{level} {heading}"
-    if marker not in text:
+    """The text under `level heading`, up to the next heading of the same or a higher level.
+    Lines inside code fences are never headings (a `# comment` in a block is not one)."""
+    out: list[str] = []
+    inside = fenced = False
+    for line in text.splitlines():
+        if line.startswith("```"):
+            fenced = not fenced
+        hashes = len(line) - len(line.lstrip("#"))
+        is_heading = not fenced and 0 < hashes <= len(level) and line[hashes : hashes + 1] == " "
+        if is_heading and inside:
+            break
+        if is_heading and line == f"{level} {heading}":
+            inside = True
+            continue
+        if inside:
+            out.append(line)
+    if not inside:
         raise SystemExit(f"README.md has no '{level} {heading}' heading")
-    body = text.split(marker, 1)[1].split("\n", 1)[1]
-    return re.split(rf"\n#{{1,{len(level)}}} ", body, maxsplit=1)[0]
+    return "\n".join(out) + "\n"
 
 
 def _blocks(section: str, lang: str) -> list[str]:

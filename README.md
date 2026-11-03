@@ -10,22 +10,56 @@ Most CVs are read by software before a person sees them: an applicant tracking s
 
 It is an open source CV builder for people who want an ATS-friendly resume they can keep as CV as code, and a JSON Resume alternative that targets LaTeX.
 
-## Quick start
+## Install
 
-On Ubuntu or Debian, in a terminal:
+Each block ends with `cvforge doctor`, which checks Python, a TeX engine and the PDF readers, and prints the exact install command for anything missing.
+
+### Windows
+
+In PowerShell:
+
+```powershell
+winget install -e --id Python.Python.3.12
+winget install -e --id Git.Git
+winget install -e --id MiKTeX.MiKTeX
+py -m pip install --user pipx
+py -m pipx ensurepath
+# Close and reopen PowerShell so the new PATH applies, then:
+py -m pipx install "cvforge[check] @ git+https://github.com/FadelJD/Help-me-resume"
+cvforge doctor
+```
+
+If you prefer TeX Live to MiKTeX, install it from [tug.org/texlive/windows.html](https://tug.org/texlive/windows.html) instead. MiKTeX downloads LaTeX packages the first time a CV needs them. If it asks every time, turn on automatic installs in the MiKTeX Console, under Settings.
+
+On Windows, pdftotext is not a gate unless poppler is installed (`winget install oschwartz10612.Poppler`). Without poppler, `check` gates on pdfplumber, pypdf-layout and PDFium, which all come with `pipx install`. pdftotext uses the same library as many applicant tracking systems, so the Windows result says less about those systems than the Linux one. Install poppler, or run `check` in WSL, for the Linux gate set. pdftotext then also runs, as an advisory reader.
+
+### Ubuntu or Debian
 
 ```bash
 sudo apt-get update && sudo apt-get install -y latexmk texlive-latex-extra texlive-fonts-recommended lmodern poppler-utils pipx
 pipx install "cvforge[check] @ git+https://github.com/FadelJD/Help-me-resume"
-mkdir my-cv && cd my-cv
+cvforge doctor
+```
+
+### WSL
+
+In a WSL Ubuntu terminal, follow the Ubuntu or Debian block above, which ends with `cvforge doctor`.
+
+If a terminal says `cvforge: command not found`, run `pipx ensurepath` and open a new terminal. On macOS, install [MacTeX](https://tug.org/mactex/), poppler and pipx with Homebrew, then follow the Ubuntu block from `pipx install`. CI does not test macOS. Windows support is new: CI runs the Windows block on a hosted windows-latest runner, and nobody has run it on a Windows PC yet.
+
+## Quick start
+
+The same commands work in bash and PowerShell:
+
+```bash
+mkdir my-cv
+cd my-cv
 cvforge init --example
 cvforge build --compile -o out/cv.tex
 cvforge check out/cv.tex
 ```
 
 You now have a PDF and a report: `out/cv.pdf` and `out/cv.report.json`. The example is a fictional person, Jane Doe. To start your own, run `cvforge init` in an empty folder and answer the questions.
-
-If your terminal says `cvforge: command not found`, run `pipx ensurepath` and open a new terminal. On macOS, install [MacTeX](https://tug.org/mactex/) and poppler first; on Windows, use WSL with the Ubuntu steps above. These two routes are not tested yet.
 
 ## Does your template survive screening software?
 
