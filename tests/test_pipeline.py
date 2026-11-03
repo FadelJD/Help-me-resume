@@ -116,6 +116,7 @@ def test_html_to_text() -> None:
 
 
 @pytest.mark.tex
+@pytest.mark.poppler
 def test_build_compiles_with_zero_edits(workdir: Path, no_network: None) -> None:
     result = _build(workdir / "out" / "jane.tex", compile_pdf_too=True)
     assert result.pdf is not None and result.pdf.exists()
