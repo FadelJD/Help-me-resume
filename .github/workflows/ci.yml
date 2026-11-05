@@ -116,7 +116,7 @@ jobs:
         run: mypy cvforge
 
       - name: Test
-        run: pytest -q -rs -m "not corpus"
+        run: pytest -q -rfEs -m "not corpus"
 
   corpus:
     # Public template corpus: every template x every parser must match docs/parser-table.md.

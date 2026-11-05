@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import tomllib
 from pathlib import Path
 
@@ -35,6 +36,9 @@ def test_errors_print_forward_slashes(windows: None) -> None:
     assert issue.to_dict()["file"] == "tests/fixtures/bad.cv.txt"
 
 
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="needs a filename containing a backslash"
+)
 def test_explain_and_build_print_forward_slashes(
     windows: None, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
