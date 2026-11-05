@@ -22,6 +22,7 @@ from typer._click.exceptions import (  # Typer vendors click; these classes are 
 
 from cvforge import pipeline, views
 from cvforge.check import miss_issues
+from cvforge.confirm import parse_answer_arg
 from cvforge.doctor import diagnose, missing_required
 from cvforge.errors import CVForgeError, Issue
 from cvforge.platforms import show_path
@@ -180,6 +181,9 @@ def build(
     job: JobOpt = None,
     output: Annotated[Path | None, typer.Option("-o", "--output", help="Output .tex path.")] = None,
     compile_pdf: Annotated[bool, typer.Option("--compile", help="Also build the PDF.")] = False,
+    docx: Annotated[
+        bool, typer.Option("--docx", help="Also write a single-column .docx beside the .tex.")
+    ] = False,
     max_bullets: MaxOpt = None,
     locale: LocaleOpt = None,
     profile: ProfileOpt = None,
@@ -196,6 +200,7 @@ def build(
             output=output,
             max_bullets=max_bullets,
             compile_pdf_too=compile_pdf,
+            docx=docx,
         )
     except CVForgeError as exc:
         if not as_json:
@@ -208,6 +213,7 @@ def build(
                     "ok": True,
                     "tex": show_path(result.tex),
                     "pdf": show_path(result.pdf) if result.pdf else None,
+                    "docx": show_path(result.docx) if result.docx else None,
                     "report": show_path(result.report_path),
                 }
             )
@@ -509,6 +515,95 @@ def import_cmd(
     for title in result.titles:
         out.print(f"title line in a file: {escape(title)} (goes in a hat's title_line)")
     out.print(result.summary, highlight=False, soft_wrap=True)
+
+
+@app.command("confirm")
+def confirm_cmd(
+    profile: ProfileOpt = None,
+    confirm: Annotated[
+        Path | None,
+        typer.Option("--confirm", help="CONFIRM.md from import (default: beside the profile)."),
+    ] = None,
+    answer: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--answer",
+            help='N=CHOICE picks option CHOICE of entry N; N="text" types a value. Repeatable.',
+        ),
+    ] = None,
+    as_json: JsonOpt = False,
+) -> None:
+    """Settle the facts import marked TODO confirm, one question at a time."""
+    try:
+        state = pipeline.confirm_pending(profile, confirm)
+        if answer:
+            file = show_path(state.profile)
+            pairs = [parse_answer_arg(a, file) for a in answer]
+            result = pipeline.confirm_answer(state.profile, confirm, pairs)
+    except CVForgeError as exc:
+        _fail(exc, as_json)
+    if answer:
+        if as_json:
+            out.print_json(json.dumps(result.to_dict()))
+            return
+        for a, q in result.applied:
+            out.print(
+                f"#{a.number} {escape(q.what)}: wrote {escape(a.value)} "
+                f"on line {', '.join(map(str, q.lines))}",
+                highlight=False,
+                soft_wrap=True,
+            )
+        _confirm_tail(result.state)
+        return
+    if as_json:
+        out.print_json(json.dumps(state.to_dict()))
+        return
+    _confirm_interactive(state, confirm)
+
+
+def _confirm_tail(state: pipeline.ConfirmState) -> None:
+    left = len(state.questions)
+    where = show_path(state.profile)
+    if left:
+        out.print(
+            f"{where}: {left} fact(s) still marked TODO confirm; run `cvforge confirm` to continue",
+            highlight=False,
+            soft_wrap=True,
+        )
+    else:
+        out.print(f"{where}: nothing left to confirm", highlight=False, soft_wrap=True)
+
+
+def _confirm_interactive(state: pipeline.ConfirmState, confirm: Path | None) -> None:
+    total = len(state.questions)
+    answered = 0
+    for position, question in enumerate(state.questions, start=1):
+        views.print_question(out, question, position, total)
+        while True:
+            raw = str(typer.prompt("answer", default="s", show_default=False))
+            word = raw.strip().casefold()
+            if word in ("s", "skip"):
+                break
+            if word in ("q", "quit"):
+                out.print(f"stopped: {answered} answered", highlight=False)
+                _confirm_tail(pipeline.confirm_pending(state.profile, confirm))
+                return
+            try:
+                result = pipeline.confirm_answer(state.profile, confirm, [(question.number, raw)])
+            except CVForgeError as exc:
+                _print_issues(exc.issues)
+                continue
+            answered += 1
+            for a, q in result.applied:
+                out.print(
+                    f"wrote {escape(a.value)} on line {', '.join(map(str, q.lines))}",
+                    highlight=False,
+                    soft_wrap=True,
+                )
+            break
+    if total:
+        out.print(f"done: {answered} answered, {total - answered} skipped", highlight=False)
+    _confirm_tail(pipeline.confirm_pending(state.profile, confirm))
 
 
 add_app = typer.Typer(no_args_is_help=True, help="Append to the profile without opening it.")

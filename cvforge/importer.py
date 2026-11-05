@@ -798,3 +798,30 @@ def confirm_markdown(merged: Merged, files: list[str]) -> str:
     if merged.draft.notes:
         lines += ["## Not imported", ""] + [f"- {n}" for n in merged.draft.notes] + [""]
     return "\n".join(lines)
+
+
+_MD_ENTRY = re.compile(r"^## (\d+)\. (.+?)\s*$")
+_MD_OPTION = re.compile(
+    r"^- `(?P<value>.*)` \u2014 (?P<sources>.*?)(?P<kept> \(in the profile now\))?\s*$"
+)
+
+
+def read_confirm_markdown(text: str) -> dict[int, Confirm]:
+    """The numbered entries of a CONFIRM.md written by `confirm_markdown`, by number."""
+    entries: dict[int, Confirm] = {}
+    current: Confirm | None = None
+    for line in text.replace("\r\n", "\n").split("\n"):
+        heading = _MD_ENTRY.match(line)
+        if heading is not None:
+            current = Confirm(int(heading.group(1)), heading.group(2), [], "")
+            entries[current.number] = current
+            continue
+        if line.startswith("## "):
+            current = None  # "## Not imported" and anything else unnumbered
+            continue
+        option = _MD_OPTION.match(line)
+        if current is not None and option is not None:
+            current.options.append((option.group("value"), option.group("sources")))
+            if option.group("kept"):
+                current.kept = option.group("value")
+    return entries
