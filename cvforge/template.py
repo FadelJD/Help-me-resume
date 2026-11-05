@@ -16,6 +16,7 @@ from typing import Any
 import jinja2
 from jinja2 import nodes
 
+from cvforge.compile import detect_engine
 from cvforge.config import Locale
 from cvforge.errors import CVForgeError, Issue
 from cvforge.escape import escape, escape_url
@@ -38,6 +39,8 @@ FEATURES: dict[str, str] = {
     "education.bullets.skills": "bullet.skills",
     "projects.url": "projects.url",
     "projects.href": "projects.url",
+    "projects.stack": "projects.stack",
+    "education.location": "education.location",
     "skill_groups": "skills.groups",
     "skill_groups.name": "skills.groups",
     "skill_groups.skills": "skills.groups",
@@ -97,7 +100,7 @@ class Header:
     supports: tuple[str, ...]
     max_bullets: int | None
     max_pages: int | None
-    engine: str = "pdflatex"
+    engine: str = "auto"  # detected from the preamble at compile time unless declared
 
 
 @dataclass(frozen=True)
@@ -161,6 +164,7 @@ def environment() -> jinja2.Environment:
 
 
 def parse_header(text: str, file: str) -> tuple[Header | None, list[Issue]]:
+    text = text.replace("\r\n", "\n")  # templates saved on Windows
     lines = text.splitlines()
     start = next((i for i, line in enumerate(lines) if line.strip()), 0)
     if not lines or lines[start].strip() != HEADER_MAGIC:
@@ -238,13 +242,13 @@ def parse_header(text: str, file: str) -> tuple[Header | None, list[Issue]]:
                 fix="add e.g. `%% sections: experience, projects, skills, education`.",
             )
         )
-    engine_list = _list("engine", ENGINE_NAMES) if "engine" in values else ("pdflatex",)
+    engine_list = _list("engine", ENGINE_NAMES) if "engine" in values else ("auto",)
     header = Header(
         sections=sections,
         supports=_list("supports", FEATURE_NAMES),
         max_bullets=_int("max-bullets-per-role"),
         max_pages=_int("max-pages"),
-        engine=engine_list[0] if engine_list else "pdflatex",
+        engine=engine_list[0] if engine_list else "auto",
     )
     return header, issues
 
@@ -553,7 +557,9 @@ def lint(text: str, file: str, engine: str | None = None) -> list[Issue]:
 
     if engine is None:
         header, _ = parse_header(text, file)
-        engine = header.engine if header else "pdflatex"
+        engine = header.engine if header else "auto"
+    if engine == "auto":
+        engine = detect_engine(text).engines[0]
 
     if _DATE_PLACEHOLDER.search(code):
         for idx, line in enumerate(lines):
@@ -833,6 +839,8 @@ def format_date(value: str | None, locale: Locale) -> str:
         return ""
     if value == "present":
         return locale.present
+    if len(value) == 4:  # the source gave only a year
+        return value
     return datetime.strptime(value, "%Y-%m").strftime(locale.date_format)
 
 
@@ -895,6 +903,7 @@ def build_context(
                 "name": escape(pr.name),
                 "url": link["text"],
                 "href": link["href"],
+                "stack": escape(pr.stack or ""),
                 **dated(si),
                 "bullets": bullets(si),
             }
@@ -908,6 +917,7 @@ def build_context(
                 "id": ed.id,
                 "degree": escape(ed.degree),
                 "org": escape(ed.org),
+                "location": escape(ed.location or ""),
                 **dated(si),
                 "bullets": bullets(si),
             }

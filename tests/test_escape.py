@@ -9,6 +9,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from cvforge.compile import compile_pdf
 from cvforge.escape import _SPECIAL, BREAK, escape, escape_url
 
 from .conftest import FIXTURES
@@ -75,6 +76,7 @@ def test_property_url_has_no_bare_percent_or_hash(s: str) -> None:
 
 
 @pytest.mark.tex
+@pytest.mark.poppler
 def test_fixture_cases_compile_and_extract(tmp_path: Path) -> None:
     lines = (FIXTURES / "escape_cases.txt").read_text(encoding="utf-8").splitlines()
     body = "\n\n".join(escape(line) for line in lines)
@@ -84,15 +86,14 @@ def test_fixture_cases_compile_and_extract(tmp_path: Path) -> None:
         f"\\begin{{document}}\n{body}\n\\end{{document}}\n",
         encoding="utf-8",
     )
-    subprocess.run(
-        ["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error", tex.name],
-        cwd=tmp_path,
-        check=True,
-        capture_output=True,
-    )
+    compile_pdf(tex)
     assert shutil.which("pdftotext")
     text = subprocess.run(
-        ["pdftotext", str(tmp_path / "e.pdf"), "-"], capture_output=True, text=True, check=True
+        ["pdftotext", str(tmp_path / "e.pdf"), "-"],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=True,
     ).stdout
     flat = " ".join(text.split())
     for line in lines:
@@ -108,6 +109,7 @@ def test_long_tokens_get_break_opportunities() -> None:
 
 
 @pytest.mark.tex
+@pytest.mark.poppler
 def test_regression_long_url_is_not_cut_at_the_margin(tmp_path: Path) -> None:
     # Found by the escaper fuzz: an unbreakable URL ran past the margin and pdftotext lost it.
     url = "https://example.com/" + "/".join(f"segment_{i:02d}_abcdefgh" for i in range(12))
@@ -118,13 +120,12 @@ def test_regression_long_url_is_not_cut_at_the_margin(tmp_path: Path) -> None:
         "\\end{document}\n",
         encoding="utf-8",
     )
-    subprocess.run(
-        ["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error", tex.name],
-        cwd=tmp_path,
-        check=True,
-        capture_output=True,
-    )
+    compile_pdf(tex)
     text = subprocess.run(
-        ["pdftotext", str(tmp_path / "u.pdf"), "-"], capture_output=True, text=True, check=True
+        ["pdftotext", str(tmp_path / "u.pdf"), "-"],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=True,
     ).stdout
     assert "".join(text.split()) == url

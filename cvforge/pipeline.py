@@ -17,11 +17,12 @@ from typing import Any
 from pydantic import ValidationError
 
 from cvforge import __version__
-from cvforge.check import CheckReport, check
-from cvforge.compile import compile_pdf
+from cvforge.check import CheckReport, check, check_pdf
+from cvforge.compile import compile_tex
 from cvforge.config import DEFAULT_CONFIG_TEXT, LOCALES, Config, Locale, load_config
 from cvforge.errors import CVForgeError, Issue, errors_only
 from cvforge.escape import escape
+from cvforge.importer import confirm_markdown, import_file, merge
 from cvforge.interview import Ask, Confirm, Say, hat_text, run_interview
 from cvforge.parse import (
     ParsedProfile,
@@ -29,6 +30,7 @@ from cvforge.parse import (
     append_item,
     append_skill,
     bullet_ids,
+    dump_draft,
     dump_profile,
     item_ids,
     load_hat,
@@ -36,6 +38,7 @@ from cvforge.parse import (
     next_id,
     parse_text,
 )
+from cvforge.platforms import show_path
 from cvforge.resources import builtin_template, data_path
 from cvforge.rewrite import LiteLLMRewriter, Proposal, Rewriter, apply, propose
 from cvforge.schema import Bullet, Education, Experience, Hat, Profile, Project, Selection
@@ -143,7 +146,7 @@ def resolve_hat(name: str | None, cfg: Config) -> tuple[Hat | None, str]:
     path = (
         Path(name) if name.endswith(".toml") or "/" in name else Path(cfg.hats_dir) / f"{name}.toml"
     )
-    return load_hat(path), str(path)
+    return load_hat(path), show_path(path)
 
 
 def read_job(job: str | None) -> str | None:
@@ -237,13 +240,19 @@ class BuildResult:
     selection: Selection
     warnings: list[Issue] = field(default_factory=list)
     pdf: Path | None = None
+    engine: str = ""
+    engine_note: str = ""
 
     @property
     def summary(self) -> str:
         n_b = len(self.report["emitted"]["bullets"])
         n_d = sum(1 for d in self.selection.dropped if d.kind == "bullet")
-        pdf = f", pdf {self.pdf}" if self.pdf else ""
-        return f"wrote {self.tex} ({n_b} bullets, {n_d} dropped){pdf}"
+        pdf = (
+            f", pdf {show_path(self.pdf)} with {self.engine} ({self.engine_note})"
+            if self.pdf
+            else ""
+        )
+        return f"wrote {show_path(self.tex)} ({n_b} bullets, {n_d} dropped){pdf}"
 
 
 @dataclass
@@ -319,7 +328,7 @@ def prepare(
             )
         candidates = [x for x in (declared, max_bullets) if x is not None]
         limit = min(candidates) if candidates else None
-    selection = select(parsed.profile, hat_model, job_text, limit)
+    selection = select(parsed.profile, hat_model, job_text, limit, skills_mode=cfg.skills)
     return Prepared(
         cfg,
         parsed,
@@ -423,11 +432,11 @@ def make_report(
         "tool": "cvforge",
         "version": __version__,
         "built": build_date(),
-        "tex": str(out_path),
-        "profile": prep.parsed.source.file,
-        "template": str(prep.template_path),
+        "tex": show_path(out_path),
+        "profile": show_path(prep.parsed.source.file),
+        "template": show_path(prep.template_path),
         "hat": sel.hat,
-        "job": job_ref or "",
+        "job": show_path(job_ref or ""),
         "locale": locale.name,
         "template_fields": prep.template_report.fields,
         "template_header": {
@@ -474,17 +483,18 @@ def build(
     prep = prepare(profile=profile, template=template, hat=hat, job=job, max_bullets=max_bullets)
     result = render_selection(prep, output, job)
     if compile_pdf_too:
-        result.pdf = _compile(prep, result.tex)
+        _compile(prep, result)
     return result
 
 
 def _engine(prep: Prepared) -> str:
     header = prep.template_report.header
-    return header.engine if header else "pdflatex"
+    return header.engine if header else "auto"
 
 
-def _compile(prep: Prepared, tex: Path) -> Path:
-    return compile_pdf(tex, engine=_engine(prep), search=[prep.template_path.parent])
+def _compile(prep: Prepared, result: BuildResult) -> None:
+    done = compile_tex(result.tex, engine=_engine(prep), search=[prep.template_path.parent])
+    result.pdf, result.engine, result.engine_note = done.pdf, done.engine, done.note
 
 
 # ---------------------------------------------------------------- explain
@@ -540,7 +550,7 @@ def explain(
         max_bullets=max_bullets,
         need_template=use_template,
     )
-    return ExplainResult(prep.selection, prep.selection.hat, job or "")
+    return ExplainResult(prep.selection, prep.selection.hat, show_path(job or ""))
 
 
 # ---------------------------------------------------------------- template validate
@@ -600,7 +610,9 @@ def init(
         raise CVForgeError(errs)
     profile_path.write_text(text, encoding="utf-8")
     config_path.write_text(
-        DEFAULT_CONFIG_TEXT.format(template=result.template, hat=result.hat, locale=result.locale),
+        DEFAULT_CONFIG_TEXT.format(
+            template=show_path(result.template), hat=result.hat, locale=result.locale
+        ),
         encoding="utf-8",
     )
     written = [profile_path, config_path]
@@ -611,7 +623,7 @@ def init(
         if not hat_path.exists():
             hat_path.write_text(hat_text(name, title, result.profile), encoding="utf-8")
             written.append(hat_path)
-    return WriteResult(profile_path, f"wrote {', '.join(str(p) for p in written)}", written)
+    return WriteResult(profile_path, f"wrote {', '.join(show_path(p) for p in written)}", written)
 
 
 def _init_example(directory: Path, profile_path: Path, config_path: Path) -> WriteResult:
@@ -641,7 +653,7 @@ def _init_example(directory: Path, profile_path: Path, config_path: Path) -> Wri
         written.append(target)
     return WriteResult(
         profile_path,
-        f"wrote {', '.join(str(p) for p in written)} (fictional example: Jane Doe)",
+        f"wrote {', '.join(show_path(p) for p in written)} (fictional example: Jane Doe)",
         written,
     )
 
@@ -670,7 +682,7 @@ def _profile_text(profile: Path | None) -> tuple[Path, str]:
 def add_skill(profile: Path | None, sid: str, name: str) -> WriteResult:
     path, text = _profile_text(profile)
     _write_checked(path, append_skill(text, str(path), sid, name))
-    return WriteResult(path, f"added skill {sid}: {name} to {path}")
+    return WriteResult(path, f"added skill {sid}: {name} to {show_path(path)}")
 
 
 def add_role(
@@ -693,7 +705,7 @@ def add_role(
     except ValidationError as exc:
         raise _arg_error(exc, str(path)) from exc
     _write_checked(path, append_item(text, str(path), "experience", role))
-    return WriteResult(path, f"added role {new_id}: {title}, {org} to {path}")
+    return WriteResult(path, f"added role {new_id}: {title}, {org} to {show_path(path)}")
 
 
 def add_project(
@@ -706,7 +718,7 @@ def add_project(
     except ValidationError as exc:
         raise _arg_error(exc, str(path)) from exc
     _write_checked(path, append_item(text, str(path), "projects", project))
-    return WriteResult(path, f"added project {new_id}: {name} to {path}")
+    return WriteResult(path, f"added project {new_id}: {name} to {show_path(path)}")
 
 
 def add_education(
@@ -725,7 +737,7 @@ def add_education(
     except ValidationError as exc:
         raise _arg_error(exc, str(path)) from exc
     _write_checked(path, append_item(text, str(path), "education", edu))
-    return WriteResult(path, f"added education {new_id}: {degree} to {path}")
+    return WriteResult(path, f"added education {new_id}: {degree} to {show_path(path)}")
 
 
 def add_bullet(
@@ -744,7 +756,7 @@ def add_bullet(
     except ValidationError as exc:
         raise _arg_error(exc, str(path)) from exc
     _write_checked(path, append_bullet(text, str(path), item_id, bullet))
-    return WriteResult(path, f"added bullet {item_id}.{new_id} to {path}")
+    return WriteResult(path, f"added bullet {item_id}.{new_id} to {show_path(path)}")
 
 
 def _arg_error(exc: ValidationError, file: str) -> CVForgeError:
@@ -766,8 +778,15 @@ def _arg_error(exc: ValidationError, file: str) -> CVForgeError:
 
 
 def run_check(
-    tex: Path, job: str | None, *, strict: bool, lint_template: bool, semantic: bool
+    tex: Path,
+    job: str | None,
+    *,
+    strict: bool,
+    lint_template: bool,
+    semantic: bool,
+    profile: Path | None = None,
 ) -> CheckReport:
+    """A .tex built by cvforge, or an existing .pdf checked against a profile's facts."""
     if not tex.exists():
         raise CVForgeError(
             [
@@ -780,6 +799,18 @@ def run_check(
             ]
         )
     cfg = _config()
+    if tex.suffix.lower() == ".pdf":
+        parsed = load_valid_profile(resolve_profile(profile, cfg))
+        return check_pdf(
+            tex,
+            parsed.profile,
+            LOCALES[cfg.locale],
+            read_job(job),
+            cfg.thresholds,
+            strict=strict,
+            semantic=semantic,
+            settings=cfg.parsers,
+        )
     return check(
         tex,
         read_job(job),
@@ -851,5 +882,71 @@ def tailor(
             json.dumps(result.report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
     if compile_pdf_too:
-        result.pdf = _compile(prep, result.tex)
+        _compile(prep, result)
     return result, proposals
+
+
+# ---------------------------------------------------------------- import
+
+
+@dataclass
+class ImportResult:
+    output: Path
+    confirm: Path | None
+    confirms: int
+    issues: list[Issue]
+    titles: list[str]
+
+    @property
+    def summary(self) -> str:
+        state = "valid" if not errors_only(self.issues) else "needs the TODO lines filled"
+        extra = (
+            f", {self.confirms} fact(s) to confirm in {show_path(self.confirm)}"
+            if self.confirm
+            else ""
+        )
+        return f"wrote {show_path(self.output)} ({state}){extra}"
+
+
+def import_profiles(
+    files: list[Path], output: Path, confirm: Path | None, force: bool
+) -> ImportResult:
+    """Draft a profile from existing CVs; earlier files win, disagreements go to CONFIRM.md."""
+    for f in files:
+        if not f.exists():
+            raise CVForgeError(
+                [Issue(file=str(f), item="FILE", message="file not found.", fix="check the path.")]
+            )
+    if output.exists() and not force:
+        raise CVForgeError(
+            [
+                Issue(
+                    file=str(output),
+                    item="--force",
+                    message="already exists; import will not overwrite it.",
+                    fix="choose another -o path, or pass --force.",
+                )
+            ]
+        )
+    drafts = [import_file(f) for f in files]
+    merged = merge(drafts)
+    names = [f.name for f in files]
+    intro = (
+        f"Draft profile from `cvforge import` of {', '.join(names)}.\n"
+        "Text is verbatim from those files and every value names its source. Nothing was\n"
+        "invented: lines marked TODO need you, and TODO confirm lines are listed in CONFIRM.md."
+    )
+    text = dump_draft(merged.draft, intro)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(text, encoding="utf-8")
+    confirm_path = None
+    if len(files) > 1 or merged.confirms or merged.draft.notes:
+        confirm_path = confirm or output.with_name("CONFIRM.md")
+        confirm_path.write_text(confirm_markdown(merged, names), encoding="utf-8")
+    try:
+        issues = validate_profile(parse_text(text, str(output)))
+    except CVForgeError as exc:
+        issues = exc.issues
+    return ImportResult(
+        output, confirm_path, len(merged.confirms), issues, [t.value for t in merged.titles]
+    )

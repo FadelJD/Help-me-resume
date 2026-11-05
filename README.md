@@ -1,5 +1,10 @@
 # CV Forge
 
+[![ci](https://github.com/FadelJD/Help-me-resume/actions/workflows/ci.yml/badge.svg)](https://github.com/FadelJD/Help-me-resume/actions/workflows/ci.yml)
+[![install test](https://github.com/FadelJD/Help-me-resume/actions/workflows/install-test.yml/badge.svg)](https://github.com/FadelJD/Help-me-resume/actions/workflows/install-test.yml)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
+![Tested on Ubuntu and Windows](https://img.shields.io/badge/tested%20on-Ubuntu%20%7C%20Windows-informational)
+![Licence: MIT](https://img.shields.io/badge/licence-MIT-green)
 
 CV Forge builds your CV from one plain-text file and a LaTeX template you choose. Then it reads the PDF back the way hiring software does and tells you which facts came through.
 
@@ -9,13 +14,50 @@ CV Forge builds your CV from one plain-text file and a LaTeX template you choose
 
 Many employers run every CV through screening software before a person reads it. That software pulls the text out of your PDF, and LaTeX CVs often come out scrambled: dates go missing, two columns merge into one, an icon sticks to your phone number. CV Forge keeps every fact about you in one file, builds the CV from it, and checks the result with the same free PDF readers that screening tools use.
 
-## Quick start
+## Install
 
-On Ubuntu or Debian, in a terminal. pipx, used below, installs command-line apps written in Python.
+Every block ends with `cvforge doctor`. It checks Python, LaTeX and the PDF readers, and prints the install command for anything missing. pipx, used below, installs command-line apps written in Python.
+
+### Windows
+
+In PowerShell:
+
+```powershell
+winget install -e --id Python.Python.3.12
+winget install -e --id Git.Git
+winget install -e --id MiKTeX.MiKTeX
+py -m pip install --user pipx
+py -m pipx ensurepath
+# Close and reopen PowerShell so the new PATH applies, then:
+py -m pipx install "cvforge[check] @ git+https://github.com/FadelJD/Help-me-resume"
+cvforge doctor
+```
+
+Windows support is new. [docs/windows.md](docs/windows.md) covers TeX Live as an alternative to MiKTeX, which PDF readers run on Windows, and what has been tested there.
+
+### Ubuntu or Debian
 
 ```bash
 sudo apt-get update && sudo apt-get install -y latexmk texlive-latex-extra texlive-fonts-recommended lmodern poppler-utils pipx
 pipx install "cvforge[check] @ git+https://github.com/FadelJD/Help-me-resume"
+cvforge doctor
+```
+
+### WSL
+
+WSL runs Ubuntu inside Windows. Open its Ubuntu terminal and follow the Ubuntu block above.
+
+### macOS
+
+Install [MacTeX](https://tug.org/mactex/), poppler and pipx with Homebrew, then run the last two lines of the Ubuntu block. CI does not test macOS yet.
+
+If a terminal says `cvforge: command not found`, run `pipx ensurepath` and open a new terminal.
+
+## Quick start
+
+The same commands work in bash and PowerShell:
+
+```bash
 mkdir my-cv
 cd my-cv
 cvforge init --example
@@ -25,19 +67,15 @@ cvforge check out/cv.tex
 
 This builds a CV for Jane Doe, a fictional person, and leaves two files in `out`: the PDF, `cv.pdf`, and the check results, `cv.report.json`. To start your own, run `cvforge init` in an empty folder and answer its questions.
 
-On Windows, use WSL, which runs Ubuntu inside Windows: open its Ubuntu terminal and follow the same steps. On macOS, install [MacTeX](https://tug.org/mactex/), poppler and pipx with Homebrew, then run the commands from `pipx install` on. CI tests these steps on a clean Ubuntu machine.
-
-If a terminal says `cvforge: command not found`, run `pipx ensurepath` and open a new terminal.
-
 ## What the check does
 
-`cvforge check` reads your PDF with five PDF readers and reports three things.
+`cvforge check` reads your PDF with up to seven PDF readers and reports three things.
 
 - **Read back:** each reader turns the PDF into plain text, and CV Forge looks for your name and contact details, every title, employer and date, the start of every bullet, and every skill. Three readers must return all of them for the check to pass, and the others are shown for information.
 - **Job match:** with `--job ad.txt`, it reports how much of the ad's wording your CV covers and lists the important words it is missing.
 - **Evidence:** a skill appears on the CV only when a printed bullet shows it, and the report gives that share as *evidence*. It should be 100%.
 
-The three readers that must pass are pdftotext, pdfplumber and pypdf in layout mode. Scores are for your information until you add `--strict`, which makes low scores fail the check.
+The three readers that must pass are pdftotext, pdfplumber and pypdf in layout mode on Linux and macOS. On Windows they are pdfplumber, pypdf in layout mode and PDFium, the PDF engine inside Chrome. Scores are for your information until you add `--strict`, which makes low scores fail the check.
 
 ## How popular templates fare
 
@@ -54,16 +92,17 @@ We converted five popular public LaTeX CV templates, built the same CV with each
 
 ![Awesome-CV built by CV Forge, with its check summary](docs/assets/cv-check.png)
 
-pypdf runs in layout mode here. Its default mode splits words inside every LaTeX font we tried (`T echnical W riter`), so CV Forge shows that mode for information only. [docs/parser-table.md](docs/parser-table.md) has all five readers and every lost string.
+pypdf runs in layout mode here. Its default mode splits words inside every LaTeX font we tried (`T echnical W riter`), so CV Forge shows that mode for information only. [docs/parser-table.md](docs/parser-table.md) has all seven readers and every lost string.
 
 ## What is already tested
 
-- **Five public templates** (Jake's Resume, AltaCV, moderncv, Awesome-CV and Deedy Resume) are built and read by all five readers on every CI run, which also rebuilds the table above.
+- **Five public templates** (Jake's Resume, AltaCV, moderncv, Awesome-CV and Deedy Resume) are built and read by all seven readers on every CI run, which also rebuilds the table above.
 - **Four fictional people**, a backend developer, a data analyst, a marketing manager and a technical writer, each with two job ads: their saved `explain` output in [examples/people](examples/people) is compared on every run.
 - **25 saved builds**, five templates for each of five sample people, are compared line by line.
 - **5,000 generated strings** full of LaTeX special characters (`& % $ # _ { } ~ ^ \`) each compile, and every letter and digit in them reads back.
 - **Every error message** is listed in [docs/errors.md](docs/errors.md) with the file, line and fix it names.
-- **A fresh install** on a clean Ubuntu machine runs the commands on this page: the example CV must build and pass `check` within ten minutes.
+- **A fresh install** on clean Ubuntu and Windows machines runs the commands on this page: the example CV builds and passes `check`, in 36 seconds on Windows.
+- **Windows line endings** in a profile, hat or template give the same CV as Unix ones.
 
 ## One profile, many CVs
 
@@ -136,7 +175,7 @@ jobs:
       strict: false
 ```
 
-Each push builds your CV, runs the check and attaches the PDF and report to the run. The run's page shows a summary such as `parsed: 3/3 · keyword: 0.71 · evidence: 100%`: *parsed* counts the must-pass readers that returned every fact, *keyword* is how much of the job ad's wording you cover, and *evidence* is the share of listed skills shown in your experience.
+Each push builds your CV, runs the check and attaches the PDF and report to the run. The run's page shows a table of readers and a summary such as `parsed: 3/3 · keyword: 0.71 · evidence: 100%`: *parsed* counts the must-pass readers that returned every fact, *keyword* is how much of the job ad's wording you cover, and *evidence* is the share of listed skills shown in your experience.
 
 ## Roadmap
 

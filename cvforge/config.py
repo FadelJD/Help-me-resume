@@ -62,6 +62,8 @@ class Config(BaseModel):
     hats_dir: str = "hats"
     locale: LocaleName = "th"
     out_dir: str = "out"
+    # evidenced: list only skills a shown bullet demonstrates; all: every skill, in the CV's order.
+    skills: Literal["evidenced", "all"] = "evidenced"
     thresholds: Thresholds = Thresholds()
     llm: LLMConfig = LLMConfig()
     parsers: dict[str, ParserSetting] = {}
@@ -75,6 +77,7 @@ hat = "{hat}"
 hats_dir = "hats"
 locale = "{locale}"          # au | uk | us | th : date style, CV/Résumé wording, page size
 out_dir = "out"
+skills = "evidenced"         # evidenced | all (every listed skill, in your order)
 
 [thresholds]                 # reported by `check`; only enforced with `check --strict`
 keyword = 0.5
@@ -82,7 +85,8 @@ semantic = 0.5
 evidence = 1.0
 
 # Parser gating. Gating parsers fail `check` on a lost field; advisory ones only warn.
-# Defaults: pdftotext, pdfplumber, pypdf-layout gate; pdftotext-layout and pypdf advise.
+# Defaults: pdftotext, pdfplumber, pypdf-layout gate; pdftotext-layout, pypdf, pdfminer and
+# pdfium advise.
 # [parsers.pypdf]
 # gate = true
 

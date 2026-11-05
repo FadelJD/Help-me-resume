@@ -50,14 +50,14 @@ class Outcome:
 def cases(tmp: Path) -> list[Case]:
     out: list[Case] = []
     for f in sorted((BAD / "profile").glob("*.cv.txt")):
-        rel = str(f.relative_to(ROOT))
+        rel = f.relative_to(ROOT).as_posix()  # cvforge prints paths with /
         out.append(Case("profile", f.name.removesuffix(".cv.txt"), ["validate", "-p", rel], rel))
     for f in sorted((BAD / "hat").glob("*.toml")):
-        rel = str(f.relative_to(ROOT))
+        rel = f.relative_to(ROOT).as_posix()  # cvforge prints paths with /
         argv = ["build", "-p", "examples/profile.cv.txt", "-t", "templates/minimal.tex"]
         out.append(Case("hat", f.stem, [*argv, "--hat", rel], rel))
     for f in sorted((BAD / "template").glob("*.tex")):
-        rel = str(f.relative_to(ROOT))
+        rel = f.relative_to(ROOT).as_posix()  # cvforge prints paths with /
         out.append(Case("template", f.stem, ["template", "validate", rel], rel))
     for raw in (BAD / "commands.txt").read_text().splitlines():
         if not raw.strip() or raw.startswith("#"):
@@ -83,7 +83,7 @@ def run_all() -> list[Outcome]:
         for case in cases(tmp):
             shutil.copy(ROOT / "examples" / "profile.cv.txt", tmp)
             r = run_case(case)
-            masked = [ln.replace(d, "<tmp>") for ln in r.lines]
+            masked = [ln.replace(d, "<tmp>").replace(Path(d).as_posix(), "<tmp>") for ln in r.lines]
             results.append(Outcome(r.case, r.exit_code, masked))
         return results
 

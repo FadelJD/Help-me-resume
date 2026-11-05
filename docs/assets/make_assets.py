@@ -30,7 +30,9 @@ CVFORGE = str(Path(sys.executable).with_name("cvforge"))
 
 def run(cmd: list[str], cwd: Path) -> str:
     env = {**os.environ, "COLUMNS": "92", "SOURCE_DATE_EPOCH": "1793404800"}
-    proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env, check=True)
+    proc = subprocess.run(
+        cmd, cwd=cwd, capture_output=True, encoding="utf-8", errors="replace", env=env, check=True
+    )
     return (proc.stdout + proc.stderr).replace(str(cwd), ".")
 
 

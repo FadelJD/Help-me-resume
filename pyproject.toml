@@ -1,6 +1,6 @@
 [project]
 name = "cvforge"
-version = "0.1.0"
+version = "0.2.0"
 description = "Turn a plain-text profile into a LaTeX CV on your own template, then prove it survives automated screening."
 readme = "README.md"
 license = "MIT"
@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-check = ["pdfplumber>=0.11", "pypdf>=4"]
+check = ["pdfplumber>=0.11", "pypdf>=4", "pdfminer.six>=20231228", "pypdfium2>=4"]
 semantic = ["sentence-transformers>=3"]
 llm = ["litellm>=1.40"]
 dev = ["pytest>=8", "hypothesis>=6.100", "ruff>=0.6", "mypy>=1.11"]
@@ -49,12 +49,13 @@ python_version = "3.11"
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["pdfplumber", "pdfplumber.*", "sentence_transformers", "litellm"]
+module = ["pdfplumber", "pdfplumber.*", "sentence_transformers", "litellm", "pdfminer.*", "pypdfium2"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-    "tex: needs latexmk and pdftotext on PATH",
+    "tex: needs a TeX engine (pdflatex) on PATH",
+    "poppler: needs pdftotext (poppler) on PATH",
     "corpus: builds the public template corpus (see tests/fixtures/templates/provision.sh)",
 ]

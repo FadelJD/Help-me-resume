@@ -105,22 +105,52 @@ jobs:
           cvforge check "${args[@]}" > check.json
           status=$?
           python - <<'PY'
+          # Step summary: the summary line and the reader table, so the result reads on the
+          # Actions page without opening the artifact. Mirrors `cvforge check` in a terminal.
           import json, os
-          data = json.load(open("check.json"))
+
+          def cell(text):
+              return str(text).replace("|", "\\|").replace("\n", " ")
+
+          try:
+              data = json.load(open("check.json", encoding="utf-8"))
+          except (OSError, ValueError) as exc:
+              data = {"error": f"cvforge check wrote no JSON report ({exc}); see the step log."}
           badge = data.get("badge", "check error")
-          lines = ["### CV check", "", f"`{badge}`", ""]
-          for p in data.get("parsers", []):
-              for m in p["misses"]:
-                  lines.append(f"- {p['name']}: lost {m['field']} `{m['expected']}` ({m['item']})")
-          for i in data.get("issues", []) + data.get("lint", []):
+          verdict = "passed" if data.get("ok") else "failed"
+          lines = ["### CV check", ""]
+          if "error" in data:
+              lines.append(f"**check failed:** {data['error']}")
+          else:
+              lines.append(f"**check {verdict}:** `{badge}`")
+              gates = ", ".join(data.get("gates", [])) or "none"
+              lines += ["", f"Gating readers on this system: {gates}", ""]
+              lines += ["| Reader | Role | Result |", "| --- | --- | --- |"]
+              for r in data.get("parsers", []):
+                  role = "gate" if r["gate"] else "advisory"
+                  if r["skipped"]:
+                      result = f"skipped ({r['skipped']})"
+                  elif r["ok"]:
+                      result = f"ok, {r['checked']} facts returned"
+                  else:
+                      word = "FAILED" if r["gate"] else "warning"
+                      result = f"{word}, {len(r['misses'])} of {r['checked']} facts lost"
+                  lines.append(f"| {cell(r['name'])} | {role} | {cell(result)} |")
+              lines.append("")
+          for r in data.get("parsers", []):
+              for m in r["misses"]:
+                  lines.append(
+                      f"- {cell(r['name'])}: lost {m['field']} `{m['expected']}` ({m['item']})"
+                  )
+          for i in data.get("warnings", []) + data.get("lint", []):
               lines.append(f"- {i['severity']}: {i['message']} Fix: {i['fix']}")
           for f in data.get("strict_failures", []):
               lines.append(f"- strict: {f}")
-          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as fh:
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fh:
               fh.write("\n".join(lines) + "\n")
-          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
               fh.write(f"badge={badge}\n")
-          print(badge)
+          print(f"check {verdict}: {badge}")
           PY
           exit $status
 

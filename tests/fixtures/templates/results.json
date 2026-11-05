@@ -110,6 +110,42 @@
           }
         ],
         "glued": 0
+      },
+      "pdfminer": {
+        "gate": false,
+        "ok": false,
+        "checked": 41,
+        "garbled_glyphs": 0,
+        "dates_separated": 2,
+        "dates_checked": 2,
+        "misses": [
+          {
+            "item": "prj-02",
+            "field": "name",
+            "kind": "garbled",
+            "expected": "thai_date_utils",
+            "found": "date utils"
+          }
+        ],
+        "glued": 0
+      },
+      "pdfium": {
+        "gate": false,
+        "ok": false,
+        "checked": 41,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [
+          {
+            "item": "prj-02",
+            "field": "name",
+            "kind": "garbled",
+            "expected": "thai_date_utils",
+            "found": "date utils"
+          }
+        ],
+        "glued": 0
       }
     }
   },
@@ -243,6 +279,26 @@
           }
         ],
         "glued": 0
+      },
+      "pdfminer": {
+        "gate": false,
+        "ok": true,
+        "checked": 40,
+        "garbled_glyphs": 3,
+        "dates_separated": 2,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
+      },
+      "pdfium": {
+        "gate": false,
+        "ok": true,
+        "checked": 40,
+        "garbled_glyphs": 0,
+        "dates_separated": 2,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
       }
     }
   },
@@ -338,6 +394,26 @@
         "dates_checked": 2,
         "misses": [],
         "glued": 0
+      },
+      "pdfminer": {
+        "gate": false,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 2,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
+      },
+      "pdfium": {
+        "gate": false,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
       }
     }
   },
@@ -395,6 +471,26 @@
         "dates_checked": 0,
         "misses": [],
         "glued": 22
+      },
+      "pdfminer": {
+        "gate": false,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 2,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
+      },
+      "pdfium": {
+        "gate": false,
+        "ok": true,
+        "checked": 36,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
       }
     }
   },
@@ -499,6 +595,26 @@
             "found": "LaT eX"
           }
         ],
+        "glued": 1
+      },
+      "pdfminer": {
+        "gate": false,
+        "ok": true,
+        "checked": 40,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [],
+        "glued": 0
+      },
+      "pdfium": {
+        "gate": false,
+        "ok": true,
+        "checked": 40,
+        "garbled_glyphs": 0,
+        "dates_separated": 0,
+        "dates_checked": 2,
+        "misses": [],
         "glued": 1
       }
     }

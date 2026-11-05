@@ -1,7 +1,8 @@
-# Fresh-install test: a clean Ubuntu runner runs the README's Quick start commands, in order,
-# and nothing else. The only substitution: the `pipx install ... git+...@main` line installs this
-# commit instead, so the test checks the code being pushed. Must end with a PDF and a passing
-# check, within 10 minutes of wall-clock time.
+# Fresh-install test: a clean runner runs the README's install block for its OS, then the Quick
+# start commands, in order, and nothing else. .github/scripts/readme_commands.py extracts them and
+# lists the substitutions: the `pipx install ... git+...` line installs this commit instead, and on
+# Windows the `winget install` lines are skipped (no winget on hosted runners; Python and TeX Live
+# come from setup actions). Must end with a PDF and a passing check within 10 minutes of commands.
 name: install-test
 
 on:
@@ -21,26 +22,12 @@ jobs:
         with:
           path: repo
 
-      - name: Extract the Quick start commands from README.md
+      - name: Extract the install and Quick start commands from README.md
         env:
           REPO: ${{ github.workspace }}/repo
         run: |
-          python3 - "$REPO/README.md" > "$RUNNER_TEMP/quickstart.sh" <<'PY'
-          import re
-          import sys
-
-          text = open(sys.argv[1], encoding="utf-8").read()
-          section = text.split("\n## Quick start\n", 1)[1].split("\n## ", 1)[0]
-          lines = [ln for block in re.findall(r"```bash\n(.*?)```", section, re.S)
-                   for ln in block.strip().splitlines()]
-          installs = [ln for ln in lines if ln.startswith("pipx install ") and "cvforge" in ln]
-          assert len(installs) == 1, f"expected one cvforge install line, got {installs}"
-          for needed in ("cvforge init", "cvforge build", "cvforge check"):
-              assert any(ln.startswith(needed) for ln in lines), f"Quick start lacks {needed}"
-          print("set -euxo pipefail")
-          for ln in lines:
-              print('pipx install "$REPO[check]"' if ln in installs else ln)
-          PY
+          python3 "$REPO/.github/scripts/readme_commands.py" "$REPO/README.md" linux \
+            > "$RUNNER_TEMP/quickstart.sh"
           cat "$RUNNER_TEMP/quickstart.sh"
 
       - name: Run them, timed
@@ -55,3 +42,72 @@ jobs:
           elapsed=$(( $(date +%s) - start ))
           echo "Quick start wall-clock: ${elapsed}s" | tee -a "$GITHUB_STEP_SUMMARY"
           test "$elapsed" -lt 600
+
+  readme-quickstart-windows:
+    # continue-on-error: Windows support is new and no maintainer has run it on a real Windows
+    # machine yet. A failure here shows on the Actions page but does not block the Linux jobs.
+    runs-on: windows-latest
+    continue-on-error: true
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: repo
+
+      # Stand-ins for the README's two `winget install` lines.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: TeX Live (stands in for winget install MiKTeX; no latexmk, so cvforge runs pdflatex)
+        uses: TeX-Live/setup-texlive-action@v4
+        with:
+          cache: true
+          packages: |
+            scheme-basic
+            geometry
+            lm
+            enumitem
+
+      # The image's Git for Windows ships Xpdf's pdftotext in C:\Program Files\Git\ucrt64\bin
+      # (seen in run 41618764377: "pdftotext version 4.06 [www.xpdfreader.com]"). Hide exactly
+      # that file; any other pdftotext or pdfinfo on PATH still fails this step.
+      - name: Poppler must be absent, so the Windows gate set is what runs
+        run: |
+          $git = Join-Path $env:ProgramFiles "Git"
+          foreach ($c in @(Get-Command pdftotext, pdfinfo -All -ErrorAction SilentlyContinue)) {
+            Write-Host "$($c.Name) at $($c.Source)"
+            & $c.Source -v 2>&1 | Select-Object -First 1 | ForEach-Object { Write-Host "  $_" }
+            if ($c.Source.StartsWith("$git\")) {
+              Rename-Item $c.Source "$($c.Name).hidden-by-ci"
+              Write-Host "  hidden: renamed to $($c.Name).hidden-by-ci"
+            }
+          }
+          $left = @(Get-Command pdftotext, pdfinfo -All -ErrorAction SilentlyContinue)
+          if ($left) { throw "poppler tools still on PATH: $($left.Source -join ', ')" }
+
+      - name: Extract the install and Quick start commands from README.md
+        env:
+          REPO: ${{ github.workspace }}/repo
+        run: |
+          python "$env:REPO/.github/scripts/readme_commands.py" "$env:REPO/README.md" windows `
+            | Set-Content -Encoding utf8 "$env:RUNNER_TEMP/quickstart.ps1"
+          Get-Content "$env:RUNNER_TEMP/quickstart.ps1"
+
+      - name: Run them, timed
+        working-directory: ${{ runner.temp }}
+        env:
+          REPO: ${{ github.workspace }}/repo
+        run: |
+          $start = Get-Date
+          & "$env:RUNNER_TEMP/quickstart.ps1"
+          # The script's `cd my-cv` carries over in PowerShell, so use absolute paths.
+          $cv = Join-Path $env:RUNNER_TEMP "my-cv/out"
+          if (-not (Test-Path "$cv/cv.pdf")) { throw "no $cv/cv.pdf" }
+          if (-not (Test-Path "$cv/cv.report.json")) { throw "no $cv/cv.report.json" }
+          $elapsed = [int]((Get-Date) - $start).TotalSeconds
+          "Windows Quick start wall-clock: ${elapsed}s" | Tee-Object -Append -FilePath $env:GITHUB_STEP_SUMMARY
+          if ($elapsed -ge 600) { throw "took ${elapsed}s, limit 600s" }

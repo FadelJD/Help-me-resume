@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from cvforge.platforms import show_path
+
 
 @dataclass(frozen=True)
 class Issue:
@@ -13,6 +15,9 @@ class Issue:
     line: int | None = None
     item: str | None = None
     severity: str = "error"  # "error" | "warning"
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "file", show_path(self.file))
 
     def __str__(self) -> str:
         where = self.file if self.line is None else f"{self.file}:{self.line}"

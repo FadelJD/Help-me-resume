@@ -45,11 +45,15 @@ def missing_requirements(entry: dict[str, Any]) -> list[str]:
         if kind == "cmd" and shutil.which(value) is None:
             missing.append(req)
         elif kind == "sty":
-            found = subprocess.run(["kpsewhich", value], capture_output=True, text=True).stdout
+            found = subprocess.run(
+                ["kpsewhich", value], capture_output=True, encoding="utf-8", errors="replace"
+            ).stdout
             if not found.strip():
                 missing.append(req)
         elif kind == "font" and shutil.which("fc-list"):
-            fonts = subprocess.run(["fc-list", ":", "family"], capture_output=True, text=True)
+            fonts = subprocess.run(
+                ["fc-list", ":", "family"], capture_output=True, encoding="utf-8", errors="replace"
+            )
             if value not in fonts.stdout:
                 missing.append(req)
     return missing
@@ -146,6 +150,10 @@ def document(results: list[dict[str, Any]]) -> str:
         "`full-stack-engineer` hat, compiled, and read back by every parser adapter. Generated",
         "by `python -m tests.corpus --write`; `tests/test_corpus.py` fails if a fresh run",
         "disagrees with this table.",
+        "",
+        "Gate and advisory labels are the Linux and macOS defaults. On Windows, where poppler",
+        "is not installed by default, pdfplumber, pypdf-layout and pdfium gate and pdftotext is",
+        "advisory when present; the pdfium column shows how that reader behaves.",
         "",
         "✓ means every fact came back as whole words. ✗ lists what was lost: *garbled* (something",
         "close came back), *interleaved* (the words came back with other text between them, i.e.",

@@ -11,6 +11,7 @@ from typing import Any
 
 import pytest
 
+from cvforge.platforms import current_os
 from cvforge.template import validate_template
 
 from .corpus import CORPUS, RESULTS, manifest, missing_requirements, run_template
@@ -45,6 +46,8 @@ def test_corpus_template_has_licence_original_and_valid_contract(entry: dict[str
 @pytest.mark.corpus
 @pytest.mark.parametrize("entry", ENTRIES, ids=[e["name"] for e in ENTRIES])
 def test_corpus_matches_published_table(entry: dict[str, Any], tmp_path: Path) -> None:
+    if current_os() != "linux":
+        pytest.skip("results.json is the Linux reference; gate sets differ on other systems")
     missing = missing_requirements(entry)
     if missing:
         pytest.skip(f"needs {', '.join(missing)}; run tests/fixtures/templates/provision.sh")

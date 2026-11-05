@@ -95,7 +95,7 @@ def test_config_supplies_defaults(workdir: Path) -> None:
     )
     (workdir / "profile.cv.txt").write_text((EXAMPLES / "profile.cv.txt").read_text())
     (workdir / "cvforge.toml").write_text(
-        f'template = "{TEMPLATES / "minimal.tex"}"\nhat = "developer"\n'
+        f'template = "{(TEMPLATES / "minimal.tex").as_posix()}"\nhat = "developer"\n'
     )
     result = pipeline.build(
         profile=None,
@@ -116,10 +116,15 @@ def test_html_to_text() -> None:
 
 
 @pytest.mark.tex
+@pytest.mark.poppler
 def test_build_compiles_with_zero_edits(workdir: Path, no_network: None) -> None:
     result = _build(workdir / "out" / "jane.tex", compile_pdf_too=True)
     assert result.pdf is not None and result.pdf.exists()
     text = subprocess.run(
-        ["pdftotext", str(result.pdf), "-"], capture_output=True, text=True, check=True
+        ["pdftotext", str(result.pdf), "-"],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=True,
     ).stdout
     assert "Jane Doe" in text and "Acme Software" in text

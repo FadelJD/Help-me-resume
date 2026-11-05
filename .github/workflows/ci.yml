@@ -43,6 +43,81 @@ jobs:
       - name: Test
         run: pytest -q
 
+  test-windows:
+    # continue-on-error: Windows support is new and no maintainer has run it on a real Windows
+    # machine yet. A failure here shows on the Actions page but does not block the Linux jobs.
+    # TeX Live comes from the setup action without latexmk (cvforge runs the engine itself), and
+    # poppler is deliberately not installed, so the Windows reader gate set
+    # (pdfplumber, pypdf-layout, pdfium) is what gates and poppler-marked tests skip.
+    # The corpus is Linux-only: its fonts are provisioned by a bash script.
+    runs-on: windows-latest
+    continue-on-error: true
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # scheme-basic plus what the shipped templates and the non-corpus test templates load
+      # (tests/fixtures/template_icons.tex, template_twocol.tex, the Jake's Resume fixture).
+      # preprint provides fullpage.
+      - name: Install TeX Live
+        uses: TeX-Live/setup-texlive-action@v4
+        with:
+          cache: true
+          packages: |
+            scheme-basic
+            geometry
+            lm
+            enumitem
+            marvosym
+            paracol
+            titlesec
+            fancyhdr
+            preprint
+            babel-english
+
+      # The image's Git for Windows ships Xpdf's pdftotext in C:\Program Files\Git\ucrt64\bin
+      # (seen in run 41618764377: "pdftotext version 4.06 [www.xpdfreader.com]"). Hide exactly
+      # that file; any other pdftotext or pdfinfo on PATH still fails this step.
+      - name: Poppler must be absent, so the Windows gate set is what runs
+        run: |
+          $git = Join-Path $env:ProgramFiles "Git"
+          foreach ($c in @(Get-Command pdftotext, pdfinfo -All -ErrorAction SilentlyContinue)) {
+            Write-Host "$($c.Name) at $($c.Source)"
+            & $c.Source -v 2>&1 | Select-Object -First 1 | ForEach-Object { Write-Host "  $_" }
+            if ($c.Source.StartsWith("$git\")) {
+              Rename-Item $c.Source "$($c.Name).hidden-by-ci"
+              Write-Host "  hidden: renamed to $($c.Name).hidden-by-ci"
+            }
+          }
+          $left = @(Get-Command pdftotext, pdfinfo -All -ErrorAction SilentlyContinue)
+          if ($left) { throw "poppler tools still on PATH: $($left.Source -join ', ')" }
+
+      - name: Install package
+        run: pip install -e ".[dev,check]"
+
+      - name: cvforge doctor
+        run: cvforge doctor
+
+      # One command per step: a pwsh step's exit code is only its last native command's.
+      - name: Lint
+        run: ruff check .
+
+      - name: Format
+        run: ruff format --check .
+
+      - name: Type-check
+        run: mypy cvforge
+
+      - name: Test
+        run: pytest -q -rfEs -m "not corpus"
+
   corpus:
     # Public template corpus: every template x every parser must match docs/parser-table.md.
     runs-on: ubuntu-24.04

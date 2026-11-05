@@ -1,4 +1,4 @@
-"""Fuzz `cvforge/escape.py` through the real pipeline: build -> latexmk -> pdftotext.
+"""Fuzz `cvforge/escape.py` through the real pipeline: build -> compile -> pdftotext.
 
 Each Hypothesis example is a batch of BATCH strings rendered as the bullets of ONE document, so
 TOTAL strings cost EXAMPLES compiles instead of TOTAL. Every bullet's text is the fuzzed string
@@ -8,7 +8,7 @@ pdftotext output and keeps each escaped bullet text unique, which `check_traceab
 `\\item`, as templates/minimal.tex does, so a string's first character meets LaTeX exactly as it
 would in a real CV.
 
-Property per string: the build succeeds, latexmk compiles with no error, every bullet id is
+Property per string: the build succeeds, the PDF compiles with no error, every bullet id is
 found in the output, and the sequence of alphanumeric characters (after NFKC, which folds
 ligatures such as U+FB01) is the same in the source and in the extracted text. Hyphenation,
 line breaks and other non-alphanumeric characters therefore do not count as loss.
@@ -34,6 +34,8 @@ from cvforge.errors import CVForgeError
 from cvforge.parse import dump_profile
 from cvforge.pipeline import build
 from cvforge.schema import Bullet, Experience, Person, Profile
+
+pytestmark = pytest.mark.poppler  # compares against pdftotext output
 
 TOTAL = 5000  # strings exercised per run; the work order requires 5,000 to pass
 BATCH = 50  # strings per compiled document; at 100 Hypothesis overruns its data budget
@@ -200,7 +202,8 @@ def run_pipeline(strings: list[str], workdir: Path) -> Outcome:
     text = subprocess.run(
         ["pdftotext", "-enc", "UTF-8", str(result.pdf), "-"],
         capture_output=True,
-        text=True,
+        encoding="utf-8",
+        errors="replace",
         check=True,
     ).stdout
     found = _segments(text)

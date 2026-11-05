@@ -7,12 +7,13 @@ The format is a strict subset of YAML read with ruamel.yaml, so comments and lay
 from __future__ import annotations
 
 import io
+import json as _json
 import re
 import tomllib
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ValidationError
 from ruamel.yaml import YAML
@@ -20,6 +21,9 @@ from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import MarkedYAMLError
 
 from cvforge.errors import CVForgeError, Issue
+
+if TYPE_CHECKING:
+    from cvforge.importer import Draft, Src
 from cvforge.schema import Bullet, Education, Experience, Hat, Person, Profile, Project
 
 Loc = tuple[str | int, ...]
@@ -125,7 +129,10 @@ def _fix_for(err: dict[str, Any], loc: Loc) -> tuple[str, str]:
         return (f"required key `{field}` is missing.", f"add `{field}:` to this item.")
     if field in ("start", "end"):
         extra = " or `present`" if field == "end" else ""
-        return (f"`{field}` is not a valid date.", f"write it as YYYY-MM{extra}, e.g. 2025-06.")
+        return (
+            f"`{field}` is not a valid date.",
+            f"write it as YYYY-MM or YYYY{extra}, e.g. 2025-06.",
+        )
     if field == "weight":
         return ("`weight` must be a whole number from 1 to 5.", "use 1 (weak) to 5 (strong).")
     if kind == "string_pattern_mismatch":
@@ -188,6 +195,7 @@ def load_raw_text(text: str, file: str) -> Any:
 
 
 def parse_text(text: str, file: str = "profile.cv.txt") -> ParsedProfile:
+    text = text.replace("\r\n", "\n")  # files saved on Windows
     data = load_raw_text(text, file)
     lines: dict[Loc, int] = {}
     _walk_lines(data, (), lines)
@@ -312,6 +320,10 @@ def dump_profile(profile: Profile) -> str:
     root["person"] = _item_map(profile.person)
     skills = CommentedMap(profile.skills)
     root["skills"] = skills
+    if profile.skill_groups:
+        root["skill_groups"] = CommentedMap(
+            {g: _flow(members) for g, members in profile.skill_groups.items()}
+        )
     for section in ("experience", "projects", "education"):
         root[section] = CommentedSeq([_item_map(i) for i in getattr(profile, section)])
     root.yaml_set_start_comment(PROFILE_HEADER)
@@ -319,6 +331,89 @@ def dump_profile(profile: Profile) -> str:
     for section in ("experience", "projects", "education"):
         root.yaml_set_comment_before_after_key(section, before="\n")
     return dump_raw(root)
+
+
+def dump_draft(draft: Draft, intro: str) -> str:
+    """A draft from `cvforge import` as profile text, one `# source:` comment per value.
+
+    Written by hand rather than through ruamel so each value keeps its comment on its own line.
+    Strings are JSON-quoted, which is valid YAML. Missing required values are left empty with a
+    TODO comment: the profile then fails validation until they are filled, instead of guessing.
+    """
+    q = _json.dumps
+
+    def note(src: Src | None) -> str:
+        if src is None:
+            return "  # TODO no file supplies this"
+        marks = (
+            f"; TODO confirm (CONFIRM.md #{', #'.join(map(str, src.confirm))})"
+            if src.confirm
+            else ""
+        )
+        return f"  # source: {src.source}{marks}"
+
+    def val(src: Src | None) -> str:
+        return q(src.value if src is not None else "", ensure_ascii=False)
+
+    out = [f"# {line}" for line in intro.splitlines()]
+    out.append("person:")
+    out.append(f"  name: {val(draft.name)}{note(draft.name)}")
+    for key_ in ("email", "phone"):
+        src = getattr(draft, key_)
+        if src is not None:
+            out.append(f"  {key_}: {val(src)}{note(src)}")
+        else:
+            out.append(f"  # {key_}: TODO no file supplies this")
+    out.append("  # location: TODO no file states where you are based")
+    if draft.links:
+        out.append("  links:")
+        for link in draft.links:
+            out.append(f"    - {val(link)}{note(link)}")
+    out.append("")
+    out.append("skills:")
+    for sid, name in draft.skills:
+        out.append(f"  {sid}: {val(name)}{note(name)}")
+    if draft.groups:
+        out.append("")
+        out.append("skill_groups:  # how your CV groups the skills, as written")
+        for group, ids in draft.groups:
+            out.append(f"  {val(group)}: [{', '.join(ids)}]{note(group)}")
+    prefixes = {"experience": "exp-", "projects": "prj-", "education": "edu-"}
+    for section in ("experience", "projects", "education"):
+        items = [i for i in draft.items if i.section == section]
+        out.append("")
+        if not items:
+            out.append(f"{section}: []")
+            continue
+        out.append(f"{section}:")
+        for n, item in enumerate(items, start=1):
+            out.append(f"  - id: {prefixes[section]}{n:02d}")
+            title_key = {"experience": "title", "projects": "name", "education": "degree"}[section]
+            out.append(f"    {title_key}: {val(item.title)}{note(item.title)}")
+            if section != "projects":
+                out.append(f"    org: {val(item.org)}{note(item.org)}")
+            if item.location is not None:
+                out.append(f"    location: {val(item.location)}{note(item.location)}")
+            if section == "projects" and item.stack is not None:
+                out.append(f"    stack: {val(item.stack)}{note(item.stack)}")
+            for date_key in ("start", "end"):
+                src = getattr(item, date_key)
+                if src is not None and src.value:
+                    out.append(f"    {date_key}: {val(src)}{note(src)}")
+                elif section == "experience" or (section == "education" and date_key == "end"):
+                    out.append(f'    {date_key}: ""{note(None)}')
+            if item.bullets:
+                out.append("    bullets:")
+                for k, bullet in enumerate(item.bullets, start=1):
+                    out.append(f"      - id: b{k}")
+                    out.append(f"        text: {val(bullet.text)}{note(bullet.text)}")
+                    if bullet.skills:
+                        out.append(
+                            f"        skills: [{', '.join(bullet.skills)}]"
+                            "  # skill names that appear verbatim in the text"
+                        )
+                    out.append("        weight: 3  # default; not from your files")
+    return "\n".join(out) + "\n"
 
 
 def dump_raw(data: Any) -> str:
