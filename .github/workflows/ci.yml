@@ -46,6 +46,13 @@ jobs:
   test-windows:
     # continue-on-error: Windows support is new and no maintainer has run it on a real Windows
     # machine yet. A failure here shows on the Actions page but does not block the Linux jobs.
+    # Remove continue-on-error once these commands (docs/windows.md) pass on a Windows PC, after
+    # the README's Windows install block, in PowerShell:
+    #   cvforge doctor
+    #   mkdir my-cv; cd my-cv; cvforge init --example
+    #   cvforge build --compile --docx -o out/cv.tex
+    #   cvforge check out/cv.tex
+    # and, in a clone of this repository: py -m pip install -e ".[dev,check]"; py -m pytest -q
     # TeX Live comes from the setup action without latexmk (cvforge runs the engine itself), and
     # poppler is deliberately not installed, so the Windows reader gate set
     # (pdfplumber, pypdf-layout, pdfium) is what gates and poppler-marked tests skip.

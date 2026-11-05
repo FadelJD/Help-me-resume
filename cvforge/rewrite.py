@@ -7,14 +7,11 @@ in the rewrite that the source lacks rejects the rewrite automatically. When uns
 
 from __future__ import annotations
 
-import importlib
-import os
 import re
-from collections.abc import Callable
-from dataclasses import dataclass, field, replace
-from typing import Any, Protocol
+from dataclasses import dataclass, replace
+from typing import Protocol
 
-from cvforge.errors import CVForgeError, Issue
+from cvforge.llm import Client
 from cvforge.schema import Profile, SelectedItem, Selection
 
 SYSTEM_PROMPT = """You reword CV bullet points for a specific job ad.
@@ -363,57 +360,18 @@ class CannedRewriter:
 
 
 @dataclass
-class LiteLLMRewriter:
-    model: str
-    api_key_env: str = ""
-    _completion: Callable[..., Any] | None = field(default=None, repr=False)
+class LLMRewriter:
+    """Rewords one bullet at a time through the configured LLM client (cvforge/llm.py)."""
 
-    def __post_init__(self) -> None:
-        try:
-            module = importlib.import_module("litellm")
-        except ImportError as exc:
-            raise CVForgeError(
-                [
-                    Issue(
-                        file="cvforge.toml",
-                        message="--rewrite needs LiteLLM, which is not installed.",
-                        fix="pip install 'cvforge[llm]'.",
-                    )
-                ]
-            ) from exc
-        self._completion = module.completion
+    client: Client
 
     def rewrite(self, text: str, *, job: str, title_line: str) -> str:
-        assert self._completion is not None
-        kwargs: dict[str, Any] = {}
-        if self.api_key_env:
-            key = os.environ.get(self.api_key_env)
-            if not key:
-                raise CVForgeError(
-                    [
-                        Issue(
-                            file="cvforge.toml",
-                            message=f"llm.api_key_env names {self.api_key_env}, which is not set.",
-                            fix=f"export {self.api_key_env}=... or clear api_key_env.",
-                        )
-                    ]
-                )
-            kwargs["api_key"] = key
         user = (
             f"Job ad (vocabulary only):\n{job[:6000]}\n\n"
             f"Target role: {title_line or 'as in the job ad'}\n\nOriginal bullet:\n{text}"
         )
-        resp = self._completion(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user},
-            ],
-            temperature=0,
-            **kwargs,
-        )
-        content = resp.choices[0].message.content or ""
-        return " ".join(str(content).strip().strip('"').split())
+        content = self.client.complete(SYSTEM_PROMPT, user)
+        return " ".join(content.strip().strip('"').split())
 
 
 @dataclass

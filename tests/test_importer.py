@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import importlib.util
+import shutil
 from pathlib import Path
 
 import pytest
 
 from cvforge import pipeline
+from cvforge.errors import CVForgeError
 from cvforge.importer import (
     Draft,
     DraftBullet,
@@ -79,17 +82,26 @@ def _facts(path: Path) -> tuple[list[tuple[str, str, str]], list[str]]:
 @pytest.mark.tex
 @pytest.mark.parametrize(
     "kind",
-    ["tex", pytest.param("pdf", marks=pytest.mark.poppler)],  # PDF import uses pdftotext
+    ["tex", pytest.param("pdf", marks=pytest.mark.poppler), "pdf-pdfium"],
 )
-def test_import_reproduces_the_source_profile(built: Path, kind: str, tmp_path: Path) -> None:
+def test_import_reproduces_the_source_profile(
+    built: Path, kind: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     source = built if kind == "tex" else built.with_suffix(".pdf")
     out = tmp_path / f"{kind}.cv.txt"
+    if kind == "pdf-pdfium":  # pdftotext removed from PATH: PDFium reads the text layer
+        monkeypatch.setenv("PATH", str(tmp_path / "empty"))
+        assert shutil.which("pdftotext") is None
     result = pipeline.import_profiles([source], out, None, force=False)
+    if kind.startswith("pdf"):
+        reader = "pdfium" if kind == "pdf-pdfium" else "pdftotext"
+        assert result.readers == {"cv.pdf": reader}
+        assert f"read cv.pdf with {reader}" in result.summary
     assert not [i for i in result.issues if i.severity == "error"], result.issues
     roles, bullets = _facts(out)
     want_roles, want_bullets = _facts(EXAMPLES / "profile.cv.txt")
     assert roles == want_roles
-    if kind == "pdf":  # Jake's OT1 encoding draws underscores as rules: the PDF lost them
+    if kind.startswith("pdf"):  # Jake's OT1 encoding draws underscores as rules: the PDF lost them
         want_bullets = [b.replace("_", " ") for b in want_bullets]
     assert sorted(bullets) == sorted(want_bullets)
     text = out.read_text()
@@ -141,3 +153,18 @@ def test_import_rejects_other_formats(tmp_path: Path) -> None:
     f.write_text("x")
     with pytest.raises(Exception, match=r"\.pdf or \.tex"):
         import_file(f)
+
+
+def test_import_without_any_pdf_reader_names_both_installs(
+    built: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("PATH", str(tmp_path / "empty"))
+    real = importlib.util.find_spec
+    monkeypatch.setattr(
+        importlib.util, "find_spec", lambda name, *a: None if name == "pypdfium2" else real(name)
+    )
+    with pytest.raises(CVForgeError) as exc:
+        pipeline.import_profiles([built.with_suffix(".pdf")], tmp_path / "x.cv.txt", None, False)
+    issue = exc.value.issues[0]
+    assert "needs pdftotext or PDFium" in issue.message
+    assert "pypdfium2" in issue.fix and "poppler" in issue.fix

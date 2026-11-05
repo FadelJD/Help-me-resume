@@ -26,6 +26,7 @@ from typing import Any
 from cvforge.compile import compile_pdf
 from cvforge.config import Locale, ParserSetting, Thresholds
 from cvforge.errors import CVForgeError, Issue
+from cvforge.llm import Client, json_answer
 from cvforge.parsers import PARSER_NAMES, Parser, all_parsers, default_gates
 from cvforge.platforms import run_tool, show_path
 from cvforge.schema import Profile
@@ -219,6 +220,7 @@ class CheckReport:
     warnings: list[Issue]
     strict_failures: list[str]
     lint: list[Issue] = field(default_factory=list)
+    llm_reader: dict[str, Any] | None = None  # advisory only; see llm_read
 
     @property
     def gating(self) -> list[ParserResult]:
@@ -284,6 +286,7 @@ class CheckReport:
             "strict_failures": self.strict_failures,
             "warnings": [w.to_dict() for w in self.warnings],
             "lint": [i.to_dict() for i in self.lint],
+            "llm_reader": self.llm_reader,
         }
 
 
@@ -707,3 +710,66 @@ def miss_issues(result: CheckReport) -> list[Issue]:
                 )
             )
     return issues
+
+
+LLM_READER_PROMPT = (
+    "You are the reading step of an applicant tracking system. From the CV text, list every fact "
+    "you can read: the person's name and contact details, each job title, employer and date, "
+    "each bullet point, and each skill. Then say which of the listed CV skills the experience "
+    "shows being used. Answer with JSON only: "
+    '{"facts": ["..."], "evidenced_skills": ["<skill name as listed>"]}.'
+)
+
+
+def llm_read(pdf: Path, report: dict[str, Any], job: str | None, client: Client) -> dict[str, Any]:
+    """A language model reads the extracted text the way newer screening tools do. Its answer is
+    held to the same fact list as the PDF readers and reported as one advisory column: it never
+    gates the check, and skills it names that are not on the CV are listed as rejected."""
+    reader = next((p for p in all_parsers() if p.unavailable() is None), None)
+    if reader is None:
+        raise CVForgeError(
+            [
+                Issue(
+                    file=str(pdf),
+                    item="--llm-reader",
+                    message="no PDF reader is installed to give the model the CV's text.",
+                    fix='pip install "cvforge[check]"; run `cvforge doctor` for details.',
+                )
+            ]
+        )
+    text = reader.extract(pdf)
+    shown = list(report["emitted"].get("skills", []))
+    user = (
+        "CV skills:\n" + "\n".join(shown) + f"\n\nJob ad:\n{(job or '(none given)')[:6000]}"
+        f"\n\nExtracted text:\n{text}"
+    )
+    answer = json_answer(client.complete(LLM_READER_PROMPT, user))
+    if not isinstance(answer, dict):
+        raise CVForgeError(
+            [
+                Issue(
+                    file=str(pdf),
+                    item="--llm-reader",
+                    message='the model did not answer with {"facts": [...]} JSON.',
+                    fix="run again, or try another model in [llm]; the rest of the check is "
+                    "unaffected without --llm-reader.",
+                )
+            ]
+        )
+    facts = expected_facts(report)
+    variants = extracted_variants("\n".join(str(f) for f in answer.get("facts") or []))
+    missing = [
+        f for f in facts if judge(variants, f.expected, prefix=f.field == "bullet") != "intact"
+    ]
+    by_name = {s.casefold(): s for s in shown}
+    named = [str(s) for s in answer.get("evidenced_skills") or []]
+    return {
+        "name": "llm-reader",
+        "gate": False,
+        "text_from": reader.name,
+        "facts_checked": len(facts),
+        "facts_found": len(facts) - len(missing),
+        "missing": [{"item": f.item, "field": f.field, "expected": f.expected} for f in missing],
+        "evidenced_skills": [by_name[s.casefold()] for s in named if s.casefold() in by_name],
+        "rejected_skills": [s for s in named if s.casefold() not in by_name],
+    }

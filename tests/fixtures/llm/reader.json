@@ -1,0 +1,6 @@
+[
+  {
+    "match": "Extracted text:",
+    "response": "{\"facts\": [\"Jane Doe\", \"Technical Writer\", \"Acme Software\", \"Jun 2025\"], \"evidenced_skills\": [\"Python\", \"Kubernetes\"]}"
+  }
+]

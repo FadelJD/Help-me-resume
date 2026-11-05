@@ -10,6 +10,7 @@ from rich.table import Table
 
 if TYPE_CHECKING:
     from cvforge.check import CheckReport
+    from cvforge.confirm import Question
     from cvforge.pipeline import ExplainResult
     from cvforge.rewrite import Proposal
     from cvforge.template import TemplateReport
@@ -101,6 +102,16 @@ def print_check(console: Console, result: CheckReport) -> None:
             verdict = "FAILED" if p.gate else "warning"
             status = f"{verdict}, {len(p.misses)} of {p.checked} facts lost"
         console.print(f"{p.name} [{role}]: {status}", highlight=False, markup=False)
+    if result.llm_reader:
+        r = result.llm_reader
+        line = (
+            f"llm-reader [advisory, reads {r['text_from']} text]: "
+            f"{r['facts_found']} of {r['facts_checked']} facts returned; evidenced skills: "
+            f"{', '.join(r['evidenced_skills']) or 'none'}"
+        )
+        if r["rejected_skills"]:
+            line += f"; not on the CV, ignored: {', '.join(r['rejected_skills'])}"
+        console.print(line, highlight=False, markup=False, soft_wrap=True)
     s = result.scores
     if s.get("keyword") is not None:
         console.print(f"keyword coverage: {s['keyword']:.2f}", highlight=False)
@@ -152,3 +163,28 @@ def print_proposals(console: Console, proposals: list[Proposal]) -> None:
         )
         table.add_row(p.qid, escape(p.original), escape(p.rewritten), verdict)
     console.print(table)
+
+
+def print_question(console: Console, question: Question, position: int, total: int) -> None:
+    """One CONFIRM.md entry: what it is, where it sits, the competing values and their sources."""
+    console.print(
+        f"\n[bold]{position} of {total}: CONFIRM.md #{question.number}[/bold] "
+        f"{escape(question.what)}",
+        highlight=False,
+        soft_wrap=True,
+    )
+    console.print(
+        f"  profile line {question.line} ({escape(question.where)})", highlight=False, style="dim"
+    )
+    for k, option in enumerate(question.options, start=1):
+        now = " (in the profile now)" if option.current else ""
+        console.print(
+            f"  {k}) {escape(option.value)}  [dim]from {escape(option.sources)}{now}[/dim]",
+            highlight=False,
+            soft_wrap=True,
+        )
+    console.print(
+        "  or type your own value (in quotes if it is only digits); s to skip, q to quit",
+        highlight=False,
+        style="dim",
+    )

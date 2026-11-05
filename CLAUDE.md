@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+Read `STATUS.md` first: branches, open PRs and what is unverified.
+
 Full build spec: `docs/SPEC.md`. Decisions not covered by the spec: `DECISIONS.md` (one line each).
 
 The tool turns `profile.cv.txt` into a `.tex` CV built on the user's own LaTeX template, then proves the

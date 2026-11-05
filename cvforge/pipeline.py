@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 import json
 import os
 import re
@@ -9,7 +10,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
@@ -17,13 +18,16 @@ from typing import Any
 from pydantic import ValidationError
 
 from cvforge import __version__
-from cvforge.check import CheckReport, check, check_pdf
+from cvforge.check import CheckReport, check, check_pdf, llm_read, load_report
 from cvforge.compile import compile_tex
 from cvforge.config import DEFAULT_CONFIG_TEXT, LOCALES, Config, Locale, load_config
+from cvforge.confirm import Answer, Question, apply_answer, questions, resolve
+from cvforge.docx_export import write_docx
 from cvforge.errors import CVForgeError, Issue, errors_only
 from cvforge.escape import escape
 from cvforge.importer import confirm_markdown, import_file, merge
 from cvforge.interview import Ask, Confirm, Say, hat_text, run_interview
+from cvforge.llm import Client, client_from_config
 from cvforge.parse import (
     ParsedProfile,
     append_bullet,
@@ -37,12 +41,14 @@ from cvforge.parse import (
     load_profile,
     next_id,
     parse_text,
+    set_bullet_skills,
 )
 from cvforge.platforms import show_path
 from cvforge.resources import builtin_template, data_path
-from cvforge.rewrite import LiteLLMRewriter, Proposal, Rewriter, apply, propose
+from cvforge.rewrite import LLMRewriter, Proposal, Rewriter, apply, propose
 from cvforge.schema import Bullet, Education, Experience, Hat, Profile, Project, Selection
 from cvforge.select import select
+from cvforge.tag import TagProposal, propose_tags
 from cvforge.template import (
     TemplateReport,
     build_context,
@@ -242,6 +248,7 @@ class BuildResult:
     pdf: Path | None = None
     engine: str = ""
     engine_note: str = ""
+    docx: Path | None = None
 
     @property
     def summary(self) -> str:
@@ -252,7 +259,8 @@ class BuildResult:
             if self.pdf
             else ""
         )
-        return f"wrote {show_path(self.tex)} ({n_b} bullets, {n_d} dropped){pdf}"
+        docx = f", docx {show_path(self.docx)}" if self.docx else ""
+        return f"wrote {show_path(self.tex)} ({n_b} bullets, {n_d} dropped){pdf}{docx}"
 
 
 @dataclass
@@ -479,12 +487,32 @@ def build(
     output: Path | None,
     max_bullets: int | None,
     compile_pdf_too: bool,
+    docx: bool = False,
 ) -> BuildResult:
     prep = prepare(profile=profile, template=template, hat=hat, job=job, max_bullets=max_bullets)
     result = render_selection(prep, output, job)
+    if docx:
+        _write_docx(prep, result)
     if compile_pdf_too:
         _compile(prep, result)
     return result
+
+
+def _write_docx(prep: Prepared, result: BuildResult) -> None:
+    """The .docx beside the .tex, from the same selection and the bullets the .tex emitted."""
+    header = prep.template_report.header
+    assert header is not None
+    shown = set(header.sections)
+    result.docx = write_docx(
+        result.tex.with_suffix(".docx"),
+        prep.selection,
+        prep.parsed.profile,
+        prep.hat,
+        LOCALES[prep.cfg.locale],
+        [s for s in prep.selection.sections if s in shown],
+        set(result.report["emitted"]["bullets"]),
+        result.report["built"],
+    )
 
 
 def _engine(prep: Prepared) -> str:
@@ -785,8 +813,36 @@ def run_check(
     lint_template: bool,
     semantic: bool,
     profile: Path | None = None,
+    llm_reader: bool = False,
 ) -> CheckReport:
     """A .tex built by cvforge, or an existing .pdf checked against a profile's facts."""
+    result = _run_check(tex, job, strict, lint_template, semantic, profile)
+    if llm_reader:
+        if result.pdf is None or tex.suffix.lower() == ".pdf":
+            raise CVForgeError(
+                [
+                    Issue(
+                        file=str(tex),
+                        item="--llm-reader",
+                        message="--llm-reader needs a .tex written by cvforge build.",
+                        fix="check the .tex that build wrote, with --llm-reader.",
+                    )
+                ]
+            )
+        _, report = load_report(tex)
+        client = client_from_config(_config(), "--llm-reader")
+        result.llm_reader = llm_read(result.pdf, report, read_job(job), client)
+    return result
+
+
+def _run_check(
+    tex: Path,
+    job: str | None,
+    strict: bool,
+    lint_template: bool,
+    semantic: bool,
+    profile: Path | None,
+) -> CheckReport:
     if not tex.exists():
         raise CVForgeError(
             [
@@ -829,20 +885,7 @@ Approve = Callable[[list[Proposal]], None]
 
 
 def rewriter_from_config(cfg: Config) -> Rewriter:
-    if not cfg.llm.model:
-        raise CVForgeError(
-            [
-                Issue(
-                    file="cvforge.toml",
-                    item="llm.model",
-                    message="--rewrite is unavailable: no LLM is configured.",
-                    fix='set [llm] model = "<provider>/<model>" in cvforge.toml (e.g. '
-                    "\"ollama/llama3\") and pip install 'cvforge[llm]'; everything else works "
-                    "without it.",
-                )
-            ]
-        )
-    return LiteLLMRewriter(cfg.llm.model, cfg.llm.api_key_env)
+    return LLMRewriter(client_from_config(cfg, "--rewrite"))
 
 
 def tailor(
@@ -896,6 +939,7 @@ class ImportResult:
     confirms: int
     issues: list[Issue]
     titles: list[str]
+    readers: dict[str, str] = field(default_factory=dict)  # PDF file -> reader that read it
 
     @property
     def summary(self) -> str:
@@ -905,7 +949,12 @@ class ImportResult:
             if self.confirm
             else ""
         )
-        return f"wrote {show_path(self.output)} ({state}){extra}"
+        read = "".join(
+            f"; read {name} with {reader}"
+            + (" (pdftotext is not installed)" if reader == "pdfium" else "")
+            for name, reader in self.readers.items()
+        )
+        return f"wrote {show_path(self.output)} ({state}){extra}{read}"
 
 
 def import_profiles(
@@ -947,6 +996,163 @@ def import_profiles(
         issues = validate_profile(parse_text(text, str(output)))
     except CVForgeError as exc:
         issues = exc.issues
+    readers = {f.name: d.reader for f, d in zip(files, drafts, strict=True) if d.reader}
     return ImportResult(
-        output, confirm_path, len(merged.confirms), issues, [t.value for t in merged.titles]
+        output,
+        confirm_path,
+        len(merged.confirms),
+        issues,
+        [t.value for t in merged.titles],
+        readers,
     )
+
+
+# ---------------------------------------------------------------- tag --llm
+
+
+@dataclass
+class TagResult:
+    path: Path
+    proposals: list[TagProposal]
+    diff: str
+    written: bool
+
+    @property
+    def added(self) -> int:
+        return sum(len(p.added) for p in self.proposals)
+
+
+ApproveTags = Callable[[str, list[TagProposal]], bool]
+
+
+def tag_profile(
+    profile: Path | None, approve: ApproveTags, client: Client | None = None
+) -> TagResult:
+    """Ask the model for skill ids per bullet; show the change as a diff; write only if approved.
+    Only declared skill ids are kept and existing tags are never removed (cvforge/tag.py)."""
+    path, text = _profile_text(profile)
+    parsed = parse_text(text, str(path))
+    engine = client or client_from_config(_config(), "tag --llm")
+    proposals = propose_tags(parsed.profile, engine, str(path))
+    changes = {p.qid: p.proposed for p in proposals if p.added}
+    if not changes:
+        return TagResult(path, proposals, "", False)
+    new_text = set_bullet_skills(text, str(path), changes)
+    name = show_path(path)
+    diff = "".join(
+        difflib.unified_diff(
+            text.splitlines(keepends=True),
+            new_text.splitlines(keepends=True),
+            name,
+            f"{name} (proposed)",
+        )
+    )
+    written = approve(diff, proposals)
+    if written:
+        _write_checked(path, new_text)
+    return TagResult(path, proposals, diff, written)
+
+
+# ---------------------------------------------------------------- confirm
+
+
+@dataclass
+class ConfirmState:
+    profile: Path
+    confirm: Path | None  # the CONFIRM.md read, or None when there is none
+    questions: list[Question]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "ok": True,
+            "profile": show_path(self.profile),
+            "confirm": show_path(self.confirm) if self.confirm else None,
+            "pending": [q.to_dict() for q in self.questions],
+        }
+
+
+@dataclass
+class ConfirmResult:
+    applied: list[tuple[Answer, Question]]
+    state: ConfirmState  # what is still open after the answers
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            **self.state.to_dict(),
+            "applied": [
+                {**a.to_dict(), "what": q.what, "lines": list(q.lines)} for a, q in self.applied
+            ],
+        }
+
+
+def confirm_today() -> str:
+    """Today's local date, or SOURCE_DATE_EPOCH's when set (reproducible runs and tests)."""
+    epoch = os.environ.get("SOURCE_DATE_EPOCH")
+    if epoch:
+        return datetime.fromtimestamp(int(epoch), tz=UTC).strftime("%Y-%m-%d")
+    return date.today().isoformat()
+
+
+def _read_keeping_newlines(path: Path) -> str:
+    with path.open(encoding="utf-8", newline="") as f:
+        return f.read()
+
+
+def confirm_pending(profile: Path | None, confirm: Path | None) -> ConfirmState:
+    """The open TODO confirm entries of the profile, described by CONFIRM.md when it exists."""
+    path, _ = _profile_text(profile)
+    text = _read_keeping_newlines(path)
+    md = confirm if confirm is not None else path.with_name("CONFIRM.md")
+    if confirm is not None and not md.exists():
+        raise CVForgeError(
+            [
+                Issue(
+                    file=str(md),
+                    item="--confirm",
+                    message="CONFIRM.md not found.",
+                    fix="pass the CONFIRM.md that `cvforge import` wrote, or leave out --confirm "
+                    "to work from the profile's TODO confirm lines alone.",
+                )
+            ]
+        )
+    md_text = md.read_text(encoding="utf-8") if md.exists() else None
+    found = md if md_text is not None else None
+    return ConfirmState(path, found, questions(text, str(path), md_text))
+
+
+def confirm_answer(
+    profile: Path | None,
+    confirm: Path | None,
+    answers: list[tuple[int, str]],
+    today: str | None = None,
+) -> ConfirmResult:
+    """Apply (entry number, raw answer) pairs in order; all or nothing, one write at the end."""
+    state = confirm_pending(profile, confirm)
+    path, file = state.profile, str(state.profile)
+    text = _read_keeping_newlines(path)
+    stamp = f"user {today or confirm_today()}"
+    by_number = {q.number: q for q in state.questions}
+    applied: list[tuple[Answer, Question]] = []
+    for number, raw in answers:
+        question = by_number.get(number)
+        if question is None:
+            pending = ", ".join(f"#{n}" for n in by_number) or "none"
+            raise CVForgeError(
+                [
+                    Issue(
+                        file=file,
+                        item=f"CONFIRM.md #{number}",
+                        message=f"entry #{number} is not waiting for an answer (open: {pending}).",
+                        fix="run `cvforge confirm --json` to list the open entries and answer "
+                        "one of those numbers.",
+                    )
+                ]
+            )
+        answer = resolve(question, raw, file)
+        text = apply_answer(text, file, question, answer, stamp)
+        applied.append((answer, question))
+        del by_number[number]  # answered: a second answer to it in this run is an error
+    if applied:
+        with path.open("w", encoding="utf-8", newline="") as f:
+            f.write(text)
+    return ConfirmResult(applied, confirm_pending(path, confirm))

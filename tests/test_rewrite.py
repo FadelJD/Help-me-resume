@@ -8,10 +8,10 @@ import pytest
 from cvforge import pipeline
 from cvforge.config import Config, LLMConfig
 from cvforge.errors import CVForgeError
+from cvforge.llm import LiteLLMClient, Settings
 from cvforge.parse import load_profile
 from cvforge.rewrite import (
     CannedRewriter,
-    LiteLLMRewriter,
     Proposal,
     find_new_facts,
     profile_vocabulary,
@@ -126,7 +126,7 @@ def test_litellm_missing_says_how_to_install(monkeypatch: pytest.MonkeyPatch) ->
 
     monkeypatch.setattr(importlib, "import_module", fail)
     with pytest.raises(CVForgeError) as exc:
-        LiteLLMRewriter("ollama/llama3")
+        LiteLLMClient(Settings("ollama", "llama3", "", ""))
     assert "cvforge[llm]" in exc.value.issues[0].fix
 
 

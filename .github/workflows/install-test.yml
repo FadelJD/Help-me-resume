@@ -38,6 +38,7 @@ jobs:
           start=$(date +%s)
           bash "$RUNNER_TEMP/quickstart.sh"
           test -s my-cv/out/cv.pdf
+          test -s my-cv/out/cv.docx
           test -s my-cv/out/cv.report.json
           elapsed=$(( $(date +%s) - start ))
           echo "Quick start wall-clock: ${elapsed}s" | tee -a "$GITHUB_STEP_SUMMARY"
@@ -46,6 +47,13 @@ jobs:
   readme-quickstart-windows:
     # continue-on-error: Windows support is new and no maintainer has run it on a real Windows
     # machine yet. A failure here shows on the Actions page but does not block the Linux jobs.
+    # Remove continue-on-error once these commands (docs/windows.md) pass on a Windows PC, after
+    # the README's Windows install block, in PowerShell:
+    #   cvforge doctor
+    #   mkdir my-cv; cd my-cv; cvforge init --example
+    #   cvforge build --compile --docx -o out/cv.tex
+    #   cvforge check out/cv.tex
+    # and, in a clone of this repository: py -m pip install -e ".[dev,check]"; py -m pytest -q
     runs-on: windows-latest
     continue-on-error: true
     timeout-minutes: 30
@@ -108,6 +116,7 @@ jobs:
           $cv = Join-Path $env:RUNNER_TEMP "my-cv/out"
           if (-not (Test-Path "$cv/cv.pdf")) { throw "no $cv/cv.pdf" }
           if (-not (Test-Path "$cv/cv.report.json")) { throw "no $cv/cv.report.json" }
+          if (-not (Test-Path "$cv/cv.docx")) { throw "no $cv/cv.docx" }
           $elapsed = [int]((Get-Date) - $start).TotalSeconds
           "Windows Quick start wall-clock: ${elapsed}s" | Tee-Object -Append -FilePath $env:GITHUB_STEP_SUMMARY
           if ($elapsed -ge 600) { throw "took ${elapsed}s, limit 600s" }

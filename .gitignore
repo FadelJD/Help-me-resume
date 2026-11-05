@@ -26,3 +26,6 @@ check.json
 private/
 private/profile.cv.txt
 private/out/
+
+# Agent worktrees (local only)
+.claude/worktrees/
