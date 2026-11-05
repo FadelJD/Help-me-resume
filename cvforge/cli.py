@@ -180,6 +180,9 @@ def build(
     job: JobOpt = None,
     output: Annotated[Path | None, typer.Option("-o", "--output", help="Output .tex path.")] = None,
     compile_pdf: Annotated[bool, typer.Option("--compile", help="Also build the PDF.")] = False,
+    docx: Annotated[
+        bool, typer.Option("--docx", help="Also write a single-column .docx beside the .tex.")
+    ] = False,
     max_bullets: MaxOpt = None,
     locale: LocaleOpt = None,
     profile: ProfileOpt = None,
@@ -196,6 +199,7 @@ def build(
             output=output,
             max_bullets=max_bullets,
             compile_pdf_too=compile_pdf,
+            docx=docx,
         )
     except CVForgeError as exc:
         if not as_json:
@@ -208,6 +212,7 @@ def build(
                     "ok": True,
                     "tex": show_path(result.tex),
                     "pdf": show_path(result.pdf) if result.pdf else None,
+                    "docx": show_path(result.docx) if result.docx else None,
                     "report": show_path(result.report_path),
                 }
             )

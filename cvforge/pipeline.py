@@ -21,6 +21,7 @@ from cvforge.check import CheckReport, check, check_pdf
 from cvforge.compile import compile_tex
 from cvforge.config import DEFAULT_CONFIG_TEXT, LOCALES, Config, Locale, load_config
 from cvforge.confirm import Answer, Question, apply_answer, questions, resolve
+from cvforge.docx_export import write_docx
 from cvforge.errors import CVForgeError, Issue, errors_only
 from cvforge.escape import escape
 from cvforge.importer import confirm_markdown, import_file, merge
@@ -243,6 +244,7 @@ class BuildResult:
     pdf: Path | None = None
     engine: str = ""
     engine_note: str = ""
+    docx: Path | None = None
 
     @property
     def summary(self) -> str:
@@ -253,7 +255,8 @@ class BuildResult:
             if self.pdf
             else ""
         )
-        return f"wrote {show_path(self.tex)} ({n_b} bullets, {n_d} dropped){pdf}"
+        docx = f", docx {show_path(self.docx)}" if self.docx else ""
+        return f"wrote {show_path(self.tex)} ({n_b} bullets, {n_d} dropped){pdf}{docx}"
 
 
 @dataclass
@@ -480,12 +483,32 @@ def build(
     output: Path | None,
     max_bullets: int | None,
     compile_pdf_too: bool,
+    docx: bool = False,
 ) -> BuildResult:
     prep = prepare(profile=profile, template=template, hat=hat, job=job, max_bullets=max_bullets)
     result = render_selection(prep, output, job)
+    if docx:
+        _write_docx(prep, result)
     if compile_pdf_too:
         _compile(prep, result)
     return result
+
+
+def _write_docx(prep: Prepared, result: BuildResult) -> None:
+    """The .docx beside the .tex, from the same selection and the bullets the .tex emitted."""
+    header = prep.template_report.header
+    assert header is not None
+    shown = set(header.sections)
+    result.docx = write_docx(
+        result.tex.with_suffix(".docx"),
+        prep.selection,
+        prep.parsed.profile,
+        prep.hat,
+        LOCALES[prep.cfg.locale],
+        [s for s in prep.selection.sections if s in shown],
+        set(result.report["emitted"]["bullets"]),
+        result.report["built"],
+    )
 
 
 def _engine(prep: Prepared) -> str:
