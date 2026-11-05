@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 from pathlib import Path
 from types import ModuleType
 
@@ -43,9 +44,34 @@ def test_linux_script_installs_the_checkout() -> None:
     assert "git+https://" not in script
 
 
-def test_readme_says_what_windows_gates_on() -> None:
-    assert "pdftotext is not a gate unless poppler is installed" in README
-    assert "pdfplumber, pypdf-layout and PDFium" in README
+def test_windows_reader_set_is_explained() -> None:
+    assert "On Windows they are pdfplumber, pypdf in layout mode and PDFium" in README
+    assert "](docs/windows.md)" in README
+    windows = (ROOT / "docs" / "windows.md").read_text(encoding="utf-8")
+    assert "pdftotext never has to pass on Windows" in windows
+
+
+# Plain writing: these patterns read as machine-written and are banned from user-facing docs.
+STYLE_RULES = {
+    "em dash": "\u2014",
+    "en dash": "\u2013",
+    "'rather than'": r"\brather than\b",
+    "'instead of'": r"\binstead of\b",
+    "', not X' contrast": r", not \w",
+    "'not X but Y' contrast": r"\bnot\b[^.\n]{1,40}\bbut\b",
+}
+
+
+@pytest.mark.parametrize("doc", ["README.md", "docs/windows.md"])
+def test_docs_follow_the_style_rules(doc: str) -> None:
+    text = (ROOT / doc).read_text(encoding="utf-8")
+    prose = re.sub(r"```.*?```", "", text, flags=re.S)  # commands may contain anything
+    found = [
+        f"{name}: {m.group(0)!r}"
+        for name, pattern in STYLE_RULES.items()
+        for m in re.finditer(pattern, prose, flags=re.I)
+    ]
+    assert not found, f"{doc}: " + "; ".join(found)
 
 
 def test_quick_start_commands_run_in_both_shells() -> None:
