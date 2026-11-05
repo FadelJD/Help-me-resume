@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Mapping, Sequence
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Literal
 
 OS = Literal["windows", "macos", "linux"]
@@ -48,6 +48,14 @@ def current_os() -> OS:
     if sys.platform == "darwin":
         return "macos"
     return "linux"
+
+
+def show_path(path: str | PurePath) -> str:
+    """A path as cvforge prints it: always with `/`. Windows accepts `/`, so the text stays valid
+    to paste back, and JSON, error messages and saved files read the same on every system.
+    Programs are still handed native paths; only text for people and scripts goes through here."""
+    text = str(path)
+    return text.replace("\\", "/") if current_os() == "windows" else text
 
 
 def os_label(os_name: OS | None = None) -> str:

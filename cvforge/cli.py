@@ -24,6 +24,7 @@ from cvforge import pipeline, views
 from cvforge.check import miss_issues
 from cvforge.doctor import diagnose, missing_required
 from cvforge.errors import CVForgeError, Issue
+from cvforge.platforms import show_path
 from cvforge.rewrite import Proposal
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -204,9 +205,9 @@ def build(
             json.dumps(
                 {
                     "ok": True,
-                    "tex": str(result.tex),
-                    "pdf": str(result.pdf) if result.pdf else None,
-                    "report": str(result.report_path),
+                    "tex": show_path(result.tex),
+                    "pdf": show_path(result.pdf) if result.pdf else None,
+                    "report": show_path(result.report_path),
                 }
             )
         )
@@ -285,9 +286,9 @@ def tailor(
             json.dumps(
                 {
                     "ok": True,
-                    "tex": str(result.tex),
-                    "pdf": str(result.pdf) if result.pdf else None,
-                    "report": str(result.report_path),
+                    "tex": show_path(result.tex),
+                    "pdf": show_path(result.pdf) if result.pdf else None,
+                    "report": show_path(result.report_path),
                     "rewrites": [p.to_dict() for p in proposals],
                 }
             )

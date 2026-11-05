@@ -27,7 +27,7 @@ from cvforge.compile import compile_pdf
 from cvforge.config import Locale, ParserSetting, Thresholds
 from cvforge.errors import CVForgeError, Issue
 from cvforge.parsers import PARSER_NAMES, Parser, all_parsers, default_gates
-from cvforge.platforms import run_tool
+from cvforge.platforms import run_tool, show_path
 from cvforge.schema import Profile
 from cvforge.score import Encoder, keyword_coverage, semantic_similarity
 from cvforge.template import format_date, lint
@@ -259,8 +259,8 @@ class CheckReport:
         return {
             "ok": self.ok,
             "roundtrip_ok": self.roundtrip_ok,
-            "tex": str(self.tex),
-            "pdf": str(self.pdf) if self.pdf else None,
+            "tex": show_path(self.tex),
+            "pdf": show_path(self.pdf) if self.pdf else None,
             "badge": self.badge,
             "gates": [p.name for p in self.parsers if p.gate],
             "gates_missing": [p.name for p in self.gating_missing],

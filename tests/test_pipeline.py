@@ -95,7 +95,7 @@ def test_config_supplies_defaults(workdir: Path) -> None:
     )
     (workdir / "profile.cv.txt").write_text((EXAMPLES / "profile.cv.txt").read_text())
     (workdir / "cvforge.toml").write_text(
-        f'template = "{TEMPLATES / "minimal.tex"}"\nhat = "developer"\n'
+        f'template = "{(TEMPLATES / "minimal.tex").as_posix()}"\nhat = "developer"\n'
     )
     result = pipeline.build(
         profile=None,

@@ -63,6 +63,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      # scheme-basic plus what the shipped templates and the non-corpus test templates load
+      # (tests/fixtures/template_icons.tex, template_twocol.tex, the Jake's Resume fixture).
+      # preprint provides fullpage.
       - name: Install TeX Live
         uses: TeX-Live/setup-texlive-action@v4
         with:
@@ -72,6 +75,12 @@ jobs:
             geometry
             lm
             enumitem
+            marvosym
+            paracol
+            titlesec
+            fancyhdr
+            preprint
+            babel-english
 
       # The image's Git for Windows ships Xpdf's pdftotext in C:\Program Files\Git\ucrt64\bin
       # (seen in run 41618764377: "pdftotext version 4.06 [www.xpdfreader.com]"). Hide exactly

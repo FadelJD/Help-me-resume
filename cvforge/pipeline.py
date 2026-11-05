@@ -38,6 +38,7 @@ from cvforge.parse import (
     next_id,
     parse_text,
 )
+from cvforge.platforms import show_path
 from cvforge.resources import builtin_template, data_path
 from cvforge.rewrite import LiteLLMRewriter, Proposal, Rewriter, apply, propose
 from cvforge.schema import Bullet, Education, Experience, Hat, Profile, Project, Selection
@@ -145,7 +146,7 @@ def resolve_hat(name: str | None, cfg: Config) -> tuple[Hat | None, str]:
     path = (
         Path(name) if name.endswith(".toml") or "/" in name else Path(cfg.hats_dir) / f"{name}.toml"
     )
-    return load_hat(path), str(path)
+    return load_hat(path), show_path(path)
 
 
 def read_job(job: str | None) -> str | None:
@@ -246,8 +247,12 @@ class BuildResult:
     def summary(self) -> str:
         n_b = len(self.report["emitted"]["bullets"])
         n_d = sum(1 for d in self.selection.dropped if d.kind == "bullet")
-        pdf = f", pdf {self.pdf} with {self.engine} ({self.engine_note})" if self.pdf else ""
-        return f"wrote {self.tex} ({n_b} bullets, {n_d} dropped){pdf}"
+        pdf = (
+            f", pdf {show_path(self.pdf)} with {self.engine} ({self.engine_note})"
+            if self.pdf
+            else ""
+        )
+        return f"wrote {show_path(self.tex)} ({n_b} bullets, {n_d} dropped){pdf}"
 
 
 @dataclass
@@ -427,11 +432,11 @@ def make_report(
         "tool": "cvforge",
         "version": __version__,
         "built": build_date(),
-        "tex": str(out_path),
-        "profile": prep.parsed.source.file,
-        "template": str(prep.template_path),
+        "tex": show_path(out_path),
+        "profile": show_path(prep.parsed.source.file),
+        "template": show_path(prep.template_path),
         "hat": sel.hat,
-        "job": job_ref or "",
+        "job": show_path(job_ref or ""),
         "locale": locale.name,
         "template_fields": prep.template_report.fields,
         "template_header": {
@@ -545,7 +550,7 @@ def explain(
         max_bullets=max_bullets,
         need_template=use_template,
     )
-    return ExplainResult(prep.selection, prep.selection.hat, job or "")
+    return ExplainResult(prep.selection, prep.selection.hat, show_path(job or ""))
 
 
 # ---------------------------------------------------------------- template validate
@@ -605,7 +610,9 @@ def init(
         raise CVForgeError(errs)
     profile_path.write_text(text, encoding="utf-8")
     config_path.write_text(
-        DEFAULT_CONFIG_TEXT.format(template=result.template, hat=result.hat, locale=result.locale),
+        DEFAULT_CONFIG_TEXT.format(
+            template=show_path(result.template), hat=result.hat, locale=result.locale
+        ),
         encoding="utf-8",
     )
     written = [profile_path, config_path]
@@ -616,7 +623,7 @@ def init(
         if not hat_path.exists():
             hat_path.write_text(hat_text(name, title, result.profile), encoding="utf-8")
             written.append(hat_path)
-    return WriteResult(profile_path, f"wrote {', '.join(str(p) for p in written)}", written)
+    return WriteResult(profile_path, f"wrote {', '.join(show_path(p) for p in written)}", written)
 
 
 def _init_example(directory: Path, profile_path: Path, config_path: Path) -> WriteResult:
@@ -646,7 +653,7 @@ def _init_example(directory: Path, profile_path: Path, config_path: Path) -> Wri
         written.append(target)
     return WriteResult(
         profile_path,
-        f"wrote {', '.join(str(p) for p in written)} (fictional example: Jane Doe)",
+        f"wrote {', '.join(show_path(p) for p in written)} (fictional example: Jane Doe)",
         written,
     )
 
@@ -675,7 +682,7 @@ def _profile_text(profile: Path | None) -> tuple[Path, str]:
 def add_skill(profile: Path | None, sid: str, name: str) -> WriteResult:
     path, text = _profile_text(profile)
     _write_checked(path, append_skill(text, str(path), sid, name))
-    return WriteResult(path, f"added skill {sid}: {name} to {path}")
+    return WriteResult(path, f"added skill {sid}: {name} to {show_path(path)}")
 
 
 def add_role(
@@ -698,7 +705,7 @@ def add_role(
     except ValidationError as exc:
         raise _arg_error(exc, str(path)) from exc
     _write_checked(path, append_item(text, str(path), "experience", role))
-    return WriteResult(path, f"added role {new_id}: {title}, {org} to {path}")
+    return WriteResult(path, f"added role {new_id}: {title}, {org} to {show_path(path)}")
 
 
 def add_project(
@@ -711,7 +718,7 @@ def add_project(
     except ValidationError as exc:
         raise _arg_error(exc, str(path)) from exc
     _write_checked(path, append_item(text, str(path), "projects", project))
-    return WriteResult(path, f"added project {new_id}: {name} to {path}")
+    return WriteResult(path, f"added project {new_id}: {name} to {show_path(path)}")
 
 
 def add_education(
@@ -730,7 +737,7 @@ def add_education(
     except ValidationError as exc:
         raise _arg_error(exc, str(path)) from exc
     _write_checked(path, append_item(text, str(path), "education", edu))
-    return WriteResult(path, f"added education {new_id}: {degree} to {path}")
+    return WriteResult(path, f"added education {new_id}: {degree} to {show_path(path)}")
 
 
 def add_bullet(
@@ -749,7 +756,7 @@ def add_bullet(
     except ValidationError as exc:
         raise _arg_error(exc, str(path)) from exc
     _write_checked(path, append_bullet(text, str(path), item_id, bullet))
-    return WriteResult(path, f"added bullet {item_id}.{new_id} to {path}")
+    return WriteResult(path, f"added bullet {item_id}.{new_id} to {show_path(path)}")
 
 
 def _arg_error(exc: ValidationError, file: str) -> CVForgeError:
@@ -893,8 +900,12 @@ class ImportResult:
     @property
     def summary(self) -> str:
         state = "valid" if not errors_only(self.issues) else "needs the TODO lines filled"
-        extra = f", {self.confirms} fact(s) to confirm in {self.confirm}" if self.confirm else ""
-        return f"wrote {self.output} ({state}){extra}"
+        extra = (
+            f", {self.confirms} fact(s) to confirm in {show_path(self.confirm)}"
+            if self.confirm
+            else ""
+        )
+        return f"wrote {show_path(self.output)} ({state}){extra}"
 
 
 def import_profiles(
