@@ -77,7 +77,10 @@ def _facts(path: Path) -> tuple[list[tuple[str, str, str]], list[str]]:
 
 
 @pytest.mark.tex
-@pytest.mark.parametrize("kind", ["tex", "pdf"])
+@pytest.mark.parametrize(
+    "kind",
+    ["tex", pytest.param("pdf", marks=pytest.mark.poppler)],  # PDF import uses pdftotext
+)
 def test_import_reproduces_the_source_profile(built: Path, kind: str, tmp_path: Path) -> None:
     source = built if kind == "tex" else built.with_suffix(".pdf")
     out = tmp_path / f"{kind}.cv.txt"

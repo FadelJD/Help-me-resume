@@ -23,7 +23,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 
 from cvforge.errors import CVForgeError, Issue
-from cvforge.platforms import run_tool
+from cvforge.platforms import install_command, run_tool
 from cvforge.score import tokenize
 
 # ---------------------------------------------------------------- data
@@ -217,7 +217,8 @@ def pdf_blocks(path: Path, label: str) -> tuple[list[Block], list[str]]:
                     file=str(path),
                     item="pdftotext",
                     message=f"could not read the PDF text: {exc}.",
-                    fix="install poppler-utils (pdftotext) and check the file opens.",
+                    fix="importing a PDF needs pdftotext from poppler: "
+                    f"{install_command('pdftotext')}; then check the file opens.",
                 )
             ]
         ) from exc
