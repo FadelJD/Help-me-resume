@@ -192,3 +192,7 @@ Choices the spec leaves open. One line each, newest last.
 - Windows test suite on windows-latest at 8169e6c: 332 passed, 25 skipped (pdftotext absent, plus one Unix-only filename test), 0 failed. The Windows jobs stay `continue-on-error` until a run on a real Windows PC confirms them.
 - v0.2.0: develop takes readme-cleanup and wo4-windows (README conflict resolved to wo4-windows' version), main fast-forwards to develop. Branches kept: main, develop, wo3-user-cv. Work from wo3-user-cv reaches main only by cherry-pick after the user confirms CONFIRM.md: the import command and the sample-data fix.
 - The README style test bans only em and en dashes in README.md and docs/windows.md. Phrase rules ("rather than", "instead of", ", not X") were dropped: ordinary English should not fail a contributor's build.
+
+## Work order 5
+
+- Item 2: without pdftotext, `cvforge import` reads a PDF with PDFium. `parsers.pdfium.layout_text` keeps PDFium's own word spaces and line ends, merges pieces on the same visual line by their vertical position, indents by the left edge in units of the text size, and puts three spaces where a gap is wider than 2.5 times the text size, so the importer's column rules (title left, dates right) work unchanged. The import summary names the reader per file. With neither reader installed, import fails with both install commands.

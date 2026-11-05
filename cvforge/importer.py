@@ -14,7 +14,9 @@ confirmations, not resolved.
 
 from __future__ import annotations
 
+import importlib.util
 import re
+import shutil
 import subprocess
 import unicodedata
 from collections.abc import Callable
@@ -70,6 +72,7 @@ class Draft:
     groups: list[tuple[Src, list[str]]] = field(default_factory=list)  # (group name, ids)
     items: list[DraftItem] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+    reader: str = ""  # PDF text reader used: pdftotext or pdfium; empty for .tex
 
 
 @dataclass
@@ -202,26 +205,55 @@ _HEADINGS = {
 }
 
 
-def pdf_blocks(path: Path, label: str) -> tuple[list[Block], list[str]]:
-    try:
-        out = run_tool(
-            ["pdftotext", "-layout", "-enc", "UTF-8", str(path), "-"],
-            cwd=path.parent,
-            timeout=60,
-            check=True,
-        ).stdout
-    except (OSError, subprocess.CalledProcessError) as exc:
+def pdf_text(path: Path) -> tuple[str, str]:
+    """The PDF's text laid out in columns, and the reader that produced it: pdftotext when it
+    is on PATH, otherwise PDFium (pypdfium2, installed with cvforge[check])."""
+    if shutil.which("pdftotext"):
+        try:
+            out = run_tool(
+                ["pdftotext", "-layout", "-enc", "UTF-8", str(path), "-"],
+                cwd=path.parent,
+                timeout=60,
+                check=True,
+            ).stdout
+        except (OSError, subprocess.CalledProcessError) as exc:
+            raise _unreadable(path, "pdftotext", exc) from exc
+        return out, "pdftotext"
+    if importlib.util.find_spec("pypdfium2") is None:
         raise CVForgeError(
             [
                 Issue(
                     file=str(path),
-                    item="pdftotext",
-                    message=f"could not read the PDF text: {exc}.",
-                    fix="importing a PDF needs pdftotext from poppler: "
-                    f"{install_command('pdftotext')}; then check the file opens.",
+                    item="PDF",
+                    message="no PDF reader is installed: import needs pdftotext or PDFium.",
+                    fix=f"{install_command('pypdfium2')}; or install poppler: "
+                    f"{install_command('pdftotext')}.",
                 )
             ]
-        ) from exc
+        )
+    from cvforge.parsers.pdfium import layout_text
+
+    try:
+        return layout_text(path), "pdfium"
+    except Exception as exc:  # pypdfium2 raises its own error types for damaged files
+        raise _unreadable(path, "pdfium", exc) from exc
+
+
+def _unreadable(path: Path, reader: str, exc: Exception) -> CVForgeError:
+    return CVForgeError(
+        [
+            Issue(
+                file=str(path),
+                item=reader,
+                message=f"could not read the PDF text with {reader}: {exc}.",
+                fix="check the file opens in a PDF viewer and is not password-protected.",
+            )
+        ]
+    )
+
+
+def pdf_blocks(path: Path, label: str) -> tuple[list[Block], list[str], str]:
+    out, reader = pdf_text(path)
     blocks: list[Block] = []
     for page_no, page in enumerate(out.split("\f"), start=1):
         src = f"{label} p.{page_no}"
@@ -240,7 +272,7 @@ def pdf_blocks(path: Path, label: str) -> tuple[list[Block], list[str]]:
                 blocks.append(Block("row", " ".join(parts[:-1]), parts[-1], src, indent))
             else:
                 blocks.append(Block("line", body, "", src, indent))
-    return blocks, pdf_links(path)
+    return blocks, pdf_links(path), reader
 
 
 def pdf_links(path: Path) -> list[str]:
@@ -557,8 +589,9 @@ def _row(item: DraftItem, b: Block) -> None:
 
 def import_file(path: Path, label: str | None = None) -> Draft:
     label = label or path.stem
+    reader = ""
     if path.suffix.lower() == ".pdf":
-        blocks, uris = pdf_blocks(path, label)
+        blocks, uris, reader = pdf_blocks(path, label)
     elif path.suffix.lower() == ".tex":
         blocks, uris = tex_blocks(path, f"{label}.tex")
     else:
@@ -572,7 +605,9 @@ def import_file(path: Path, label: str | None = None) -> Draft:
                 )
             ]
         )
-    return structure(blocks, uris, label)
+    draft = structure(blocks, uris, label)
+    draft.reader = reader
+    return draft
 
 
 # ---------------------------------------------------------------- merge

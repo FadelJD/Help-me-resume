@@ -896,6 +896,7 @@ class ImportResult:
     confirms: int
     issues: list[Issue]
     titles: list[str]
+    readers: dict[str, str] = field(default_factory=dict)  # PDF file -> reader that read it
 
     @property
     def summary(self) -> str:
@@ -905,7 +906,12 @@ class ImportResult:
             if self.confirm
             else ""
         )
-        return f"wrote {show_path(self.output)} ({state}){extra}"
+        read = "".join(
+            f"; read {name} with {reader}"
+            + (" (pdftotext is not installed)" if reader == "pdfium" else "")
+            for name, reader in self.readers.items()
+        )
+        return f"wrote {show_path(self.output)} ({state}){extra}{read}"
 
 
 def import_profiles(
@@ -947,6 +953,12 @@ def import_profiles(
         issues = validate_profile(parse_text(text, str(output)))
     except CVForgeError as exc:
         issues = exc.issues
+    readers = {f.name: d.reader for f, d in zip(files, drafts, strict=True) if d.reader}
     return ImportResult(
-        output, confirm_path, len(merged.confirms), issues, [t.value for t in merged.titles]
+        output,
+        confirm_path,
+        len(merged.confirms),
+        issues,
+        [t.value for t in merged.titles],
+        readers,
     )
