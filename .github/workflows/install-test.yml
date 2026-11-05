@@ -38,6 +38,7 @@ jobs:
           start=$(date +%s)
           bash "$RUNNER_TEMP/quickstart.sh"
           test -s my-cv/out/cv.pdf
+          test -s my-cv/out/cv.docx
           test -s my-cv/out/cv.report.json
           elapsed=$(( $(date +%s) - start ))
           echo "Quick start wall-clock: ${elapsed}s" | tee -a "$GITHUB_STEP_SUMMARY"
@@ -115,6 +116,7 @@ jobs:
           $cv = Join-Path $env:RUNNER_TEMP "my-cv/out"
           if (-not (Test-Path "$cv/cv.pdf")) { throw "no $cv/cv.pdf" }
           if (-not (Test-Path "$cv/cv.report.json")) { throw "no $cv/cv.report.json" }
+          if (-not (Test-Path "$cv/cv.docx")) { throw "no $cv/cv.docx" }
           $elapsed = [int]((Get-Date) - $start).TotalSeconds
           "Windows Quick start wall-clock: ${elapsed}s" | Tee-Object -Append -FilePath $env:GITHUB_STEP_SUMMARY
           if ($elapsed -ge 600) { throw "took ${elapsed}s, limit 600s" }

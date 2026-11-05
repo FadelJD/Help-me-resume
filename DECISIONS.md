@@ -218,3 +218,4 @@ Choices the spec leaves open. One line each, newest last.
 - Item 4, docx: one paragraph per entry, bold "Title, Organisation" then location and "Jun 2023 to Present" in the locale's date style; name in Title style, the hat's title line, one contact line; skills by group when the selection has groups.
 - Item 4, docx: page size follows the locale (A4, or Letter for us) with 1.8 cm margins; document properties carry the name and build date. Only `build` takes `--docx` for now; `tailor` does not.
 - Item 4, docx: the file's text is the same on every build, but the zip timestamps make it differ byte for byte.
+- Item 5: the README states that the text layer is what is tested, names Workday, Greenhouse, Lever, iCIMS, Ashby and Taleo as context only with no score claimed for any, and ties --docx to Taleo and iCIMS favouring Word files. The Quick start builds the .docx, and both fresh-install jobs require it. The style test keeps only the em and en dash rule.

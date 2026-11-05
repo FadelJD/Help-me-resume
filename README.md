@@ -61,11 +61,11 @@ The same commands work in bash and PowerShell:
 mkdir my-cv
 cd my-cv
 cvforge init --example
-cvforge build --compile -o out/cv.tex
+cvforge build --compile --docx -o out/cv.tex
 cvforge check out/cv.tex
 ```
 
-This builds a CV for Jane Doe, a fictional person, and leaves two files in `out`: the PDF, `cv.pdf`, and the check results, `cv.report.json`. To start your own, run `cvforge init` in an empty folder and answer its questions.
+This builds a CV for Jane Doe, a fictional person, and leaves three files in `out`: the PDF, `cv.pdf`, a Word copy, `cv.docx`, and the check results, `cv.report.json`. To start your own, run `cvforge init` in an empty folder and answer its questions.
 
 ## What the check does
 
@@ -76,6 +76,12 @@ This builds a CV for Jane Doe, a fictional person, and leaves two files in `out`
 - **Evidence:** a skill appears on the CV only when a printed bullet shows it, and the report gives that share as *evidence*. It should be 100%.
 
 The three readers that must pass are pdftotext, pdfplumber and pypdf in layout mode on Linux and macOS. On Windows they are pdfplumber, pypdf in layout mode and PDFium, the PDF engine inside Chrome. Scores are for your information until you add `--strict`, which makes low scores fail the check.
+
+## What this checks, and what it doesn't
+
+Every applicant tracking system starts the same way: it pulls the text out of your file. If a date, a name or a bullet is lost at that step, nothing later can find it. That text layer is what CV Forge tests, with the same open-source PDF readers that screening tools are built on.
+
+It does not emulate any vendor's parser, and it does not claim a score for any named product. Workday, Greenhouse, Lever, iCIMS, Ashby and Taleo each add their own field mapping and ranking on top, which nobody outside those companies can reproduce. Taleo and iCIMS in particular are known to handle Word files more reliably than PDFs, which is why `cvforge build --docx` writes a single-column Word copy from the same selection, and a test reads it back against the same fact list.
 
 ## How popular templates fare
 
@@ -155,10 +161,27 @@ CV Forge may reword and reorder your bullets. It will not add a number, tool, em
 
 ## Everyday use
 
+- Start from the CVs you already have: `cvforge import old-cv.pdf other-cv.tex` drafts a profile, and `cvforge confirm` asks you, one question at a time, which value is right wherever the files disagree.
 - Add new experience with `cvforge add bullet`, without opening the profile.
 - Keep one hat per direction, for example `hats/developer.toml` and `hats/technical-writer.toml`, and build per application with `cvforge build --hat technical-writer --job ad.txt --compile`.
 - Keep the profile, template and hats in Git: every bullet has an id, so a diff shows exactly which fact changed.
 - Add `--json` to any command when a script reads the output.
+
+## Optional: a language model
+
+Three extras can use a language model: `cvforge tailor --rewrite` offers rewordings of your bullets, `cvforge tag --llm` suggests which of your declared skills each bullet shows, and `cvforge check --llm-reader` lets a model read the extracted text as newer screening tools do. Without a configured model and key none of these run, and CV Forge works fully without them.
+
+Every rewrite and tag needs your approval, and any rewrite that adds a number, tool, employer or date is rejected automatically. The model reader is reported as one extra column for information only: it never decides whether the check passes.
+
+Set the provider and model once in `cvforge.toml`, and the key in an environment variable:
+
+```toml
+[llm]
+provider = "anthropic"
+model = "claude-sonnet-5-5"
+```
+
+Then export `CVFORGE_LLM_API_KEY`, install the extra with `pipx inject cvforge litellm`, and run `cvforge doctor` to confirm a key is found. The key is never stored in a file or printed. `CVFORGE_LLM_PROVIDER` and `CVFORGE_LLM_MODEL` override the file.
 
 ## Check your CV on every push
 
