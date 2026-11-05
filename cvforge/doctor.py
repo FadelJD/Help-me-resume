@@ -13,6 +13,9 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from cvforge.config import Config, load_config
+from cvforge.errors import CVForgeError
+from cvforge.llm import settings
 from cvforge.parsers import default_gates
 from cvforge.platforms import OS, current_os, install_command, os_label
 from cvforge.score import SEMANTIC_MODEL
@@ -132,7 +135,26 @@ def diagnose(os_name: OS | None = None) -> list[Item]:
             install_command("semantic", os_name),
         )
     )
+    items.append(_llm_item())
     return items
+
+
+def _llm_item() -> Item:
+    """Whether an LLM is configured and a key is present; the key itself is never shown."""
+    try:
+        s = settings(load_config())
+    except CVForgeError:
+        s = settings(Config())
+    detail = s.describe()
+    ok = s.configured and (s.key_source != "" or not s.needs_key)
+    if ok and s.provider != "canned" and importlib.util.find_spec("litellm") is None:
+        ok, detail = False, detail + "; LiteLLM is not installed"
+    fix = (
+        "set [llm] provider and model in cvforge.toml, export CVFORGE_LLM_API_KEY, and "
+        'pip install "cvforge[llm]"; only tailor --rewrite, tag --llm and check --llm-reader '
+        "use it"
+    )
+    return Item("llm", ok, detail, False, fix)
 
 
 def missing_required(os_name: OS | None = None) -> list[str]:

@@ -1,0 +1,14 @@
+[
+  {
+    "match": "Shipped a REST API in Node.js and PostgreSQL serving 1M requests a day.",
+    "response": "Delivered a Node.js and PostgreSQL REST API serving 1M requests a day."
+  },
+  {
+    "match": "Built a React and TypeScript dashboard used by 30 field staff for daily reporting.",
+    "response": "Built a React and TypeScript dashboard used by 45 field staff for daily reporting."
+  },
+  {
+    "match": "Added GitHub Actions pipelines running tests on every pull request.",
+    "response": "Added GitHub Actions and Jenkins pipelines running tests on every pull request."
+  }
+]

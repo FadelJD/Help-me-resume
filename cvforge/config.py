@@ -39,11 +39,14 @@ class Thresholds(BaseModel):
 
 
 class LLMConfig(BaseModel):
+    """[llm] in cvforge.toml; see cvforge/llm.py. Env vars CVFORGE_LLM_PROVIDER, CVFORGE_LLM_MODEL
+    and CVFORGE_LLM_API_KEY override it. Empty model: every LLM feature is off."""
+
     model_config = ConfigDict(extra="forbid")
-    # LiteLLM model string, e.g. "ollama/llama3"; empty means rewrite is off.
-    model: str = ""
-    # Optional env var holding the API key; LiteLLM's own defaults apply otherwise.
-    api_key_env: str = ""
+    provider: str = ""  # LiteLLM provider, e.g. "anthropic", "openai", "ollama"; or "canned"
+    model: str = ""  # model name, or a full LiteLLM string such as "ollama/llama3"
+    api_key_env: str = ""  # env var holding the key; CVFORGE_LLM_API_KEY always wins
+    canned: str = ""  # JSON file of prepared responses, for provider "canned" (tests, dry runs)
 
 
 class ParserSetting(BaseModel):

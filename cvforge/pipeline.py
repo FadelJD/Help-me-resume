@@ -24,6 +24,7 @@ from cvforge.errors import CVForgeError, Issue, errors_only
 from cvforge.escape import escape
 from cvforge.importer import confirm_markdown, import_file, merge
 from cvforge.interview import Ask, Confirm, Say, hat_text, run_interview
+from cvforge.llm import client_from_config
 from cvforge.parse import (
     ParsedProfile,
     append_bullet,
@@ -40,7 +41,7 @@ from cvforge.parse import (
 )
 from cvforge.platforms import show_path
 from cvforge.resources import builtin_template, data_path
-from cvforge.rewrite import LiteLLMRewriter, Proposal, Rewriter, apply, propose
+from cvforge.rewrite import LLMRewriter, Proposal, Rewriter, apply, propose
 from cvforge.schema import Bullet, Education, Experience, Hat, Profile, Project, Selection
 from cvforge.select import select
 from cvforge.template import (
@@ -829,20 +830,7 @@ Approve = Callable[[list[Proposal]], None]
 
 
 def rewriter_from_config(cfg: Config) -> Rewriter:
-    if not cfg.llm.model:
-        raise CVForgeError(
-            [
-                Issue(
-                    file="cvforge.toml",
-                    item="llm.model",
-                    message="--rewrite is unavailable: no LLM is configured.",
-                    fix='set [llm] model = "<provider>/<model>" in cvforge.toml (e.g. '
-                    "\"ollama/llama3\") and pip install 'cvforge[llm]'; everything else works "
-                    "without it.",
-                )
-            ]
-        )
-    return LiteLLMRewriter(cfg.llm.model, cfg.llm.api_key_env)
+    return LLMRewriter(client_from_config(cfg, "--rewrite"))
 
 
 def tailor(
