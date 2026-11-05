@@ -36,18 +36,21 @@ with no pdftotext at all.
 | --- | --- |
 | README Windows block, then `init --example`, `build --compile` and `check` | passes in 36 seconds: `check passed: parsed: 3/3 · advisory: 1/2 · evidence: 100%` |
 | `cvforge doctor`, ruff and mypy | pass |
-| Test suite, `pytest -m "not corpus"` | fails; see below |
+| Test suite, `pytest -m "not corpus"` | passes: 332 passed, 25 skipped |
 
 Test suite history on windows-latest, newest first:
 
 | Commit | Result | What changed |
 | --- | --- | --- |
-| 0205640 | 35 failed, 297 passed, 23 skipped | paths printed with `/`, more TeX packages in CI; the new failures are being listed |
+| 8169e6c | 332 passed, 25 skipped | tests expect `/`; the PDF import test needs poppler |
+| 7b7d7c0 | 34 failed, 297 passed, 24 skipped | each failure listed: tests still expecting `\` |
+| 0205640 | 35 failed, 297 passed, 23 skipped | paths printed with `/`, more TeX packages in CI |
 | 0b3276f | 14 failed, 311 passed, 23 skipped, 2 errors | first full run |
 
-At 0b3276f, 10 of the 14 failures were paths printed with `\` (JSON from `build` and `explain`,
-and docs/errors.md), one was a test writing a Windows path into a TOML file, and four were LaTeX
-stops on templates that load packages the CI install lacked. The 23 skipped tests need pdftotext.
+The first run failed on paths printed with `\`, a test writing a Windows path into a TOML file,
+and LaTeX packages missing from the CI install. All 25 skipped tests need pdftotext, except one
+that needs a backslash inside a filename, which Windows does not allow. Importing a PDF with
+`cvforge import` also needs pdftotext, on every system.
 
 A test that runs a small Python script saw byte `0xb7` (the `·` in the summary line) arrive in
 the Windows code page. Piped output from Python on Windows uses that code page unless
