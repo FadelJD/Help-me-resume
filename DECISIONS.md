@@ -219,3 +219,4 @@ Choices the spec leaves open. One line each, newest last.
 - Item 4, docx: page size follows the locale (A4, or Letter for us) with 1.8 cm margins; document properties carry the name and build date. Only `build` takes `--docx` for now; `tailor` does not.
 - Item 4, docx: the file's text is the same on every build, but the zip timestamps make it differ byte for byte.
 - Item 5: the README states that the text layer is what is tested, names Workday, Greenhouse, Lever, iCIMS, Ashby and Taleo as context only with no score claimed for any, and ties --docx to Taleo and iCIMS favouring Word files. The Quick start builds the .docx, and both fresh-install jobs require it. The style test keeps only the em and en dash rule.
+- Item 6: STATUS.md at the repo root holds the branch table, open PRs, unverified items with the command to verify each, and the date; every session updates it as its final commit. CLAUDE.md's first instruction is to read it.
