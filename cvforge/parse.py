@@ -522,3 +522,34 @@ def bullet_ids(text: str, file: str, item_id: str) -> list[str]:
         if item.get("id") == item_id:
             return [str(b.get("id")) for b in (item.get("bullets") or [])]
     return []
+
+
+def set_bullet_skills(text: str, file: str, skills_by_bullet: dict[str, list[str]]) -> str:
+    """The profile text with the `skills:` list of each named bullet (`exp-01.b2`) replaced;
+    everything else, comments included, is kept as written."""
+    data = load_raw_text(text, file)
+    remaining = dict(skills_by_bullet)
+    for item in _iter_items(data):
+        for bullet in item.get("bullets") or []:
+            qid = f"{item.get('id')}.{bullet.get('id')}"
+            if qid not in remaining:
+                continue
+            new = _flow(remaining.pop(qid))
+            if "skills" in bullet:
+                bullet["skills"] = new
+            else:
+                keys = list(bullet.keys())
+                pos = keys.index("text") + 1 if "text" in keys else len(keys)
+                bullet.insert(pos, "skills", new)
+    if remaining:
+        raise CVForgeError(
+            [
+                Issue(
+                    file=file,
+                    item=next(iter(remaining)),
+                    message="no bullet with this id in the profile.",
+                    fix="use an id in the form <item id>.<bullet id>, e.g. exp-01.b2.",
+                )
+            ]
+        )
+    return dump_raw(data)

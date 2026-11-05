@@ -101,6 +101,16 @@ def print_check(console: Console, result: CheckReport) -> None:
             verdict = "FAILED" if p.gate else "warning"
             status = f"{verdict}, {len(p.misses)} of {p.checked} facts lost"
         console.print(f"{p.name} [{role}]: {status}", highlight=False, markup=False)
+    if result.llm_reader:
+        r = result.llm_reader
+        line = (
+            f"llm-reader [advisory, reads {r['text_from']} text]: "
+            f"{r['facts_found']} of {r['facts_checked']} facts returned; evidenced skills: "
+            f"{', '.join(r['evidenced_skills']) or 'none'}"
+        )
+        if r["rejected_skills"]:
+            line += f"; not on the CV, ignored: {', '.join(r['rejected_skills'])}"
+        console.print(line, highlight=False, markup=False, soft_wrap=True)
     s = result.scores
     if s.get("keyword") is not None:
         console.print(f"keyword coverage: {s['keyword']:.2f}", highlight=False)

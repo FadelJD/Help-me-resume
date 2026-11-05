@@ -26,6 +26,7 @@ from cvforge.doctor import diagnose, missing_required
 from cvforge.errors import CVForgeError, Issue
 from cvforge.platforms import show_path
 from cvforge.rewrite import Proposal
+from cvforge.tag import TagProposal
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 console = Console(stderr=True)
@@ -300,6 +301,68 @@ def tailor(
 
 
 @app.command()
+def tag(
+    llm: Annotated[
+        bool, typer.Option("--llm", help="Ask the configured LLM for each bullet's skill ids.")
+    ] = False,
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Write the proposed tags.")] = False,
+    profile: ProfileOpt = None,
+    as_json: JsonOpt = False,
+) -> None:
+    """Suggest skill ids for each bullet; shows a diff and writes only with your approval."""
+    if not llm:
+        _fail(
+            CVForgeError(
+                [
+                    Issue(
+                        file="cvforge tag",
+                        item="--llm",
+                        message="tag needs --llm: the model is the only tagger.",
+                        fix="run `cvforge tag --llm` after configuring [llm] (see cvforge doctor).",
+                    )
+                ]
+            ),
+            as_json,
+        )
+
+    def approve(diff: str, proposals: list[TagProposal]) -> bool:
+        if not as_json:
+            out.print(escape(diff), highlight=False, soft_wrap=True)
+            for p in proposals:
+                for sid, reason in p.rejected:
+                    console.print(f"rejected for {p.qid}: `{escape(sid)}` ({reason})")
+        if yes:
+            return True
+        if as_json or not sys.stdin.isatty():
+            return False
+        return typer.confirm("Write these tags to the profile?", default=False)
+
+    try:
+        result = pipeline.tag_profile(profile, approve)
+    except CVForgeError as exc:
+        _fail(exc, as_json)
+    if as_json:
+        out.print_json(
+            json.dumps(
+                {
+                    "ok": True,
+                    "profile": show_path(result.path),
+                    "written": result.written,
+                    "diff": result.diff,
+                    "proposals": [p.to_dict() for p in result.proposals],
+                }
+            )
+        )
+        return
+    if not result.diff:
+        out.print("no new tags proposed; the profile is unchanged", highlight=False)
+    elif result.written:
+        out.print(f"wrote {result.added} tag(s) to {show_path(result.path)}", highlight=False)
+    else:
+        out.print("not written: rerun with --yes to apply this diff", highlight=False)
+
+
+@app.command()
 def explain(
     template: TemplateOpt = None,
     hat: HatOpt = None,
@@ -337,6 +400,12 @@ def check_cmd(
     semantic: Annotated[
         bool, typer.Option("--semantic/--no-semantic", help="Embedding score if installed.")
     ] = True,
+    llm_reader: Annotated[
+        bool,
+        typer.Option(
+            "--llm-reader", help="Also let the configured LLM read the text (advisory only)."
+        ),
+    ] = False,
     profile: ProfileOpt = None,
     as_json: JsonOpt = False,
 ) -> None:
@@ -349,6 +418,7 @@ def check_cmd(
             lint_template=lint_template,
             semantic=semantic,
             profile=profile,
+            llm_reader=llm_reader,
         )
     except CVForgeError as exc:
         _fail(exc, as_json)

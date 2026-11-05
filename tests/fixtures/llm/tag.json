@@ -1,0 +1,6 @@
+[
+  {
+    "match": "Skill ids:",
+    "response": "```json\n{\"tags\": {\"exp-02.b3\": [\"docker\", \"ci\", \"kubernetes\"], \"exp-02.b4\": [\"ci\"]}}\n```"
+  }
+]

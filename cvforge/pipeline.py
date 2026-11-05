@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 import json
 import os
 import re
@@ -17,14 +18,14 @@ from typing import Any
 from pydantic import ValidationError
 
 from cvforge import __version__
-from cvforge.check import CheckReport, check, check_pdf
+from cvforge.check import CheckReport, check, check_pdf, llm_read, load_report
 from cvforge.compile import compile_tex
 from cvforge.config import DEFAULT_CONFIG_TEXT, LOCALES, Config, Locale, load_config
 from cvforge.errors import CVForgeError, Issue, errors_only
 from cvforge.escape import escape
 from cvforge.importer import confirm_markdown, import_file, merge
 from cvforge.interview import Ask, Confirm, Say, hat_text, run_interview
-from cvforge.llm import client_from_config
+from cvforge.llm import Client, client_from_config
 from cvforge.parse import (
     ParsedProfile,
     append_bullet,
@@ -38,12 +39,14 @@ from cvforge.parse import (
     load_profile,
     next_id,
     parse_text,
+    set_bullet_skills,
 )
 from cvforge.platforms import show_path
 from cvforge.resources import builtin_template, data_path
 from cvforge.rewrite import LLMRewriter, Proposal, Rewriter, apply, propose
 from cvforge.schema import Bullet, Education, Experience, Hat, Profile, Project, Selection
 from cvforge.select import select
+from cvforge.tag import TagProposal, propose_tags
 from cvforge.template import (
     TemplateReport,
     build_context,
@@ -786,8 +789,36 @@ def run_check(
     lint_template: bool,
     semantic: bool,
     profile: Path | None = None,
+    llm_reader: bool = False,
 ) -> CheckReport:
     """A .tex built by cvforge, or an existing .pdf checked against a profile's facts."""
+    result = _run_check(tex, job, strict, lint_template, semantic, profile)
+    if llm_reader:
+        if result.pdf is None or tex.suffix.lower() == ".pdf":
+            raise CVForgeError(
+                [
+                    Issue(
+                        file=str(tex),
+                        item="--llm-reader",
+                        message="--llm-reader needs a .tex written by cvforge build.",
+                        fix="check the .tex that build wrote, with --llm-reader.",
+                    )
+                ]
+            )
+        _, report = load_report(tex)
+        client = client_from_config(_config(), "--llm-reader")
+        result.llm_reader = llm_read(result.pdf, report, read_job(job), client)
+    return result
+
+
+def _run_check(
+    tex: Path,
+    job: str | None,
+    strict: bool,
+    lint_template: bool,
+    semantic: bool,
+    profile: Path | None,
+) -> CheckReport:
     if not tex.exists():
         raise CVForgeError(
             [
@@ -950,3 +981,49 @@ def import_profiles(
         [t.value for t in merged.titles],
         readers,
     )
+
+
+# ---------------------------------------------------------------- tag --llm
+
+
+@dataclass
+class TagResult:
+    path: Path
+    proposals: list[TagProposal]
+    diff: str
+    written: bool
+
+    @property
+    def added(self) -> int:
+        return sum(len(p.added) for p in self.proposals)
+
+
+ApproveTags = Callable[[str, list[TagProposal]], bool]
+
+
+def tag_profile(
+    profile: Path | None, approve: ApproveTags, client: Client | None = None
+) -> TagResult:
+    """Ask the model for skill ids per bullet; show the change as a diff; write only if approved.
+    Only declared skill ids are kept and existing tags are never removed (cvforge/tag.py)."""
+    path, text = _profile_text(profile)
+    parsed = parse_text(text, str(path))
+    engine = client or client_from_config(_config(), "tag --llm")
+    proposals = propose_tags(parsed.profile, engine, str(path))
+    changes = {p.qid: p.proposed for p in proposals if p.added}
+    if not changes:
+        return TagResult(path, proposals, "", False)
+    new_text = set_bullet_skills(text, str(path), changes)
+    name = show_path(path)
+    diff = "".join(
+        difflib.unified_diff(
+            text.splitlines(keepends=True),
+            new_text.splitlines(keepends=True),
+            name,
+            f"{name} (proposed)",
+        )
+    )
+    written = approve(diff, proposals)
+    if written:
+        _write_checked(path, new_text)
+    return TagResult(path, proposals, diff, written)

@@ -139,3 +139,60 @@ def test_json_answer_tolerates_fences_and_prose() -> None:
     assert json_answer('Sure:\n```json\n{"a": [1]}\n```') == {"a": [1]}
     assert json_answer('{"a": 1} trailing') == {"a": 1}
     assert json_answer("no json here") is None
+
+
+# ------------------------------------------------------------------ 3c: tag --llm
+
+
+def test_tag_llm_adds_only_declared_ids_and_writes_only_when_approved(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _canned(monkeypatch, tmp_path, "tag.json")
+    profile = tmp_path / "profile.cv.txt"
+    original = (EXAMPLES / "profile.cv.txt").read_text(encoding="utf-8")
+    profile.write_text(original, encoding="utf-8")
+    code, out = _run(["tag", "--llm", "-p", str(profile), "--json"], capsys)
+    assert code == 0, out
+    data = json.loads(out)
+    assert data["written"] is False and profile.read_text(encoding="utf-8") == original
+    by_id = {p["id"]: p for p in data["proposals"]}
+    assert by_id["exp-02.b3"]["added"] == ["ci"]
+    assert by_id["exp-02.b3"]["rejected"] == [
+        {"skill": "kubernetes", "reason": "not a declared skill id in this profile"}
+    ]
+    assert by_id["exp-02.b4"]["added"] == []  # already tagged ci: nothing to add
+    assert "+        skills: [docker, ci]" in data["diff"]
+    code, out = _run(["tag", "--llm", "-p", str(profile), "--json", "--yes"], capsys)
+    assert json.loads(out)["written"] is True
+    text = profile.read_text(encoding="utf-8")
+    assert "skills: [docker, ci]" in text and "kubernetes" not in text
+
+
+def test_tag_without_llm_flag_says_how(capsys: pytest.CaptureFixture[str]) -> None:
+    code, out = _run(["tag", "--json"], capsys)
+    assert code != 0 and "tag needs --llm" in out
+
+
+# ------------------------------------------------------------------ 3d: check --llm-reader
+
+
+@pytest.mark.tex
+def test_llm_reader_is_an_advisory_column_and_never_gates(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _canned(monkeypatch, tmp_path, "reader.json")
+    args = ["-p", str(EXAMPLES / "profile.cv.txt"), "-t", str(TEMPLATES / "minimal.tex")]
+    hat = ["--hat", str(EXAMPLES / "hats" / "developer.toml")]
+    code, _ = _run(["build", *args, *hat, "-o", "out/cv.tex", "--compile"], capsys)
+    assert code == 0
+    code, out = _run(
+        ["check", "out/cv.tex", "--job", str(EXAMPLES / "job.txt"), "--llm-reader", "--json"],
+        capsys,
+    )
+    data = json.loads(out)
+    reader = data["llm_reader"]
+    assert reader["gate"] is False and reader["facts_found"] < reader["facts_checked"]
+    assert reader["evidenced_skills"] == ["Python"]
+    assert reader["rejected_skills"] == ["Kubernetes"]
+    assert "llm-reader" not in data["gates"]
+    assert code == 0  # the gating readers passed; the model's misses do not fail the check
