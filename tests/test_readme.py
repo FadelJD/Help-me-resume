@@ -51,19 +51,15 @@ def test_windows_reader_set_is_explained() -> None:
     assert "pdftotext never has to pass on Windows" in windows
 
 
-# Plain writing: these patterns read as machine-written and are banned from user-facing docs.
+# Em and en dashes read as machine-written; ordinary English phrasing is left to the writer.
 STYLE_RULES = {
     "em dash": "\u2014",
     "en dash": "\u2013",
-    "'rather than'": r"\brather than\b",
-    "'instead of'": r"\binstead of\b",
-    "', not X' contrast": r", not \w",
-    "'not X but Y' contrast": r"\bnot\b[^.\n]{1,40}\bbut\b",
 }
 
 
 @pytest.mark.parametrize("doc", ["README.md", "docs/windows.md"])
-def test_docs_follow_the_style_rules(doc: str) -> None:
+def test_docs_have_no_em_or_en_dashes(doc: str) -> None:
     text = (ROOT / doc).read_text(encoding="utf-8")
     prose = re.sub(r"```.*?```", "", text, flags=re.S)  # commands may contain anything
     found = [
