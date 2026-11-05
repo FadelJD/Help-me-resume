@@ -522,3 +522,169 @@ def bullet_ids(text: str, file: str, item_id: str) -> list[str]:
         if item.get("id") == item_id:
             return [str(b.get("id")) for b in (item.get("bullets") or [])]
     return []
+
+
+# ---------------------------------------------------------------- confirm: `# TODO confirm` lines
+
+_TODO_CONFIRM = re.compile(r"TODO confirm \(CONFIRM\.md (#\d+(?:,\s*#\d+)*)\)")
+_LINE_HEAD = re.compile(
+    r"^(?P<head>[ \t]*(?:-[ \t]+)?"
+    r"(?:(?:\"(?:[^\"\\]|\\.)*\"|'(?:[^']|'')*'|[^\s#\"'\-\[{][^#]*?|-[^\s#][^#]*?):(?:[ \t]+|$))?)"
+    r"(?P<rest>\S.*)$"
+)
+
+
+@dataclass(frozen=True)
+class ValueLine:
+    """One `key: value  # comment` (or `- value  # comment`) line, split where it can change."""
+
+    head: str  # indent, list dash and key, up to the value
+    value: str
+    gap: str  # the spaces between the value and the comment
+    comment: str  # from `#` to the end of the line, or ""
+
+
+def split_value_line(line: str) -> ValueLine | None:
+    """The single-line string value of a profile line, or None when it is not one."""
+    m = _LINE_HEAD.match(line)
+    if m is None:
+        return None
+    rest = m.group("rest")
+    if rest.startswith("#"):
+        return None  # a comment line, or a key with no value
+    if rest.startswith('"'):
+        try:
+            value, end = _json.JSONDecoder().raw_decode(rest)
+        except ValueError:
+            return None
+        if not isinstance(value, str):
+            return None
+    elif rest.startswith("'"):
+        quoted = re.match(r"'((?:[^']|'')*)'", rest)
+        if quoted is None:
+            return None
+        value, end = quoted.group(1).replace("''", "'"), quoted.end()
+    else:
+        if rest[0] in "[{&*!|>%@`":
+            return None  # a list, an anchor, a block scalar: not a value to rewrite in place
+        cut = re.search(r"[ \t]#", rest)
+        value = (rest[: cut.start()] if cut else rest).rstrip()
+        end = len(value)
+        if value.endswith(":"):
+            return None  # a key whose value is on the lines below
+    tail = re.fullmatch(r"([ \t]*)(#.*)?", rest[end:])
+    if tail is None:
+        return None
+    return ValueLine(m.group("head"), value, tail.group(1), tail.group(2) or "")
+
+
+@dataclass(frozen=True)
+class ConfirmLine:
+    """A profile line marked `# TODO confirm (CONFIRM.md #N)` by `cvforge import`."""
+
+    line: int  # 1-based
+    numbers: tuple[int, ...]
+    where: str  # e.g. person.phone, exp-01 start, exp-01.b2 text
+    value: str | None  # None when the line holds no single-line value to rewrite
+    sources: str
+
+
+def _describe(loc: Loc, source: SourceMap) -> str:
+    item = source.item_id(loc)
+    keys = [k for k in loc if isinstance(k, str)]
+    if item is not None and keys:
+        return f"{item} {keys[-1]}"
+    out = ""
+    for part in loc:
+        out += f"[{part}]" if isinstance(part, int) else (f".{part}" if out else part)
+    return out
+
+
+def _line_paths(text: str, file: str) -> dict[int, str]:
+    """1-based line -> where on that line (the deepest key that starts there)."""
+    try:
+        data = load_raw_text(text, file)
+    except CVForgeError:
+        return {}
+    locs: dict[Loc, int] = {}
+    _walk_lines(data, (), locs)
+    deepest: dict[int, Loc] = {}
+    for loc, line in locs.items():
+        if line not in deepest or len(loc) > len(deepest[line]):
+            deepest[line] = loc
+    source = SourceMap(file=file, lines=locs, data=data)
+    return {line: _describe(loc, source) for line, loc in deepest.items()}
+
+
+def _todo_numbers(comment: str) -> tuple[int, ...]:
+    m = _TODO_CONFIRM.search(comment)
+    return tuple(int(n) for n in re.findall(r"\d+", m.group(1))) if m else ()
+
+
+def confirm_lines(text: str, file: str) -> list[ConfirmLine]:
+    """Every line still carrying `TODO confirm`, in file order."""
+    text = text.replace("\r\n", "\n")
+    paths: dict[int, str] | None = None
+    out: list[ConfirmLine] = []
+    for n, raw in enumerate(text.split("\n"), start=1):
+        if "TODO confirm" not in raw:
+            continue
+        split = split_value_line(raw)
+        if split is not None:
+            comment, value = split.comment, split.value
+        elif raw.lstrip().startswith("#"):
+            continue  # commented out by hand: nothing left to confirm on it
+        else:
+            hash_at = raw.find("#")
+            comment, value = (raw[hash_at:] if hash_at >= 0 else ""), None
+        numbers = _todo_numbers(comment)
+        if not numbers:
+            continue
+        if paths is None:
+            paths = _line_paths(text, file)
+        source = re.search(r"#\s*source:\s*([^;]*)", comment)
+        out.append(
+            ConfirmLine(
+                line=n,
+                numbers=numbers,
+                where=paths.get(n, f"line {n}"),
+                value=value,
+                sources=source.group(1).strip() if source else "",
+            )
+        )
+    return out
+
+
+def set_confirmed(text: str, file: str, line: int, number: int, value: str, stamp: str) -> str:
+    """`text` with `value` written on `line`, its comment now `# source: <stamp>`.
+
+    Only that line changes; every other byte, line endings included, stays as it was. Other
+    TODO confirm numbers on the same line stay pending.
+    """
+    parts = re.split(r"(?<=\n)", text)
+    raw = parts[line - 1]
+    body = raw.rstrip("\r\n")
+    ending = raw[len(body) :]
+    split = split_value_line(body)
+    numbers = _todo_numbers(split.comment) if split is not None else ()
+    if split is None or number not in numbers:
+        raise CVForgeError(
+            [
+                Issue(
+                    file=file,
+                    line=line,
+                    item=f"CONFIRM.md #{number}",
+                    message="this line holds no single-line value marked TODO confirm, so "
+                    "confirm cannot rewrite it in place.",
+                    fix="edit the line by hand: write the value, then replace the comment with "
+                    "`# source: user` and today's date.",
+                )
+            ]
+        )
+    rest = [k for k in numbers if k != number]
+    comment = f"# source: {stamp}"
+    if rest:
+        comment += f"; TODO confirm (CONFIRM.md #{', #'.join(map(str, rest))})"
+    quoted = _json.dumps(value, ensure_ascii=False)
+    parts[line - 1] = f"{split.head}{quoted}{split.gap or '  '}{comment}{ending}"
+    return "".join(parts)

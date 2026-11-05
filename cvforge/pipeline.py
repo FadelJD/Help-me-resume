@@ -9,7 +9,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
@@ -20,6 +20,7 @@ from cvforge import __version__
 from cvforge.check import CheckReport, check, check_pdf
 from cvforge.compile import compile_tex
 from cvforge.config import DEFAULT_CONFIG_TEXT, LOCALES, Config, Locale, load_config
+from cvforge.confirm import Answer, Question, apply_answer, questions, resolve
 from cvforge.errors import CVForgeError, Issue, errors_only
 from cvforge.escape import escape
 from cvforge.importer import confirm_markdown, import_file, merge
@@ -950,3 +951,108 @@ def import_profiles(
     return ImportResult(
         output, confirm_path, len(merged.confirms), issues, [t.value for t in merged.titles]
     )
+
+
+# ---------------------------------------------------------------- confirm
+
+
+@dataclass
+class ConfirmState:
+    profile: Path
+    confirm: Path | None  # the CONFIRM.md read, or None when there is none
+    questions: list[Question]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "ok": True,
+            "profile": show_path(self.profile),
+            "confirm": show_path(self.confirm) if self.confirm else None,
+            "pending": [q.to_dict() for q in self.questions],
+        }
+
+
+@dataclass
+class ConfirmResult:
+    applied: list[tuple[Answer, Question]]
+    state: ConfirmState  # what is still open after the answers
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            **self.state.to_dict(),
+            "applied": [
+                {**a.to_dict(), "what": q.what, "lines": list(q.lines)} for a, q in self.applied
+            ],
+        }
+
+
+def confirm_today() -> str:
+    """Today's local date, or SOURCE_DATE_EPOCH's when set (reproducible runs and tests)."""
+    epoch = os.environ.get("SOURCE_DATE_EPOCH")
+    if epoch:
+        return datetime.fromtimestamp(int(epoch), tz=UTC).strftime("%Y-%m-%d")
+    return date.today().isoformat()
+
+
+def _read_keeping_newlines(path: Path) -> str:
+    with path.open(encoding="utf-8", newline="") as f:
+        return f.read()
+
+
+def confirm_pending(profile: Path | None, confirm: Path | None) -> ConfirmState:
+    """The open TODO confirm entries of the profile, described by CONFIRM.md when it exists."""
+    path, _ = _profile_text(profile)
+    text = _read_keeping_newlines(path)
+    md = confirm if confirm is not None else path.with_name("CONFIRM.md")
+    if confirm is not None and not md.exists():
+        raise CVForgeError(
+            [
+                Issue(
+                    file=str(md),
+                    item="--confirm",
+                    message="CONFIRM.md not found.",
+                    fix="pass the CONFIRM.md that `cvforge import` wrote, or leave out --confirm "
+                    "to work from the profile's TODO confirm lines alone.",
+                )
+            ]
+        )
+    md_text = md.read_text(encoding="utf-8") if md.exists() else None
+    found = md if md_text is not None else None
+    return ConfirmState(path, found, questions(text, str(path), md_text))
+
+
+def confirm_answer(
+    profile: Path | None,
+    confirm: Path | None,
+    answers: list[tuple[int, str]],
+    today: str | None = None,
+) -> ConfirmResult:
+    """Apply (entry number, raw answer) pairs in order; all or nothing, one write at the end."""
+    state = confirm_pending(profile, confirm)
+    path, file = state.profile, str(state.profile)
+    text = _read_keeping_newlines(path)
+    stamp = f"user {today or confirm_today()}"
+    by_number = {q.number: q for q in state.questions}
+    applied: list[tuple[Answer, Question]] = []
+    for number, raw in answers:
+        question = by_number.get(number)
+        if question is None:
+            pending = ", ".join(f"#{n}" for n in by_number) or "none"
+            raise CVForgeError(
+                [
+                    Issue(
+                        file=file,
+                        item=f"CONFIRM.md #{number}",
+                        message=f"entry #{number} is not waiting for an answer (open: {pending}).",
+                        fix="run `cvforge confirm --json` to list the open entries and answer "
+                        "one of those numbers.",
+                    )
+                ]
+            )
+        answer = resolve(question, raw, file)
+        text = apply_answer(text, file, question, answer, stamp)
+        applied.append((answer, question))
+        del by_number[number]  # answered: a second answer to it in this run is an error
+    if applied:
+        with path.open("w", encoding="utf-8", newline="") as f:
+            f.write(text)
+    return ConfirmResult(applied, confirm_pending(path, confirm))
